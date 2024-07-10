@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
         binding.btCreateNote.setOnClickListener {
 //            db = AppDatabase.getDatabase(this@MainActivity)
-//            val notaExample = Note(null, "nuevo", "tomorrow")
+//            val notaExample = Note(null, "EL TITULO", "nuevo", "tomorrow")
 //            db.noteDAO().insertNote(notaExample)
 //            notesList = db.noteDAO().getNotes() as ArrayList<Note>
 //            adapterNotes = AdapterNotes(notesList!!)

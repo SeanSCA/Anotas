@@ -9,6 +9,7 @@ import java.util.Date
 data class Note(
     @PrimaryKey (autoGenerate = true)
     val id: Int?,
+    val title: String,
     val textContext: String,
     val date : String
 )

@@ -13,6 +13,9 @@ interface NoteDAO {
     @Query("SELECT * FROM notes WHERE id = :id")
     fun getNoteById(id: Int): Note
 
+    @Query("SELECT * FROM notes WHERE title = :title")
+    fun getNoteByTitle(title: String): Note
+
     @Query("SELECT COUNT(*) FROM notes")
     fun getNotesCount(): Int
 
