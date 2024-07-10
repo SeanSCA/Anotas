@@ -1,16 +1,16 @@
-package com.example.jinotas.DB
+package com.example.jinotas.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.ArrayList
 import java.util.Date
 
-@Entity
+@Entity(tableName = "notes")
 data class Note(
-    @PrimaryKey
-    var id: Int,
-    var textContext: String,
-    var date : Date
+    @PrimaryKey (autoGenerate = true)
+    val id: Int?,
+    val textContext: String,
+    val date : String
 )
 
 //var notes : ArrayList<Note> = arrayListOf()

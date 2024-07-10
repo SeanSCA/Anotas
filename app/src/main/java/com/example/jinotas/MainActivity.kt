@@ -5,17 +5,47 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
+import com.example.jinotas.databinding.ActivityMainBinding
+import com.example.jinotas.db.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), CoroutineScope {
+    private lateinit var binding : ActivityMainBinding
+    private lateinit var db: AppDatabase
+    private var job: Job = Job()
+    private var notesCounter : Int? = null
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        supportFragmentManager.commit {
-            replace<Notes>(R.id.fragment_container_view)
-            setReorderingAllowed(true)
-            addToBackStack(null)
+        runBlocking {
+            val corrutina = launch {
+                db = AppDatabase.getDatabase(this@MainActivity)
+                notesCounter = db.noteDAO().getNotesCount()
+            }
+            corrutina.join()
         }
+        binding.notesCounter.text = notesCounter.toString() + " notas"
+//        supportFragmentManager.commit {
+//            replace<NotesFragment>(R.id.fragment_container_view)
+//            setReorderingAllowed(true)
+//            addToBackStack(null)
+//        }
     }
 }
