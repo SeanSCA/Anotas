@@ -23,7 +23,7 @@ class AdapterNotes(private var list: ArrayList<Note>) : RecyclerView.Adapter<Ada
         holder.notesText.text = list[position].textContext
     }
 
-    private fun updateList(newList: ArrayList<Note>){
+    fun updateList(newList: ArrayList<Note>){
         list = newList
         notifyDataSetChanged()
     }
