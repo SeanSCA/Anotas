@@ -1,5 +1,6 @@
 package com.example.jinotas
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         notesCounter()
         binding.notesCounter.text = notesCounter
 
-//        binding.btCreateNote.setOnClickListener {
+        binding.btCreateNote.setOnClickListener {
 //            db = AppDatabase.getDatabase(this@MainActivity)
 //            val notaExample = Note(null, "nuevo", "tomorrow")
 //            db.noteDAO().insertNote(notaExample)
@@ -53,7 +54,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 //            replace<NotesFragment>(R.id.fragment_container_view)
 //            setReorderingAllowed(true)
 //            addToBackStack(null)
-//        }
+            val intent = Intent(this, WriteNotesActivity::class.java)
+            startActivity(intent)
+        }
     }
     private fun notesCounter(){
         runBlocking {
