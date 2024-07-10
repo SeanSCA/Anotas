@@ -17,7 +17,5 @@ class MainActivity : AppCompatActivity() {
             setReorderingAllowed(true)
             addToBackStack(null)
         }
-        val fragment: Notes =
-            supportFragmentManager.findFragmentById(R.id.fragment_container_view) as Notes
     }
 }
