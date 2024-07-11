@@ -38,8 +38,7 @@
         android:id="@+id/btCreateNote"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:background="@color/background"
-        android:src="@drawable/create_note_icon"
+        android:background="@drawable/create_note_roundcorner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/notesCounter" />
 
