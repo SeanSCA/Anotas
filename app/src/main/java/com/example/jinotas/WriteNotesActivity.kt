@@ -38,7 +38,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+//        enableEdgeToEdge()
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.btReturnToNotes.setOnClickListener {
