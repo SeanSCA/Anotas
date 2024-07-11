@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +28,8 @@ class AdapterNotes(private var list: ArrayList<Note>/*, var coroutineScope: Coro
         holder.notesText.text = list[position].textContext
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, ShowNoteActivity::class.java)
+            intent.putExtra("id", list[position].id)
+//            Toast.makeText(holder.itemView.context, list[position].id.toString(), Toast.LENGTH_LONG).show()
             startActivity(holder.itemView.context, intent, null)
         }
     }
