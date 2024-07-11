@@ -13,6 +13,9 @@
         android:theme="@style/Theme.Jinotas"
         tools:targetApi="31">
         <activity
+            android:name=".ShowNoteActivity"
+            android:exported="false" />
+        <activity
             android:name=".WriteNotesActivity"
             android:exported="false" />
         <activity
