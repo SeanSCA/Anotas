@@ -42,8 +42,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.btReturnToNotes.setOnClickListener {
-            val intent = Intent(this@WriteNotesActivity, MainActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this@WriteNotesActivity, MainActivity::class.java)
+//            startActivity(intent)
+            finish()
         }
 
         binding.btSaveNote.setOnClickListener {
@@ -64,8 +65,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                 corrutina.join()
             }
             //Esto se puede reducir mediante una función
-            val intent = Intent(this@WriteNotesActivity, MainActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this@WriteNotesActivity, MainActivity::class.java)
+//            startActivity(intent)
+            finish()
         }
     }
 }

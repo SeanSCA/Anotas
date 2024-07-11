@@ -28,8 +28,7 @@
                 android:layout_height="match_parent"
                 android:layout_marginStart="20dp"
                 android:background="@color/black"
-                android:src="@drawable/return_to_notes"
-                />
+                android:src="@drawable/return_to_notes" />
 
             <EditText
                 android:id="@+id/etTitle"
@@ -41,20 +40,20 @@
                 android:textColor="@color/white" />
 
             <ImageButton
-                android:id="@+id/btSaveNote"
+                android:id="@+id/btOverwriteNote"
                 android:layout_width="35dp"
-                android:background="@color/black"
                 android:layout_height="match_parent"
                 android:layout_marginStart="20dp"
-                android:src="@drawable/save_note"/>
+                android:background="@color/black"
+                android:src="@drawable/save_note" />
         </LinearLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/content"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layout_constraintEnd_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/noteOptions">
 
             <androidx.appcompat.widget.AppCompatEditText
