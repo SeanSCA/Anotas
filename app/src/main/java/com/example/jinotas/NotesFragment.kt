@@ -1,11 +1,14 @@
 package com.example.jinotas
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.jinotas.databinding.FragmentNotesBinding
@@ -38,6 +41,13 @@ class NotesFragment : Fragment(), CoroutineScope {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         binding = FragmentNotesBinding.inflate(inflater)
+        loadNotes()
+
+        //Esto es para mostrar la lista con las notas, modificar esto para que al pulsar en un boton ponga un layout u otro, probar tambien con el adaptador
+        return binding.root
+    }
+
+    fun loadNotes() {
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(requireContext())
@@ -46,14 +56,13 @@ class NotesFragment : Fragment(), CoroutineScope {
                 notesList = db.noteDAO().getNotes() as ArrayList<Note>
             }
             corrutina.join()
+            binding.rvNotes.layoutManager = LinearLayoutManager(context)
+            adapterNotes = AdapterNotes(notesList)
+            adapterNotes.updateList(notesList)
+            binding.rvNotes.adapter = adapterNotes
         }
-        //Esto es para mostrar la lista con las notas, modificar esto para que al pulsar en un boton ponga un layout u otro, probar tambien con el adaptador
-        binding.rvNotes.layoutManager = LinearLayoutManager(context)
-        adapterNotes = AdapterNotes(notesList!!)
-        binding.rvNotes.adapter = adapterNotes
-
-
-
-        return binding.root
+        Toast.makeText(
+            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
+        ).show()
     }
 }

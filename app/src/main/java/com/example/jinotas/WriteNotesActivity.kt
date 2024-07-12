@@ -1,12 +1,12 @@
 package com.example.jinotas
 
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.commit
+import androidx.fragment.app.replace
 import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -17,13 +17,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.ArrayList
 import kotlin.coroutines.CoroutineContext
+
 
 class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var binding: ActivityWriteNotesBinding
-    private lateinit var adapterNotes: AdapterNotes
     private lateinit var notesList: ArrayList<Note>
+    private lateinit var adapterNotes: AdapterNotes
     private lateinit var db: AppDatabase
     private var job: Job = Job()
 
@@ -41,9 +41,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
 //        enableEdgeToEdge()
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
         binding.btReturnToNotes.setOnClickListener {
-//            val intent = Intent(this@WriteNotesActivity, MainActivity::class.java)
-//            startActivity(intent)
             finish()
         }
 
@@ -60,13 +60,16 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                     )
                     db = AppDatabase.getDatabase(this@WriteNotesActivity)
                     db.noteDAO().insertNote(note)
-                  Toast.makeText(this@WriteNotesActivity, "Has creado una nota", Toast.LENGTH_LONG).show()
+                    notesList = db.noteDAO().getNotes() as ArrayList<Note>
+                    adapterNotes = AdapterNotes(notesList)
+                    adapterNotes.updateList(notesList)
+
+//                    Toast.makeText(
+//                        this@WriteNotesActivity, "Has creado una nota", Toast.LENGTH_LONG
+//                    ).show()
                 }
                 corrutina.join()
             }
-            //Esto se puede reducir mediante una función
-//            val intent = Intent(this@WriteNotesActivity, MainActivity::class.java)
-//            startActivity(intent)
             finish()
         }
     }

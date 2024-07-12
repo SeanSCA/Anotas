@@ -47,7 +47,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
 
         //Esto coloca el titulo y el contenido de la nota
         binding.etTitle.setText(notesShow.title)
-        binding.etNoteContent.setText(notesShow.textContext)
+        binding.etNoteContent.setText(notesShow.textContent)
 
         binding.btReturnToNotes.setOnClickListener {
             finish()

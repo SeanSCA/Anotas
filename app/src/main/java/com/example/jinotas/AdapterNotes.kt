@@ -5,12 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.db.Note
-import kotlinx.coroutines.CoroutineScope
 import java.util.ArrayList
 
 class AdapterNotes(private var list: ArrayList<Note>/*, var coroutineScope: CoroutineScope*/) : RecyclerView.Adapter<AdapterNotes.ViewHolder>() {
@@ -25,7 +22,7 @@ class AdapterNotes(private var list: ArrayList<Note>/*, var coroutineScope: Coro
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.notesText.text = list[position].textContext
+        holder.notesText.text = list[position].textContent
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, ShowNoteActivity::class.java)
             intent.putExtra("id", list[position].id)

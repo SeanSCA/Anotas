@@ -43,22 +43,20 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         binding.notesCounter.text = notesCounter
 
         binding.btCreateNote.setOnClickListener {
-//            db = AppDatabase.getDatabase(this@MainActivity)
-//            val notaExample = Note(null, "EL TITULO", "nuevo", "tomorrow")
-//            db.noteDAO().insertNote(notaExample)
-//            notesList = db.noteDAO().getNotes() as ArrayList<Note>
-//            adapterNotes = AdapterNotes(notesList!!)
-//            adapterNotes.updateList(notesList)
-//        }
-//        supportFragmentManager.commit {
-//            replace<NotesFragment>(R.id.fragment_container_view)
-//            setReorderingAllowed(true)
-//            addToBackStack(null)
             val intent = Intent(this, WriteNotesActivity::class.java)
             startActivity(intent)
         }
     }
-    private fun notesCounter(){
+
+    override fun onResume() {
+        super.onResume()
+        val fragment =
+            supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment
+        fragment?.loadNotes()
+    }
+
+
+    private fun notesCounter() {
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(this@MainActivity)
