@@ -57,12 +57,12 @@ class NotesFragment : Fragment(), CoroutineScope {
             }
             corrutina.join()
             binding.rvNotes.layoutManager = LinearLayoutManager(context)
-            adapterNotes = AdapterNotes(notesList)
+            adapterNotes = AdapterNotes(notesList, coroutineContext)
             adapterNotes.updateList(notesList)
             binding.rvNotes.adapter = adapterNotes
         }
-        Toast.makeText(
-            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
-        ).show()
+//        Toast.makeText(
+//            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
+//        ).show()
     }
 }

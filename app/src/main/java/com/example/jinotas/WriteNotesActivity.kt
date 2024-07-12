@@ -61,7 +61,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                     db = AppDatabase.getDatabase(this@WriteNotesActivity)
                     db.noteDAO().insertNote(note)
                     notesList = db.noteDAO().getNotes() as ArrayList<Note>
-                    adapterNotes = AdapterNotes(notesList)
+                    adapterNotes = AdapterNotes(notesList, coroutineContext)
                     adapterNotes.updateList(notesList)
 
 //                    Toast.makeText(

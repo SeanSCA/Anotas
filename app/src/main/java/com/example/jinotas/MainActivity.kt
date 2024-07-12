@@ -19,8 +19,6 @@ import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var adapterNotes: AdapterNotes
-    private lateinit var notesList: ArrayList<Note>
     private lateinit var db: AppDatabase
     private var notesCounter: String? = null
     private var job: Job = Job()
@@ -40,7 +38,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         setContentView(binding.root)
 
         notesCounter()
-        binding.notesCounter.text = notesCounter
 
         binding.btCreateNote.setOnClickListener {
             val intent = Intent(this, WriteNotesActivity::class.java)
@@ -53,6 +50,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         val fragment =
             supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment
         fragment?.loadNotes()
+        notesCounter()
     }
 
 
@@ -64,5 +62,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
             corrutina.join()
         }
+        binding.notesCounter.text = notesCounter
     }
 }
