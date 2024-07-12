@@ -9,14 +9,20 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.util.ArrayList
 import kotlin.coroutines.CoroutineContext
 
 class AdapterNotes(
     private var list: ArrayList<Note>, override val coroutineContext: CoroutineContext
 ) : RecyclerView.Adapter<AdapterNotes.ViewHolder>(), CoroutineScope {
+
+    private lateinit var db: AppDatabase
+
 
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
         val notesText = vista.findViewById<TextView>(R.id.tv_show_note)
@@ -40,9 +46,18 @@ class AdapterNotes(
             popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
             popupMenu.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
-                    R.id.action_eliminar -> Toast.makeText(
-                        holder.itemView.context, "You Clicked : " + item.title, Toast.LENGTH_SHORT
-                    ).show()
+                    R.id.action_eliminar -> runBlocking {
+                        val corrutina = launch {
+                            db = AppDatabase.getDatabase(holder.itemView.context)
+                            val note =
+                                list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
+                            if (note != null) {
+                                db.noteDAO().deleteNote(note)
+                                updateList(db.noteDAO().getNotes() as ArrayList<Note>)
+                            }
+                        }
+                        corrutina.join()
+                    }
                 }
                 true
             }
