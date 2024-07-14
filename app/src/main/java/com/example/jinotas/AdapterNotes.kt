@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.db.AppDatabase
@@ -25,7 +24,7 @@ class AdapterNotes(
 
 
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
-        val notesText = vista.findViewById<TextView>(R.id.tv_show_note)
+        val notesText = vista.findViewById<TextView>(R.id.tv_show_note_content_resume)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
