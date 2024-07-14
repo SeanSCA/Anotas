@@ -54,6 +54,8 @@ class AdapterNotes(
                             if (note != null) {
                                 db.noteDAO().deleteNote(note)
                                 updateList(db.noteDAO().getNotes() as ArrayList<Note>)
+
+
                             }
                         }
                         corrutina.join()

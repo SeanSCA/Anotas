@@ -2,6 +2,8 @@ package com.example.jinotas
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
@@ -33,12 +35,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        notesCounter()
-
+        updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
             val intent = Intent(this, WriteNotesActivity::class.java)
             startActivity(intent)
@@ -50,7 +50,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         val fragment =
             supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment
         fragment?.loadNotes()
-        notesCounter()
     }
 
 
@@ -63,5 +62,16 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             corrutina.join()
         }
         binding.notesCounter.text = notesCounter
+    }
+
+    private fun updateNotesCounter(){
+        val mainHandler = Handler(Looper.getMainLooper())
+
+        mainHandler.post(object : Runnable {
+            override fun run() {
+                notesCounter()
+                mainHandler.postDelayed(this, 500)
+            }
+        })
     }
 }
