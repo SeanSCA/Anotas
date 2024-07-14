@@ -17,6 +17,12 @@ interface NoteDAO {
     @Query("SELECT * FROM notes WHERE title  LIKE '%' || :title || '%'")
     fun getNoteByTitle(title: String): List<Note>
 
+    @Query("SELECT * FROM notes ORDER BY date")
+    fun getNoteOrderByDate(): List<Note>
+
+    @Query("SELECT * FROM notes ORDER BY title")
+    fun getNoteOrderByTitle(): List<Note>
+
     @Query("SELECT COUNT(*) FROM notes")
     fun getNotesCount(): Int
 
