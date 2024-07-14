@@ -33,23 +33,52 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title" />
 
-    <!--Cambiar para poner limite con los otros elementos-->
-    <ImageButton
-        android:id="@+id/btCreateNote"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:background="@drawable/create_note_roundcorner"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/notesCounter" />
 
-    <ImageButton
-        android:id="@+id/btSearchNote"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/optionsContainer"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black"
-        android:src="@drawable/search_note"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/notesCounter" />
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/fragment_container_view"
+        app:layout_constraintTop_toBottomOf="@+id/notesCounter">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageButton
+                android:id="@+id/btCreateNote"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/create_note_roundcorner"
+                android:contentDescription="Botón para crear una nota"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/btSearchNote"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@color/black"
+                android:contentDescription="Botón para buscar"
+                android:src="@drawable/search_note"
+                app:layout_constraintBottom_toTopOf="@+id/btOrderBy"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/btOrderBy"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/order_by_roundcorner"
+                android:contentDescription="Botón para ordenar"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btSearchNote" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container_view"
@@ -57,7 +86,7 @@
         android:layout_width="match_parent"
         android:layout_height="600dp"
         android:layout_margin="10dp"
-        app:layout_constraintTop_toBottomOf="@+id/btSearchNote"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/optionsContainer"
         tools:layout="@layout/fragment_notes" />
 </androidx.constraintlayout.widget.ConstraintLayout>
