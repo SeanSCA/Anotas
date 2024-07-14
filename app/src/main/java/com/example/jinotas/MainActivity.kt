@@ -3,26 +3,16 @@ package com.example.jinotas
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
-import android.text.Editable
-import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
-import android.widget.Button
 import android.widget.EditText
+import android.widget.PopupMenu
 import android.widget.PopupWindow
-import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.widget.doOnTextChanged
-import androidx.fragment.app.commit
-import androidx.fragment.app.replace
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -31,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.io.File
 import java.util.ArrayList
 import kotlin.coroutines.CoroutineContext
 
@@ -62,7 +51,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
 
         binding.btSearchNote.setOnClickListener {
-            showPopupMenu(this@MainActivity, binding.btSearchNote)
+            showPopupMenuSearch(this@MainActivity, binding.btSearchNote)
+        }
+
+        binding.btOrderBy.setOnClickListener {
+            showPopupMenuOrderBy(binding.btOrderBy)
         }
     }
 
@@ -96,7 +89,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         })
     }
 
-    fun showPopupMenu(context: Context, view: View) {
+    private fun  showPopupMenuSearch(context: Context, view: View) {
         val inflater = LayoutInflater.from(context)
         val layout = inflater.inflate(R.layout.menu_search, null)
 
@@ -121,7 +114,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         fragment =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
         fragment.apply {
-            searchNote.afterTextChanged{
+            searchNote.afterTextChanged {
                 loadFilteredNotes(searchNote.text.toString())
             }
         }
@@ -131,5 +124,33 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         popup.showAsDropDown(view)
     }
 
+    fun showPopupMenuOrderBy(view: View) {
+        fragment =
+            (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+        val popupMenu = PopupMenu(this@MainActivity, view)
+        popupMenu.menuInflater.inflate(R.menu.popup_menu_order_by, popupMenu.menu)
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_order_by_date -> runBlocking {
+                    val corrutina = launch {
+                        db = AppDatabase.getDatabase(this@MainActivity)
+                        fragment.orderByNotes("date")
+                    }
+                    corrutina.join()
+                }
+
+                R.id.action_order_by_title -> runBlocking {
+                    val corrutina = launch {
+                        db = AppDatabase.getDatabase(this@MainActivity)
+                        fragment.orderByNotes("title")
+                    }
+                    corrutina.join()
+                }
+            }
+            true
+        }
+        popupMenu.show()
+        true
+    }
 
 }

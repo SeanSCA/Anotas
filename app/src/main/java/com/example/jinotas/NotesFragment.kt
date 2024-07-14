@@ -1,18 +1,13 @@
 package com.example.jinotas
 
-import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
-import android.widget.Toast
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.AppDatabase
@@ -22,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.ArrayList
 import kotlin.coroutines.CoroutineContext
 
 class NotesFragment : Fragment(), CoroutineScope {
@@ -74,6 +68,29 @@ class NotesFragment : Fragment(), CoroutineScope {
                 db = AppDatabase.getDatabase(requireContext())
                 val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
                 notesList = db.noteDAO().getNoteByTitle(filter) as ArrayList<Note>
+            }
+            corrutina.join()
+            binding.rvNotes.layoutManager = LinearLayoutManager(context)
+            adapterNotes = AdapterNotes(notesList, coroutineContext)
+            adapterNotes.updateList(notesList)
+            binding.rvNotes.adapter = adapterNotes
+        }
+//        Toast.makeText(
+//            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
+//        ).show()
+    }
+
+    fun orderByNotes(type: String) {
+        runBlocking {
+            val corrutina = launch {
+                db = AppDatabase.getDatabase(requireContext())
+                if (type == "date") {
+                    notesList = db.noteDAO().getNoteOrderByDate() as ArrayList<Note>
+                } else if (type == "title") {
+                    notesList = db.noteDAO().getNoteOrderByTitle() as ArrayList<Note>
+                } else{
+                    notesList = db.noteDAO().getNotes() as ArrayList<Note>
+                }
             }
             corrutina.join()
             binding.rvNotes.layoutManager = LinearLayoutManager(context)
