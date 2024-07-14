@@ -2,11 +2,14 @@ package com.example.jinotas
 
 import android.os.Bundle
 import android.text.Editable
+import android.text.SpannableString
 import android.text.TextWatcher
+import android.text.style.RelativeSizeSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.jinotas.databinding.FragmentNotesBinding
@@ -18,6 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
+
 
 class NotesFragment : Fragment(), CoroutineScope {
     private lateinit var binding: FragmentNotesBinding
@@ -39,6 +43,8 @@ class NotesFragment : Fragment(), CoroutineScope {
     ): View? {
         binding = FragmentNotesBinding.inflate(inflater)
         loadNotes()
+
+
 
 
         return binding.root

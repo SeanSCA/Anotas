@@ -24,6 +24,7 @@ class AdapterNotes(
 
 
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
+        val titleText = vista.findViewById<TextView>(R.id.tv_show_note_title)
         val notesText = vista.findViewById<TextView>(R.id.tv_show_note_content_resume)
     }
 
@@ -33,7 +34,18 @@ class AdapterNotes(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.notesText.text = list[position].textContent
+//        val notesContent = view?.findViewById<TextView>(R.id.tv_show_note_content_resume)?.text.toString()
+//        notesContent.substring( )
+        val content = list[position].textContent
+        if(content.length >= 49){
+            val resultContent = content.substring(startIndex = 0, endIndex = 48) + "..."
+            holder.notesText.text = resultContent
+        }else{
+            val resultContent = content.substring(startIndex = 0, endIndex = content.length) + "..."
+            holder.notesText.text = resultContent
+        }
+//        holder.notesText.text = list[position].textContent
+        holder.titleText.text = list[position].title
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, ShowNoteActivity::class.java)
             intent.putExtra("id", list[position].id)
@@ -53,8 +65,6 @@ class AdapterNotes(
                             if (note != null) {
                                 db.noteDAO().deleteNote(note)
                                 updateList(db.noteDAO().getNotes() as ArrayList<Note>)
-
-
                             }
                         }
                         corrutina.join()
