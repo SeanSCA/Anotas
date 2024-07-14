@@ -59,6 +59,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
     }
 
+    /**
+     * Here it reloads all the notes when the app returns to this activity
+     */
     override fun onResume() {
         super.onResume()
         fragment =
@@ -67,6 +70,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     }
 
 
+    /**
+     * Here updates the notes counter
+     */
     private fun notesCounter() {
         runBlocking {
             val corrutina = launch {
@@ -78,6 +84,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         binding.notesCounter.text = notesCounter
     }
 
+
+    /**
+     * Here updates the notes counter every 0.5 seconds
+     */
     private fun updateNotesCounter() {
         val mainHandler = Handler(Looper.getMainLooper())
 
@@ -89,7 +99,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         })
     }
 
-    private fun  showPopupMenuSearch(context: Context, view: View) {
+    /**
+     * shows a popup with an edit text where you can write the title of the note to search
+     * @param context The activity context
+     * @param view The view to anchor the popup
+     */
+    private fun showPopupMenuSearch(context: Context, view: View) {
         val inflater = LayoutInflater.from(context)
         val layout = inflater.inflate(R.layout.menu_search, null)
 
@@ -124,6 +139,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         popup.showAsDropDown(view)
     }
 
+
+    /**
+     * shows a popup with a few options to order the notes
+     * @param view The view to anchor the popup
+     */
     fun showPopupMenuOrderBy(view: View) {
         fragment =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!

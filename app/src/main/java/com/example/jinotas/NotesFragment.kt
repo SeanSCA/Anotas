@@ -43,13 +43,12 @@ class NotesFragment : Fragment(), CoroutineScope {
     ): View? {
         binding = FragmentNotesBinding.inflate(inflater)
         loadNotes()
-
-
-
-
         return binding.root
     }
 
+    /**
+     * Load all the notes into the recyclerview
+     */
     fun loadNotes() {
         runBlocking {
             val corrutina = launch {
@@ -63,11 +62,12 @@ class NotesFragment : Fragment(), CoroutineScope {
             adapterNotes.updateList(notesList)
             binding.rvNotes.adapter = adapterNotes
         }
-//        Toast.makeText(
-//            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
-//        ).show()
     }
 
+    /**
+     * Shows only the notes with the @param filter as title
+     * @param filter parameter to search as a title
+     */
     fun loadFilteredNotes(filter: String) {
         runBlocking {
             val corrutina = launch {
@@ -81,11 +81,12 @@ class NotesFragment : Fragment(), CoroutineScope {
             adapterNotes.updateList(notesList)
             binding.rvNotes.adapter = adapterNotes
         }
-//        Toast.makeText(
-//            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
-//        ).show()
     }
 
+    /**
+     * Order the notes by title or date
+     * @param type Check if the type is "title" or "date"
+     */
     fun orderByNotes(type: String) {
         runBlocking {
             val corrutina = launch {
@@ -94,7 +95,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                     notesList = db.noteDAO().getNoteOrderByDate() as ArrayList<Note>
                 } else if (type == "title") {
                     notesList = db.noteDAO().getNoteOrderByTitle() as ArrayList<Note>
-                } else{
+                } else {
                     notesList = db.noteDAO().getNotes() as ArrayList<Note>
                 }
             }
@@ -104,11 +105,11 @@ class NotesFragment : Fragment(), CoroutineScope {
             adapterNotes.updateList(notesList)
             binding.rvNotes.adapter = adapterNotes
         }
-//        Toast.makeText(
-//            requireContext(), "Has cargado las notas", Toast.LENGTH_LONG
-//        ).show()
     }
 
+    /**
+     * Prepares the listener of the edittext
+     */
     fun EditText.afterTextChanged(afterTextChanged: (String) -> Unit) {
         this.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
