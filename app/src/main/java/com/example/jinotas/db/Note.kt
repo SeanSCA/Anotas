@@ -14,4 +14,4 @@ data class Note(
 )
 
 //var notes : ArrayList<Note> = arrayListOf()
-var notes = ArrayList<Note>()
+//var notesArrayList = ArrayList<Note>()

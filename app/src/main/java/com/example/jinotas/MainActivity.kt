@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +20,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import com.example.jinotas.databinding.ActivityMainBinding
@@ -37,6 +40,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var db: AppDatabase
     private var notesCounter: String? = null
     private var job: Job = Job()
+    private lateinit var fragment: NotesFragment
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -64,9 +68,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     override fun onResume() {
         super.onResume()
-        val fragment =
-            supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment
-        fragment?.loadNotes()
+        fragment =
+            (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+        fragment.loadNotes()
     }
 
 
@@ -111,7 +115,21 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         popup.isOutsideTouchable = true
         popup.isTouchable = true
 
+//        searchNote.afterTextChanged {
+//
+//        }
+        fragment =
+            (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+        fragment.apply {
+            searchNote.afterTextChanged{
+                loadFilteredNotes(searchNote.text.toString())
+            }
+        }
+
+
         // display the popup window at the specified location
         popup.showAsDropDown(view)
     }
+
+
 }
