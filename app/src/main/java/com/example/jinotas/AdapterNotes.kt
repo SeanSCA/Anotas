@@ -34,17 +34,14 @@ class AdapterNotes(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-//        val notesContent = view?.findViewById<TextView>(R.id.tv_show_note_content_resume)?.text.toString()
-//        notesContent.substring( )
         val content = list[position].textContent
         if(content.length >= 49){
             val resultContent = content.substring(startIndex = 0, endIndex = 48) + "..."
             holder.notesText.text = resultContent
         }else{
-            val resultContent = content.substring(startIndex = 0, endIndex = content.length) + "..."
+            val resultContent = content.substring(startIndex = 0, endIndex = content.length)
             holder.notesText.text = resultContent
         }
-//        holder.notesText.text = list[position].textContent
         holder.titleText.text = list[position].title
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, ShowNoteActivity::class.java)
