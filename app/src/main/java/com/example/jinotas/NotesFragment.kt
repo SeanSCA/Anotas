@@ -30,6 +30,7 @@ class NotesFragment : Fragment(), CoroutineScope {
     private lateinit var db: AppDatabase
     private var job: Job = Job()
 
+
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
