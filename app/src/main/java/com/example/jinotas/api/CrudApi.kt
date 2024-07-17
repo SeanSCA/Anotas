@@ -1,5 +1,6 @@
 package com.example.jinotas.api
 
+import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.CoroutineScope
@@ -47,6 +48,21 @@ class CrudApi() : CoroutineScope {
             corrutina.join()
         }
 
+        if (response!!.isSuccessful) {
+            return response!!.body()!!
+        } else {
+            return null
+        }
+    }
+
+    fun postNote(note: Note): String? {
+        var response: Response<String>? = null
+        runBlocking {
+            val corrutina = launch {
+                response = getRetrofit().create(ApiService::class.java).PostNote(note)
+            }
+            corrutina.join()
+        }
         if (response!!.isSuccessful) {
             return response!!.body()!!
         } else {
