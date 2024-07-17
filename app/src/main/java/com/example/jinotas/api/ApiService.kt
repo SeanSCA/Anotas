@@ -6,6 +6,6 @@ import retrofit2.Response
 import retrofit2.http.GET
 
 interface ApiService {
-    @GET("/Get")
-    fun GetNotesList(): Response<Notes>
+    @GET("/api/Get")
+    suspend fun GetNotesList(): Response<Notes>
 }

@@ -12,6 +12,8 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.jinotas.api.ApiService
+import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -29,7 +31,6 @@ class NotesFragment : Fragment(), CoroutineScope {
     private lateinit var notesList: ArrayList<Note>
     private lateinit var db: AppDatabase
     private var job: Job = Job()
-
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -50,19 +51,28 @@ class NotesFragment : Fragment(), CoroutineScope {
     /**
      * Load all the notes into the recyclerview
      */
+//    fun loadNotes() {
+//        runBlocking {
+//            val corrutina = launch {
+//                db = AppDatabase.getDatabase(requireContext())
+//                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
+//                notesList = db.noteDAO().getNotes() as ArrayList<Note>
+//            }
+//            corrutina.join()
+//            binding.rvNotes.layoutManager = LinearLayoutManager(context)
+//            adapterNotes = AdapterNotes(notesList, coroutineContext)
+//            adapterNotes.updateList(notesList)
+//            binding.rvNotes.adapter = adapterNotes
+//        }
+//    }
+
     fun loadNotes() {
-        runBlocking {
-            val corrutina = launch {
-                db = AppDatabase.getDatabase(requireContext())
-                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
-                notesList = db.noteDAO().getNotes() as ArrayList<Note>
-            }
-            corrutina.join()
-            binding.rvNotes.layoutManager = LinearLayoutManager(context)
-            adapterNotes = AdapterNotes(notesList, coroutineContext)
-            adapterNotes.updateList(notesList)
-            binding.rvNotes.adapter = adapterNotes
-        }
+        val notes = CrudApi().getNotesList() as ArrayList<Note>
+        binding.rvNotes.layoutManager = LinearLayoutManager(context)
+        adapterNotes = AdapterNotes(notes, coroutineContext)
+        adapterNotes.updateList(notes)
+        binding.rvNotes.adapter = adapterNotes
+
     }
 
     /**
