@@ -13,6 +13,7 @@ import android.widget.PopupMenu
 import android.widget.PopupWindow
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -84,6 +85,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         binding.notesCounter.text = notesCounter
     }
 
+    private fun notesCounterApi() {
+        notesCounter = CrudApi().getNotesList()?.size.toString()
+        binding.notesCounter.text = notesCounter
+    }
 
     /**
      * Here updates the notes counter every 0.5 seconds
