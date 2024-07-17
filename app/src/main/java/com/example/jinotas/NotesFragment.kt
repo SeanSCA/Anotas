@@ -51,22 +51,22 @@ class NotesFragment : Fragment(), CoroutineScope {
     /**
      * Load all the notes into the recyclerview
      */
-//    fun loadNotes() {
-//        runBlocking {
-//            val corrutina = launch {
-//                db = AppDatabase.getDatabase(requireContext())
-//                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
-//                notesList = db.noteDAO().getNotes() as ArrayList<Note>
-//            }
-//            corrutina.join()
-//            binding.rvNotes.layoutManager = LinearLayoutManager(context)
-//            adapterNotes = AdapterNotes(notesList, coroutineContext)
-//            adapterNotes.updateList(notesList)
-//            binding.rvNotes.adapter = adapterNotes
-//        }
-//    }
-
     fun loadNotes() {
+        runBlocking {
+            val corrutina = launch {
+                db = AppDatabase.getDatabase(requireContext())
+//                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
+                notesList = db.noteDAO().getNotes() as ArrayList<Note>
+            }
+            corrutina.join()
+            binding.rvNotes.layoutManager = LinearLayoutManager(context)
+            adapterNotes = AdapterNotes(notesList, coroutineContext)
+            adapterNotes.updateList(notesList)
+            binding.rvNotes.adapter = adapterNotes
+        }
+    }
+
+    fun loadNotesFromApi() {
         val notes = CrudApi().getNotesList() as ArrayList<Note>
         binding.rvNotes.layoutManager = LinearLayoutManager(context)
         adapterNotes = AdapterNotes(notes, coroutineContext)
