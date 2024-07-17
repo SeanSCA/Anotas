@@ -69,4 +69,34 @@ class CrudApi() : CoroutineScope {
             return null
         }
     }
+
+    fun putNote(note: Note): String? {
+        var response: Response<String>? = null
+        runBlocking {
+            val corrutina = launch {
+                response = getRetrofit().create(ApiService::class.java).PutNote(note)
+            }
+            corrutina.join()
+        }
+        if (response!!.isSuccessful) {
+            return response!!.body()!!
+        } else {
+            return null
+        }
+    }
+
+    fun deleteNote(id: String): String? {
+        var response: Response<String>? = null
+        runBlocking {
+            val corrutina = launch {
+                response = getRetrofit().create(ApiService::class.java).DeleteNote(id)
+            }
+            corrutina.join()
+        }
+        if (response!!.isSuccessful) {
+            return response!!.body()!!
+        } else {
+            return null
+        }
+    }
 }
