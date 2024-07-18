@@ -12,7 +12,6 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
         android:text="@string/title"
         android:textColor="@color/white"
         android:textSize="15sp"
@@ -55,6 +54,17 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/btDownloadNotesApi"
+                android:layout_width="48dp"
+                android:layout_height="45dp"
+                android:layout_marginStart="45dp"
+                android:background="@drawable/download_notes_api_roundcorner"
+                android:contentDescription="Botón para descargar notas de la api"
+                app:layout_constraintBottom_toBottomOf="@+id/btCreateNote"
+                app:layout_constraintStart_toEndOf="@+id/btCreateNote"
+                app:layout_constraintTop_toTopOf="@+id/btCreateNote" />
 
             <ImageButton
                 android:id="@+id/btSearchNote"
