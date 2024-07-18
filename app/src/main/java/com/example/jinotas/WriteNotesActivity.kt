@@ -2,11 +2,8 @@ package com.example.jinotas
 
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.commit
-import androidx.fragment.app.replace
 import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -60,7 +57,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                     )
                     db = AppDatabase.getDatabase(this@WriteNotesActivity)
                     db.noteDAO().insertNote(note)
-                    notesList = db.noteDAO().getNotes() as ArrayList<Note>
+                    notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                     adapterNotes = AdapterNotes(notesList, coroutineContext)
                     adapterNotes.updateList(notesList)
 

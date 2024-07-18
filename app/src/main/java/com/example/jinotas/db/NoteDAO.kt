@@ -9,7 +9,7 @@ import androidx.room.Update
 @Dao
 interface NoteDAO {
     @Query("SELECT * FROM notes")
-    fun getNotes(): List<Note>
+    fun getNotesList(): List<Note>
 
     @Query("SELECT * FROM notes WHERE id = :id")
     fun getNoteById(id: Int): Note
