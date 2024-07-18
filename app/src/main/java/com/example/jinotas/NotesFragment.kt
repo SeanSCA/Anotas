@@ -2,17 +2,13 @@ package com.example.jinotas
 
 import android.os.Bundle
 import android.text.Editable
-import android.text.SpannableString
 import android.text.TextWatcher
-import android.text.style.RelativeSizeSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.jinotas.api.ApiService
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.AppDatabase
@@ -56,7 +52,7 @@ class NotesFragment : Fragment(), CoroutineScope {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(requireContext())
 //                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
-                notesList = db.noteDAO().getNotes() as ArrayList<Note>
+                notesList = db.noteDAO().getNotesList() as ArrayList<Note>
             }
             corrutina.join()
             binding.rvNotes.layoutManager = LinearLayoutManager(context)
@@ -107,7 +103,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                 } else if (type == "title") {
                     notesList = db.noteDAO().getNoteOrderByTitle() as ArrayList<Note>
                 } else {
-                    notesList = db.noteDAO().getNotes() as ArrayList<Note>
+                    notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                 }
             }
             corrutina.join()
