@@ -61,7 +61,7 @@ class AdapterNotes(
                                 list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
                             if (note != null) {
                                 db.noteDAO().deleteNote(note)
-                                updateList(db.noteDAO().getNotes() as ArrayList<Note>)
+                                updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
                             }
                         }
                         corrutina.join()
