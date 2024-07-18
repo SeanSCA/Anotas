@@ -5,12 +5,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.PopupWindow
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.jinotas.api.CrudApi
@@ -28,9 +30,11 @@ import kotlin.coroutines.CoroutineContext
 class MainActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
+    private lateinit var adapterNotes: AdapterNotes
     private var notesCounter: String? = null
     private var job: Job = Job()
     private lateinit var fragment: NotesFragment
+    private var canConnect: Boolean = false
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -44,6 +48,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
+        binding.btDownloadNotesApi.setOnClickListener {
+            downloadNotesApi()
+        }
 
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
@@ -85,6 +94,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         binding.notesCounter.text = notesCounter
     }
 
+    /**
+     * Here updates the notes counter from the api
+     */
     private fun notesCounterApi() {
         notesCounter = CrudApi().getNotesList()?.size.toString()
         binding.notesCounter.text = notesCounter
@@ -176,6 +188,43 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
         popupMenu.show()
         true
+    }
+
+    /**
+     * Here checks if there's connection to the api
+     * @return Boolean if there's connection or not
+     */
+    private fun tryConnection(): Boolean {
+        try {
+            canConnect = CrudApi().canConnectToApi()
+        } catch (e: Exception) {
+            Log.e("cantConnectToApi", "No tienes conexión con la API")
+        }
+        return canConnect
+    }
+
+    /**
+     * Download all the notes that are not already in the database
+     */
+    private fun downloadNotesApi() {
+        if (tryConnection()) {
+            runBlocking {
+                val corrutina = launch {
+
+                    db = AppDatabase.getDatabase(this@MainActivity)
+                    val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
+                    val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
+                    for (n in notesListDB) {
+                        if (notesListApi.contains(n)) {
+                            Toast.makeText(this@MainActivity, n.title, Toast.LENGTH_LONG).show()
+                        }
+                    }
+//                    adapterNotes = AdapterNotes(notesListDB, coroutineContext)
+//                    adapterNotes.updateList(notesListDB)
+                }
+                corrutina.join()
+            }
+        }
     }
 
 }

@@ -1,5 +1,6 @@
 package com.example.jinotas.api
 
+import android.util.Log
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.google.gson.GsonBuilder
@@ -22,7 +23,7 @@ class CrudApi() : CoroutineScope {
         get() = Dispatchers.Main + job
 
 
-    private val URL_API = "https://greatsparklyglass87.conveyor.cloud/"
+    private val URL_API = "https://lostgreenbook36.conveyor.cloud/"
 
     private fun getClient(): OkHttpClient {
         var login = HttpLoggingInterceptor()
@@ -36,6 +37,27 @@ class CrudApi() : CoroutineScope {
 
         return Retrofit.Builder().baseUrl(URL_API).client(getClient())
             .addConverterFactory(GsonConverterFactory.create(gson)).build()
+    }
+
+    fun canConnectToApi(): Boolean {
+        var connected = false
+
+        runBlocking {
+            val corrutina = launch {
+                try {
+                    val response =
+                        getRetrofit().create(ApiService::class.java).GetNotesList()
+                    if (response.isSuccessful) {
+                        connected = true
+                    }
+                } catch (e: Exception) {
+                    Log.e("ConexionAPI", e.message.toString())
+                }
+            }
+            corrutina.join()
+        }
+
+        return connected
     }
 
     fun getNotesList(): Notes? {
