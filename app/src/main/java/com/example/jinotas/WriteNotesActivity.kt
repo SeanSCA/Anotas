@@ -50,7 +50,6 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
             runBlocking {
                 val corrutina = launch {
                     val note = Note(
-                        null,
                         binding.etTitle.text.toString(),
                         binding.etNoteContent.text.toString(),
                         current.toString()

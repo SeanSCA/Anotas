@@ -79,7 +79,6 @@ class NotesFragment : Fragment(), CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(requireContext())
-                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
                 notesList = db.noteDAO().getNoteByTitle(filter) as ArrayList<Note>
             }
             corrutina.join()

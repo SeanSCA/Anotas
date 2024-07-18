@@ -207,17 +207,27 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
      * Download all the notes that are not already in the database
      */
     private fun downloadNotesApi() {
+        var inserted = false
         if (tryConnection()) {
             runBlocking {
                 val corrutina = launch {
-
                     db = AppDatabase.getDatabase(this@MainActivity)
                     val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                     for (n in notesListDB) {
                         if (notesListApi.contains(n)) {
-                            Toast.makeText(this@MainActivity, n.title, Toast.LENGTH_LONG).show()
+                            db.noteDAO().insertNote(n)
+                            inserted = true
                         }
+                    }
+                    if (inserted) {
+                        Toast.makeText(
+                            this@MainActivity, "Has cargado las notas de la nube", Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity, "No hay notas nuevas en la nube", Toast.LENGTH_LONG
+                        ).show()
                     }
 //                    adapterNotes = AdapterNotes(notesListDB, coroutineContext)
 //                    adapterNotes.updateList(notesListDB)

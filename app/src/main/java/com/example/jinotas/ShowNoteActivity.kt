@@ -36,11 +36,11 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
         super.onCreate(savedInstanceState)
         binding = ActivityShowNoteBinding.inflate(layoutInflater)
 //        enableEdgeToEdge()
-        var idSearchUpdate = intent.getIntExtra("id", 0)
+        var idSearchUpdate = intent.getStringExtra("id")
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(this@ShowNoteActivity)
-                notesShow = db.noteDAO().getNoteById(idSearchUpdate)
+                notesShow = db.noteDAO().getNoteById(idSearchUpdate!!)
             }
             corrutina.join()
         }
@@ -60,7 +60,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
                     val current = LocalDateTime.now().format(formatter).toString()
                     val noteUpdate = Note(
-                        idSearchUpdate,
+                        idSearchUpdate!!,
                         binding.etTitle.text.toString(),
                         binding.etNoteContent.text.toString(),
                         current
