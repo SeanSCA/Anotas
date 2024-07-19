@@ -140,9 +140,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         popup.isOutsideTouchable = true
         popup.isTouchable = true
 
-//        searchNote.afterTextChanged {
-//
-//        }
+
         fragment =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
         fragment.apply {
@@ -214,8 +212,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     db = AppDatabase.getDatabase(this@MainActivity)
                     val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    for (n in notesListDB) {
-                        if (notesListApi.contains(n)) {
+                    for (n in notesListApi) {
+                        if (notesListDB.none { it.id == n.id }) {
                             db.noteDAO().insertNote(n)
                             inserted = true
                         }
@@ -224,17 +222,21 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                         Toast.makeText(
                             this@MainActivity, "Has cargado las notas de la nube", Toast.LENGTH_LONG
                         ).show()
+                        val newNotes = db.noteDAO().getNotesList() as ArrayList<Note>
+
+                        fragment =
+                            (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+                        fragment.loadNotes()
+                        adapterNotes = AdapterNotes(newNotes, coroutineContext)
+                        adapterNotes.updateList(notesListDB)
                     } else {
                         Toast.makeText(
                             this@MainActivity, "No hay notas nuevas en la nube", Toast.LENGTH_LONG
                         ).show()
                     }
-//                    adapterNotes = AdapterNotes(notesListDB, coroutineContext)
-//                    adapterNotes.updateList(notesListDB)
                 }
                 corrutina.join()
             }
         }
     }
-
 }
