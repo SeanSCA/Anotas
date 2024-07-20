@@ -15,11 +15,11 @@ interface ApiService {
     suspend fun GetNotesList(): Response<Notes>
 
     @POST("/api/Post")
-    suspend fun PostNote(@Body note: Note): Response<String>
+    suspend fun PostNote(@Body note: Note): Response<Note>
 
     @PUT("/api/Put")
-    suspend fun PutNote(@Body note: Note): Response<String>
+    suspend fun PutNote(@Body note: Note): Response<Note>
 
     @DELETE("/api/Delete/id")
-    suspend fun DeleteNote(@Query("id") id: String) : Response<String>
+    suspend fun DeleteNote(@Query("id") id: String) : Response<Note>
 }
