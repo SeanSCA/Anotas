@@ -7,13 +7,13 @@ import java.util.UUID
 
 @Entity(tableName = "notes")
 data class Note(
-    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey val id: Int = UUID.randomUUID().hashCode(),
     var title: String,
     var textContent: String,
     var date: String
 ) {
     constructor(title: String, content: String, date: String) : this(
-        UUID.randomUUID().toString(), title, content, date
+        UUID.randomUUID().hashCode(), title, content, date
     )
 }
 

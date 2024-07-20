@@ -12,7 +12,7 @@ interface NoteDAO {
     fun getNotesList(): List<Note>
 
     @Query("SELECT * FROM notes WHERE id = :id")
-    fun getNoteById(id: String): Note
+    fun getNoteById(id: Int): Note
 
     @Query("SELECT * FROM notes WHERE title  LIKE '%' || :title || '%'")
     fun getNoteByTitle(title: String): List<Note>

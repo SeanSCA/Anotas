@@ -8,6 +8,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -20,6 +21,6 @@ interface ApiService {
     @PUT("/api/Put")
     suspend fun PutNote(@Body note: Note): Response<Note>
 
-    @DELETE("/api/Delete/id")
-    suspend fun DeleteNote(@Query("id") id: String) : Response<Note>
+    @DELETE("/api/Delete/{id}")
+    suspend fun DeleteNote(@Path("id") id: Int) : Response<Note>
 }

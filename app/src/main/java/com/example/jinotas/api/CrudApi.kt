@@ -23,7 +23,7 @@ class CrudApi() : CoroutineScope {
         get() = Dispatchers.Main + job
 
 
-    private val URL_API = "https://lostorangetree82.conveyor.cloud/"
+    private val URL_API = "https://oldorangeapple15.conveyor.cloud/"
 
     private fun getClient(): OkHttpClient {
         var login = HttpLoggingInterceptor()
@@ -45,8 +45,7 @@ class CrudApi() : CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 try {
-                    val response =
-                        getRetrofit().create(ApiService::class.java).GetNotesList()
+                    val response = getRetrofit().create(ApiService::class.java).GetNotesList()
                     if (response.isSuccessful) {
                         connected = true
                     }
@@ -107,18 +106,13 @@ class CrudApi() : CoroutineScope {
         }
     }
 
-    fun deleteNote(id: String): Note? {
-        var response: Response<Note>? = null
+    fun deleteNote(id: Int) {
         runBlocking {
             val corrutina = launch {
-                response = getRetrofit().create(ApiService::class.java).DeleteNote(id)
+                getRetrofit().create(ApiService::class.java).DeleteNote(id)
             }
             corrutina.join()
         }
-        if (response!!.isSuccessful) {
-            return response!!.body()!!
-        } else {
-            return null
-        }
+
     }
 }

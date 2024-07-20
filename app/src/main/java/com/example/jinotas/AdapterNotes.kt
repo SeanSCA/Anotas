@@ -1,13 +1,17 @@
 package com.example.jinotas
 
+import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +26,6 @@ class AdapterNotes(
 
     private lateinit var db: AppDatabase
 
-
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
         val titleText = vista.findViewById<TextView>(R.id.tv_show_note_title)
         val notesText = vista.findViewById<TextView>(R.id.tv_show_note_content_resume)
@@ -35,10 +38,10 @@ class AdapterNotes(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val content = list[position].textContent
-        if(content.length >= 49){
+        if (content.length >= 49) {
             val resultContent = content.substring(startIndex = 0, endIndex = 48) + "..."
             holder.notesText.text = resultContent
-        }else{
+        } else {
             val resultContent = content.substring(startIndex = 0, endIndex = content.length)
             holder.notesText.text = resultContent
         }
@@ -66,6 +69,25 @@ class AdapterNotes(
                         }
                         corrutina.join()
                     }
+
+                    R.id.action_eliminar_api -> runBlocking {
+                        val corrutina = launch {
+                            val delNote = "Has eliminado la nota " + list[position].title
+                            //API
+                            CrudApi().deleteNote(list[position].id)
+                            //DB
+                            db = AppDatabase.getDatabase(holder.itemView.context)
+                            val note =
+                                list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
+                            if (note != null) {
+                                db.noteDAO().deleteNote(note)
+                            }
+                            updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+
+                            Print(holder.itemView.context, delNote)
+                        }
+                        corrutina.join()
+                    }
                 }
                 true
             }
@@ -77,6 +99,10 @@ class AdapterNotes(
     fun updateList(newList: ArrayList<Note>) {
         list = newList
         notifyDataSetChanged()
+    }
+
+    private fun Print(context: Context, text: String) {
+        return Toast.makeText(context, text, Toast.LENGTH_LONG).show()
     }
 
     override fun getItemCount() = list.size
