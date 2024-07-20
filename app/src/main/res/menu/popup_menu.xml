@@ -5,4 +5,9 @@
         android:id="@+id/action_eliminar"
         android:title="Eliminar nota"
         app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_eliminar_api"
+        android:title="Eliminar notas compartidas"
+        app:showAsAction="never"/>
 </menu>
