@@ -58,13 +58,23 @@
             <ImageButton
                 android:id="@+id/btDownloadNotesApi"
                 android:layout_width="48dp"
-                android:layout_height="45dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="45dp"
                 android:background="@drawable/download_notes_api_roundcorner"
                 android:contentDescription="Botón para descargar notas de la api"
                 app:layout_constraintBottom_toBottomOf="@+id/btCreateNote"
                 app:layout_constraintStart_toEndOf="@+id/btCreateNote"
                 app:layout_constraintTop_toTopOf="@+id/btCreateNote" />
+
+            <ImageButton
+                android:id="@+id/btUploadNotesApi"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:layout_constraintTop_toTopOf="@+id/btDownloadNotesApi"
+                app:layout_constraintBottom_toBottomOf="@+id/btDownloadNotesApi"
+                app:layout_constraintStart_toEndOf="@+id/btDownloadNotesApi"
+                android:background="@drawable/upload_notes_api_roundcorner"
+                android:layout_marginStart="45dp"/>
 
             <ImageButton
                 android:id="@+id/btSearchNote"

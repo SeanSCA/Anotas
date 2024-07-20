@@ -67,6 +67,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         binding.btOrderBy.setOnClickListener {
             showPopupMenuOrderBy(binding.btOrderBy)
         }
+
+        binding.btUploadNotesApi.setOnClickListener {
+            uploadNotesApi()
+        }
     }
 
     /**
@@ -212,12 +216,20 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     db = AppDatabase.getDatabase(this@MainActivity)
                     val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    for (n in notesListApi) {
-                        if (notesListDB.none { it.id == n.id }) {
-                            db.noteDAO().insertNote(n)
-                            inserted = true
+                    if(notesListApi.size > 0){
+                        for (n in notesListApi) {
+                            if (notesListDB.none { it.id == n.id }) {
+                                db.noteDAO().insertNote(n)
+                                inserted = true
+                            }
                         }
+                    }else{
+                        Toast.makeText(
+                            this@MainActivity, "No hay ninguna nota que descargar", Toast.LENGTH_LONG
+                        ).show()
+                        return@launch
                     }
+
                     if (inserted) {
                         Toast.makeText(
                             this@MainActivity, "Has cargado las notas de la nube", Toast.LENGTH_LONG
@@ -232,6 +244,45 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     } else {
                         Toast.makeText(
                             this@MainActivity, "No hay notas nuevas en la nube", Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                corrutina.join()
+            }
+        }
+    }
+
+    /**
+     * Upload all the notes that are not already in the api
+     */
+    private fun uploadNotesApi() {
+        var inserted = false
+        if (tryConnection()) {
+            runBlocking {
+                val corrutina = launch {
+                    val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
+                    val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
+                    if (notesListDB.size > 0) {
+                        for (n in notesListDB) {
+                            if (notesListApi.none { it.id == n.id }) {
+                                CrudApi().postNote(n)
+                                inserted = true
+                            }
+                        }
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity, "No tienes ninguna nota que subir", Toast.LENGTH_LONG
+                        ).show()
+                        return@launch
+                    }
+
+                    if (inserted) {
+                        Toast.makeText(
+                            this@MainActivity, "Has subido las notas nuevas", Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity, "No hay notas nuevas que subir", Toast.LENGTH_LONG
                         ).show()
                     }
                 }
