@@ -70,23 +70,27 @@ class AdapterNotes(
                         corrutina.join()
                     }
 
-                    R.id.action_eliminar_api -> runBlocking {
-                        val corrutina = launch {
-                            val delNote = "Has eliminado la nota " + list[position].title
-                            //API
-                            CrudApi().deleteNote(list[position].id)
-                            //DB
-                            db = AppDatabase.getDatabase(holder.itemView.context)
-                            val note =
-                                list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
-                            if (note != null) {
-                                db.noteDAO().deleteNote(note)
-                            }
-                            updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+                    R.id.action_eliminar_api -> if(MainActivity().tryConnection()){
+                        runBlocking {
+                            val corrutina = launch {
+                                val delNote = "Has eliminado la nota " + list[position].title
+                                //API
+                                CrudApi().deleteNote(list[position].id)
+                                //DB
+                                db = AppDatabase.getDatabase(holder.itemView.context)
+                                val note =
+                                    list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
+                                if (note != null) {
+                                    db.noteDAO().deleteNote(note)
+                                }
+                                updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
 
-                            Print(holder.itemView.context, delNote)
+                                Print(holder.itemView.context, delNote)
+                            }
+                            corrutina.join()
                         }
-                        corrutina.join()
+                    }else{
+                        Print(holder.itemView.context, "No tienes conexión con la API")
                     }
                 }
                 true

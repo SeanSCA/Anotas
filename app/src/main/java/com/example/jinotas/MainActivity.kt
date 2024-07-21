@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
      * Here checks if there's connection to the api
      * @return Boolean if there's connection or not
      */
-    private fun tryConnection(): Boolean {
+    fun tryConnection(): Boolean {
         try {
             canConnect = CrudApi().canConnectToApi()
         } catch (e: Exception) {
