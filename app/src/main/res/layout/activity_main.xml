@@ -70,11 +70,23 @@
                 android:id="@+id/btUploadNotesApi"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                app:layout_constraintTop_toTopOf="@+id/btDownloadNotesApi"
+                android:layout_marginStart="45dp"
+                android:contentDescription="Subir notas a la api"
+                android:background="@drawable/upload_notes_api_roundcorner"
                 app:layout_constraintBottom_toBottomOf="@+id/btDownloadNotesApi"
                 app:layout_constraintStart_toEndOf="@+id/btDownloadNotesApi"
-                android:background="@drawable/upload_notes_api_roundcorner"
-                android:layout_marginStart="45dp"/>
+                app:layout_constraintTop_toTopOf="@+id/btDownloadNotesApi" />
+
+            <ImageButton
+                android:id="@+id/btDeleteApi"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="45dp"
+                android:background="@drawable/delete_api_roundcorner"
+                android:contentDescription="Eliminar uno o todas las notas de la api"
+                app:layout_constraintBottom_toBottomOf="@+id/btUploadNotesApi"
+                app:layout_constraintStart_toEndOf="@+id/btUploadNotesApi"
+                app:layout_constraintTop_toTopOf="@+id/btUploadNotesApi" />
 
             <ImageButton
                 android:id="@+id/btSearchNote"
