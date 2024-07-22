@@ -5,4 +5,5 @@
     <string name="title">Todas las notas</string>
     <string name="title_hint">Título</string>
     <string name="start_writing_hint">Comienza a escribir</string>
+    <string name="channel_name">notesChannel</string>
 </resources>

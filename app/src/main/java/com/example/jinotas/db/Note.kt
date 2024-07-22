@@ -16,6 +16,3 @@ data class Note(
         UUID.randomUUID().hashCode(), title, content, date
     )
 }
-
-//var notes : ArrayList<Note> = arrayListOf()
-//var notesArrayList = ArrayList<Note>()

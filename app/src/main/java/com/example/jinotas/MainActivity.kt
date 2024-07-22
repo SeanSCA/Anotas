@@ -1,8 +1,15 @@
 package com.example.jinotas
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.Manifest
+import android.app.Notification
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -13,9 +20,18 @@ import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.jinotas.api.CrudApi
+import com.example.jinotas.api.NotificacionProgramada
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -25,6 +41,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.ArrayList
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
@@ -36,6 +53,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var fragment: NotesFragment
     private var canConnect: Boolean = false
 
+    //Notifications
+    private val channelId = "i.apps.notifications"
+    private val notificationPermissionCode = 250
+
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
@@ -44,11 +65,28 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         job.cancel()
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+//        // Solicitar permisos de notificación si no están concedidos
+//        if (ActivityCompat.checkSelfPermission(
+//                this, Manifest.permission.POST_NOTIFICATIONS
+//            ) != PackageManager.PERMISSION_GRANTED
+//        ) {
+//            ActivityCompat.requestPermissions(
+//                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
+//            )
+//        } else {
+//            schedulePeriodicWork()
+//            Toast.makeText(
+//                this@MainActivity,
+//                "schedulePeriodicWork",
+//                Toast.LENGTH_LONG
+//            ).show()
+//        }
 
         binding.btDownloadNotesApi.setOnClickListener {
             downloadNotesApi()
@@ -72,9 +110,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             uploadNotesApi()
         }
 
-        binding.btDeleteApi.setOnClickListener{
+        binding.btDeleteApi.setOnClickListener {
             deleteAllNotesApi()
         }
+    }
+
+    private fun schedulePeriodicWork() {
+        val periodicWorkRequest =
+            PeriodicWorkRequestBuilder<NotificacionProgramada>(5, TimeUnit.SECONDS).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "NotificacionProgramada", ExistingPeriodicWorkPolicy.KEEP, periodicWorkRequest
+        )
     }
 
     /**
@@ -86,7 +132,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
         fragment.loadNotes()
     }
-
 
     /**
      * Here updates the notes counter
@@ -324,6 +369,92 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             Toast.makeText(
                 this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
             ).show()
+        }
+    }
+
+    fun notification(): Notification {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val description_text = "Notificacions del canal"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, name, importance).apply {
+                description = description_text
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val notifyIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val notifyPendingIntent = PendingIntent.getActivity(
+            this, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notificacio =
+            NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.app_icon)
+                .setContentTitle("Titulo").setContentText("Contenido").setStyle(
+                    NotificationCompat.BigTextStyle().bigText("Todo el contenido que no cabe")
+                ).setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(notifyPendingIntent)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build()
+
+        with(
+            NotificationManagerCompat.from(this)
+        ) {
+            if (ActivityCompat.checkSelfPermission(
+                    this@MainActivity, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    notificationPermissionCode
+                )
+            } else {
+                notify(1, notificacio)
+                return notificacio
+            }
+        }
+        Toast.makeText(this, "No tiene que llegar hasta aquí", Toast.LENGTH_SHORT).show()
+        return notificacio
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == notificationPermissionCode) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted.
+                Toast.makeText(this, "ok", Toast.LENGTH_SHORT).show()
+                with(
+                    NotificationManagerCompat.from(this)
+                ) {
+                    if (ActivityCompat.checkSelfPermission(
+                            this@MainActivity, Manifest.permission.POST_NOTIFICATIONS
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        ActivityCompat.requestPermissions(
+                            this@MainActivity,
+                            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                            notificationPermissionCode
+                        )
+                    } else {
+//                        notify(1, notification())
+                    }
+                }
+            } else {
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    notificationPermissionCode
+                )
+            }
         }
     }
 }
