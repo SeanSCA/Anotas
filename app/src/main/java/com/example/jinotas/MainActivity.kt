@@ -71,6 +71,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         binding.btUploadNotesApi.setOnClickListener {
             uploadNotesApi()
         }
+
+        binding.btDeleteApi.setOnClickListener{
+            deleteAllNotesApi()
+        }
     }
 
     /**
@@ -216,16 +220,18 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     db = AppDatabase.getDatabase(this@MainActivity)
                     val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    if(notesListApi.size > 0){
+                    if (notesListApi.size > 0) {
                         for (n in notesListApi) {
                             if (notesListDB.none { it.id == n.id }) {
                                 db.noteDAO().insertNote(n)
                                 inserted = true
                             }
                         }
-                    }else{
+                    } else {
                         Toast.makeText(
-                            this@MainActivity, "No hay ninguna nota que descargar", Toast.LENGTH_LONG
+                            this@MainActivity,
+                            "No hay ninguna nota que descargar",
+                            Toast.LENGTH_LONG
                         ).show()
                         return@launch
                     }
@@ -249,6 +255,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 }
                 corrutina.join()
             }
+        } else {
+            Toast.makeText(
+                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -288,6 +298,32 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 }
                 corrutina.join()
             }
+        } else {
+            Toast.makeText(
+                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    /**
+     * Delete all the notes at the api
+     */
+    private fun deleteAllNotesApi() {
+        if (tryConnection()) {
+            var delNotes = CrudApi().getNotesList() as ArrayList<Note>
+            if (delNotes.size > 0) {
+                for (n in delNotes) {
+                    CrudApi().deleteNote(n.id)
+                }
+            } else {
+                Toast.makeText(
+                    this@MainActivity, "No hay ninguna nota en la nube", Toast.LENGTH_LONG
+                ).show()
+            }
+        } else {
+            Toast.makeText(
+                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
+            ).show()
         }
     }
 }
