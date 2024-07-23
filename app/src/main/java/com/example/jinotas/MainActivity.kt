@@ -1,5 +1,7 @@
 package com.example.jinotas
 
+import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,8 +10,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.Manifest
-import android.app.Notification
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -20,14 +20,13 @@ import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.jinotas.api.CrudApi
@@ -35,16 +34,19 @@ import com.example.jinotas.api.NotificacionProgramada
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.example.jinotas.websocket.WebSocketClient
+import com.example.jinotas.websocket.WebSocketListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.ArrayList
+
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope {
+
+class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
@@ -52,6 +54,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     private var job: Job = Job()
     private lateinit var fragment: NotesFragment
     private var canConnect: Boolean = false
+    private val webSocketClient = WebSocketClient(
+        "wss://tallbrushedcat93.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope
+    )
+
 
     //Notifications
     private val channelId = "i.apps.notifications"
@@ -63,9 +69,39 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     override fun onDestroy() {
         super.onDestroy()
         job.cancel()
+        lifecycleScope.launch {
+            webSocketClient.disconnect()
+        }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onConnected() {
+        Log.d("WebSocket", "Connected")
+        // Ejecutar en el hilo principal
+        runOnUiThread {
+            Toast.makeText(this, "Conectado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onMessage(message: String) {
+        Log.d("WebSocket", "Message received: $message")
+        // Ejecutar en el hilo principal
+        runOnUiThread {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDisconnected() {
+        Log.d("WebSocket", "Disconnected")
+        // Ejecutar en el hilo principal
+        runOnUiThread {
+            Toast.makeText(this, "Desconectado", Toast.LENGTH_SHORT).show()
+        }
+        lifecycleScope.launch(Dispatchers.Main) {
+            webSocketClient.connect(this@MainActivity)
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -87,6 +123,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 //                Toast.LENGTH_LONG
 //            ).show()
 //        }
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            webSocketClient.connect(this@MainActivity)
+        }
+
+
 
         binding.btDownloadNotesApi.setOnClickListener {
             downloadNotesApi()
@@ -114,6 +156,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             deleteAllNotesApi()
         }
     }
+
 
     private fun schedulePeriodicWork() {
         val periodicWorkRequest =
@@ -332,9 +375,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     }
 
                     if (inserted) {
-                        Toast.makeText(
-                            this@MainActivity, "Has subido las notas nuevas", Toast.LENGTH_LONG
-                        ).show()
+//                        Toast.makeText(
+//                            this@MainActivity, "Has subido las notas nuevas", Toast.LENGTH_LONG
+//                        ).show()
+                        //Sends message to websocket server
+                        webSocketClient.sendMessage("newNote")
+
                     } else {
                         Toast.makeText(
                             this@MainActivity, "No hay notas nuevas que subir", Toast.LENGTH_LONG
