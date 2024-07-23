@@ -23,7 +23,7 @@ class CrudApi() : CoroutineScope {
         get() = Dispatchers.Main + job
 
 
-    private val URL_API = "https://lostaquabox87.conveyor.cloud/"
+    private val URL_API = "https://nexttanleaf32.conveyor.cloud/"
 
     private fun getClient(): OkHttpClient {
         var login = HttpLoggingInterceptor()
