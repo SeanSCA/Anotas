@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     private lateinit var fragment: NotesFragment
     private var canConnect: Boolean = false
     private val webSocketClient = WebSocketClient(
-        "wss://tallbrushedcat93.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope
+        "wss://smallaquasled42.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope
     )
 
 
@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     }
 
     override fun onConnected() {
-        Log.d("WebSocket", "Connected")
+        Log.e("WebSocket", "Connected")
         // Ejecutar en el hilo principal
         runOnUiThread {
             Toast.makeText(this, "Conectado", Toast.LENGTH_SHORT).show()
@@ -83,15 +83,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     }
 
     override fun onMessage(message: String) {
-        Log.d("WebSocket", "Message received: $message")
+        Log.e("WebSocket", "Message received: $message")
         // Ejecutar en el hilo principal
         runOnUiThread {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            if(message == "newNote"){
+                notification()
+            }
         }
     }
 
     override fun onDisconnected() {
-        Log.d("WebSocket", "Disconnected")
+        Log.e("WebSocket", "Disconnected")
         // Ejecutar en el hilo principal
         runOnUiThread {
             Toast.makeText(this, "Desconectado", Toast.LENGTH_SHORT).show()
@@ -442,8 +444,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
 
         val notificacio =
             NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.app_icon)
-                .setContentTitle("Titulo").setContentText("Contenido").setStyle(
-                    NotificationCompat.BigTextStyle().bigText("Todo el contenido que no cabe")
+                .setContentTitle("Notas").setContentText("Nueva nota").setStyle(
+                    NotificationCompat.BigTextStyle().bigText("Se ha subido una nota nueva a la nube, recarga tus notas y la verás")
                 ).setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(notifyPendingIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build()
