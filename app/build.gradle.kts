@@ -95,6 +95,7 @@ dependencies {
 
     implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0")
 
-    implementation ("io.ktor:ktor-client-android:1.6.4")
-    implementation ("io.ktor:ktor-client-websockets:1.6.4")
+    implementation ("io.ktor:ktor-client-core:2.0.3")
+    implementation ("io.ktor:ktor-client-cio:2.0.3")
+    implementation ("io.ktor:ktor-client-websockets:2.0.3")
 }
