@@ -20,6 +20,7 @@ import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -27,15 +28,19 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.jinotas.api.CrudApi
-import com.example.jinotas.api.NotificacionProgramada
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.example.jinotas.websocket.NotificationWorker
 import com.example.jinotas.websocket.WebSocketClient
 import com.example.jinotas.websocket.WebSocketListener
+import com.example.jinotas.websocket.WebSocketService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,9 +60,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     private lateinit var fragment: NotesFragment
     private var canConnect: Boolean = false
     private val webSocketClient = WebSocketClient(
-        "wss://smallaquasled42.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope
+        "wss://smallmintcat12.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope
     )
-
 
     //Notifications
     private val channelId = "i.apps.notifications"
@@ -77,19 +81,47 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     override fun onConnected() {
         Log.e("WebSocket", "Connected")
         // Ejecutar en el hilo principal
+        var toDownload = false
+        var counter = 0
         runOnUiThread {
             Toast.makeText(this, "Conectado", Toast.LENGTH_SHORT).show()
+            if (tryConnection()) {
+                runBlocking {
+                    val corrutina = launch {
+                        db = AppDatabase.getDatabase(this@MainActivity)
+                        val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
+                        val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
+                        if (notesListApi.size > 0) {
+                            for (n in notesListApi) {
+                                if (notesListDB.none { it.id == n.id }) {
+                                    counter++
+                                    toDownload = true
+                                }
+                            }
+                        }
+                        if (toDownload) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Tienes $counter nuevas que descargar",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    corrutina.join()
+                }
+            }
         }
     }
 
     override fun onMessage(message: String) {
         Log.e("WebSocket", "Message received: $message")
         // Ejecutar en el hilo principal
-        runOnUiThread {
-            if(message == "newNote"){
-                notification()
-            }
-        }
+//        runOnUiThread {
+//            if (message == "newNote") {
+//                notification()
+//                scheduleWebSocketWorker()
+//            }
+//        }
     }
 
     override fun onDisconnected() {
@@ -103,28 +135,50 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         }
     }
 
+//    private fun scheduleWebSocketWorker() {
+////        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
+////        WorkManager.getInstance(this).enqueueUniqueWork(
+////            "WebSocketWorker", ExistingWorkPolicy.KEEP, workRequest
+////        )
+//        val worker = workManager.beginUniqueWork(
+//            "WebSocketWorker",
+//            ExistingWorkPolicy.REPLACE,
+//            OneTimeWorkRequest.from(NotificationWorker::class.java)
+//        )
+//
+//        worker.enqueue()
+//        Toast.makeText(this, "Ejecuta worker", Toast.LENGTH_LONG).show()
+//
+//    }
 
+//    private fun scheduleWebSocketWorker() {
+//        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
+//        workManager.enqueueUniqueWork("WebSocketWorker", ExistingWorkPolicy.REPLACE, workRequest)
+//        Toast.makeText(this, "Worker programado", Toast.LENGTH_LONG).show()
+//    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
 //        // Solicitar permisos de notificación si no están concedidos
-//        if (ActivityCompat.checkSelfPermission(
-//                this, Manifest.permission.POST_NOTIFICATIONS
-//            ) != PackageManager.PERMISSION_GRANTED
-//        ) {
-//            ActivityCompat.requestPermissions(
-//                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
-//            )
-//        } else {
-//            schedulePeriodicWork()
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
+            )
+        } else {
 //            Toast.makeText(
-//                this@MainActivity,
-//                "schedulePeriodicWork",
-//                Toast.LENGTH_LONG
+//                this@MainActivity, "schedulePeriodicWork", Toast.LENGTH_LONG
 //            ).show()
-//        }
+        }
+        //Esto es para las notificaciones
+        val serviceIntent = Intent(this, WebSocketService::class.java)
+        startForegroundService(serviceIntent)
 
         lifecycleScope.launch(Dispatchers.Main) {
             webSocketClient.connect(this@MainActivity)
@@ -157,15 +211,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         binding.btDeleteApi.setOnClickListener {
             deleteAllNotesApi()
         }
-    }
-
-
-    private fun schedulePeriodicWork() {
-        val periodicWorkRequest =
-            PeriodicWorkRequestBuilder<NotificacionProgramada>(5, TimeUnit.SECONDS).build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "NotificacionProgramada", ExistingPeriodicWorkPolicy.KEEP, periodicWorkRequest
-        )
     }
 
     /**
@@ -377,11 +422,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                     }
 
                     if (inserted) {
-//                        Toast.makeText(
-//                            this@MainActivity, "Has subido las notas nuevas", Toast.LENGTH_LONG
-//                        ).show()
-                        //Sends message to websocket server
-                        webSocketClient.sendMessage("newNote")
+//                        webSocketClient.sendMessage("newNote")
 
                     } else {
                         Toast.makeText(
@@ -408,6 +449,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                 for (n in delNotes) {
                     CrudApi().deleteNote(n.id)
                 }
+                Toast.makeText(this, "Has eliminado las notas de la nube", Toast.LENGTH_LONG).show()
             } else {
                 Toast.makeText(
                     this@MainActivity, "No hay ninguna nota en la nube", Toast.LENGTH_LONG
@@ -421,10 +463,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     }
 
     fun notification(): Notification {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
-            val description_text = "Notificacions del canal"
+            val description_text = "Notificaciones del canal"
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(channelId, name, importance).apply {
                 description = description_text
@@ -445,7 +486,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         val notificacio =
             NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.app_icon)
                 .setContentTitle("Notas").setContentText("Nueva nota").setStyle(
-                    NotificationCompat.BigTextStyle().bigText("Se ha subido una nota nueva a la nube, recarga tus notas y la verás")
+                    NotificationCompat.BigTextStyle()
+                        .bigText("Se ha subido una nota nueva a la nube, recarga tus notas y la verás")
                 ).setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(notifyPendingIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build()
