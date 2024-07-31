@@ -70,7 +70,7 @@ class AdapterNotes(
                         corrutina.join()
                     }
 
-                    R.id.action_eliminar_api -> if(MainActivity().tryConnection()){
+                    R.id.action_eliminar_api -> if (CrudApi().canConnectToApi()) {
                         runBlocking {
                             val corrutina = launch {
                                 val delNote = "Has eliminado la nota " + list[position].title
@@ -89,7 +89,7 @@ class AdapterNotes(
                             }
                             corrutina.join()
                         }
-                    }else{
+                    } else {
                         Print(holder.itemView.context, "No tienes conexión con la API")
                     }
                 }
