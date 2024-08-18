@@ -99,4 +99,7 @@ dependencies {
     implementation ("io.ktor:ktor-client-core:2.0.3")
     implementation ("io.ktor:ktor-client-cio:2.0.3")
     implementation ("io.ktor:ktor-client-websockets:2.0.3")
+
+    implementation(libs.dotenv.vault.kotlin)
+    implementation(libs.dotenv.kotlin)
 }
