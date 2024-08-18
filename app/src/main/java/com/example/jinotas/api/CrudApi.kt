@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.google.gson.GsonBuilder
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,8 +23,11 @@ class CrudApi() : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
-
-    private val URL_API = "https://nexttanleaf32.conveyor.cloud/"
+    val dotenv = dotenv {
+        directory = "/assets"
+        filename = "env" // instead of '.env', use 'env'
+    }
+    private val URL_API = dotenv["URL_API"]
 
     private fun getClient(): OkHttpClient {
         var login = HttpLoggingInterceptor()

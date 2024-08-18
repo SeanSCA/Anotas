@@ -27,27 +27,19 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequest
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
-import com.example.jinotas.websocket.NotificationWorker
 import com.example.jinotas.websocket.WebSocketClient
 import com.example.jinotas.websocket.WebSocketListener
 import com.example.jinotas.websocket.WebSocketService
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 
@@ -59,8 +51,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
     private var job: Job = Job()
     private lateinit var fragment: NotesFragment
     private var canConnect: Boolean = false
+    val dotenv = dotenv {
+        directory = "/assets"
+        filename = "env" // instead of '.env', use 'env'
+    }
     private val webSocketClient = WebSocketClient(
-        "wss://smallmintcat12.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope
+        dotenv["WEB_SOCKET_CLIENT"], lifecycleScope
     )
 
     //Notifications

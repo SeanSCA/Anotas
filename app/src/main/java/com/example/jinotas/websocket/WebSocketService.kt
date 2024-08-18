@@ -14,11 +14,16 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import com.example.jinotas.MainActivity
 import com.example.jinotas.R
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class WebSocketService : LifecycleService(), WebSocketListener{
-    private val webSocketClient = WebSocketClient("wss://smallmintcat12.conveyor.cloud/api/websocket?nom=Sean", lifecycleScope)
+    val dotenv = dotenv {
+        directory = "/assets"
+        filename = "env" // instead of '.env', use 'env'
+    }
+    private val webSocketClient = WebSocketClient(dotenv["WEB_SOCKET_CLIENT"], lifecycleScope)
     private val CHANNEL_ID = "WebSocketServiceChannel"
 
     override fun onCreate() {
