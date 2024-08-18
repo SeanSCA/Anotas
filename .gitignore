@@ -16,3 +16,4 @@ local.properties
 misc.xml
 deploymentTargetSelector.xml
 /environmentVariables.env
+/app/src/main/assets/env
