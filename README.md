@@ -1,4 +1,4 @@
-# Jinotas!
+# NoteManager!
 
 App to simulate a notepad with the interesting options such as uploading only the notes that are not already at the cloud, manage the external or local notes...
 
