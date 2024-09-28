@@ -35,7 +35,6 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        enableEdgeToEdge()
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -59,10 +58,6 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                     notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                     adapterNotes = AdapterNotes(notesList, coroutineContext)
                     adapterNotes.updateList(notesList)
-
-//                    Toast.makeText(
-//                        this@WriteNotesActivity, "Has creado una nota", Toast.LENGTH_LONG
-//                    ).show()
                 }
                 corrutina.join()
             }

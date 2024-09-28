@@ -51,7 +51,6 @@ class NotesFragment : Fragment(), CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(requireContext())
-//                val notaExample = Note(null, "EL TITULO", "blablablablablablablablabla", "today")
                 notesList = db.noteDAO().getNotesList() as ArrayList<Note>
             }
             corrutina.join()
@@ -68,7 +67,6 @@ class NotesFragment : Fragment(), CoroutineScope {
         adapterNotes = AdapterNotes(notes, coroutineContext)
         adapterNotes.updateList(notes)
         binding.rvNotes.adapter = adapterNotes
-
     }
 
     /**

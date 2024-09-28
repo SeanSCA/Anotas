@@ -18,10 +18,10 @@ import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class WebSocketService : LifecycleService(), WebSocketListener{
+class WebSocketService : LifecycleService(), WebSocketListener {
     val dotenv = dotenv {
         directory = "/assets"
-        filename = "env" // instead of '.env', use 'env'
+        filename = "env"
     }
     private val webSocketClient = WebSocketClient(dotenv["WEB_SOCKET_CLIENT"], lifecycleScope)
     private val CHANNEL_ID = "WebSocketServiceChannel"
@@ -30,14 +30,13 @@ class WebSocketService : LifecycleService(), WebSocketListener{
         super.onCreate()
         createNotificationChannel()
         val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
-            PendingIntent.FLAG_IMMUTABLE)
-        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Conexión exitosa")
-            .setContentText("Preparado para las notas")
-            .setSmallIcon(R.drawable.app_icon)
-            .setContentIntent(pendingIntent)
-            .build()
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification: Notification =
+            NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Conexión exitosa")
+                .setContentText("Preparado para las notas").setSmallIcon(R.drawable.app_icon)
+                .setContentIntent(pendingIntent).build()
 
         startForeground(1, notification)
 
@@ -47,7 +46,6 @@ class WebSocketService : LifecycleService(), WebSocketListener{
     }
 
     override fun onConnected() {
-        // Puedes agregar lógica aquí si es necesario
     }
 
     override fun onMessage(message: String) {
@@ -73,9 +71,7 @@ class WebSocketService : LifecycleService(), WebSocketListener{
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
-                CHANNEL_ID,
-                "WebSocket Service Channel",
-                NotificationManager.IMPORTANCE_DEFAULT
+                CHANNEL_ID, "WebSocket Service Channel", NotificationManager.IMPORTANCE_DEFAULT
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
