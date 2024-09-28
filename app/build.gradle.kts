@@ -36,6 +36,7 @@ android {
     }
     buildFeatures{
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -102,4 +103,7 @@ dependencies {
 
     implementation(libs.dotenv.vault.kotlin)
     implementation(libs.dotenv.kotlin)
+
+    implementation("javax.inject:javax.inject:1")
+
 }
