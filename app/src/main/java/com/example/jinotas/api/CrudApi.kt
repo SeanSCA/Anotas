@@ -3,6 +3,7 @@ package com.example.jinotas.api
 import android.util.Log
 import com.example.jinotas.api.notesnocodb.ApiNote
 import com.example.jinotas.api.notesnocodb.ApiResponse
+import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.google.gson.GsonBuilder
@@ -27,30 +28,25 @@ class CrudApi() : CoroutineScope {
 
     val dotenv = dotenv {
         directory = "/assets"
-        filename = "env" // instead of '.env', use 'env'
+        filename = "env"
     }
     private val URL_API = dotenv["URL_API"]
     private val API_TOKEN = dotenv["API_TOKEN"]
 
     private fun getClient(): OkHttpClient {
-        // Interceptor para registrar las solicitudes y respuestas
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
-        // Interceptor para agregar el token de autenticación
         val authInterceptor = okhttp3.Interceptor { chain ->
             val original = chain.request()
-            val requestBuilder = original.newBuilder()
-                .header("xc-token", API_TOKEN) // Usar 'xc-auth' en lugar de 'Authorization'
+            val requestBuilder = original.newBuilder().header("xc-token", API_TOKEN)
             val request = requestBuilder.build()
             chain.proceed(request)
         }
 
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor) // Añade el interceptor de autenticación
-            .build()
+        return OkHttpClient.Builder().addInterceptor(loggingInterceptor)
+            .addInterceptor(authInterceptor).build()
     }
 
     private fun getRetrofit(): Retrofit {
@@ -91,10 +87,7 @@ class CrudApi() : CoroutineScope {
                     response!!.body()!!.list.forEach { apiNote ->
                         notes.add(
                             Note(
-                                apiNote.id,
-                                apiNote.title,
-                                apiNote.textContent,
-                                apiNote.date
+                                apiNote.id, apiNote.title, apiNote.textContent, apiNote.date
                             )
                         )
                     }
@@ -108,10 +101,7 @@ class CrudApi() : CoroutineScope {
             val notes = Notes()
             notes.addAll(list.map { apiNote ->
                 Note(
-                    apiNote.id,
-                    apiNote.title,
-                    apiNote.textContent,
-                    apiNote.date
+                    apiNote.id, apiNote.title, apiNote.textContent, apiNote.date
                 )
             })
             notes
@@ -126,10 +116,10 @@ class CrudApi() : CoroutineScope {
             }
             corrutina.join()
         }
-        if (response!!.isSuccessful) {
-            return response!!.body()!!
+        return if (response!!.isSuccessful) {
+            response!!.body()!!
         } else {
-            return null
+            null
         }
     }
 

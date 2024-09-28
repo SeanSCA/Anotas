@@ -1,24 +1,19 @@
-// ApiNote.kt
 package com.example.jinotas.api.notesnocodb
 
 import com.google.gson.annotations.SerializedName
 
 data class ApiNote(
-    @SerializedName("Id")
-    val id: Int,
+    @SerializedName("Id") val id: Int,
 
-    @SerializedName("title")
-    val title: String,
+    @SerializedName("code") val code: Int,
 
-    @SerializedName("textContent")
-    val textContent: String,
+    @SerializedName("title") val title: String,
 
-    @SerializedName("date")
-    val date: String,
+    @SerializedName("textContent") val textContent: String,
 
-    @SerializedName("CreatedAt")
-    val createdAt: String? = null,
+    @SerializedName("date") val date: String,
 
-    @SerializedName("UpdatedAt")
-    val updatedAt: String? = null
+    @SerializedName("CreatedAt") val createdAt: String? = null,
+
+    @SerializedName("UpdatedAt") val updatedAt: String? = null
 )

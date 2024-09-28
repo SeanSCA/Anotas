@@ -7,26 +7,21 @@ import java.util.UUID
 
 @Entity(tableName = "notes")
 data class Note(
-    @PrimaryKey
-    @SerializedName("Id") // Campo del JSON "Id"
-    val id: Int = UUID.randomUUID().hashCode(),
+    @PrimaryKey @SerializedName("code") val code: Int = UUID.randomUUID().hashCode(),
 
-    @SerializedName("title") // Campo del JSON "title"
-    var title: String,
+    @SerializedName("Id") var id: Int?,
 
-    @SerializedName("textContent") // Campo del JSON "textContent"
-    var textContent: String,
+    @SerializedName("title") var title: String,
 
-    @SerializedName("date") // Campo del JSON "date"
-    var date: String,
+    @SerializedName("textContent") var textContent: String,
 
-    @SerializedName("CreatedAt") // Campo del JSON "CreatedAt"
-    var createdAt: String? = null, // Opcional: puedes ignorarlo si no lo necesitas
+    @SerializedName("date") var date: String,
 
-    @SerializedName("UpdatedAt") // Campo del JSON "UpdatedAt"
-    var updatedAt: String? = null // Opcional: puedes ignorarlo si no lo necesitas
+    @SerializedName("CreatedAt") var createdAt: String? = null,
+
+    @SerializedName("UpdatedAt") var updatedAt: String? = null
 ) {
-    constructor(title: String, content: String, date: String) : this(
-        UUID.randomUUID().hashCode(), title, content, date
+    constructor(id: Int?, title: String, content: String, date: String) : this(
+        UUID.randomUUID().hashCode(), id, title, content, date
     )
 }
