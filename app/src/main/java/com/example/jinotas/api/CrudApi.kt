@@ -1,6 +1,8 @@
 package com.example.jinotas.api
 
 import android.util.Log
+import com.example.jinotas.api.notesnocodb.ApiNote
+import com.example.jinotas.api.notesnocodb.ApiResponse
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.google.gson.GsonBuilder
@@ -28,12 +30,27 @@ class CrudApi() : CoroutineScope {
         filename = "env" // instead of '.env', use 'env'
     }
     private val URL_API = dotenv["URL_API"]
+    private val API_TOKEN = dotenv["API_TOKEN"]
 
     private fun getClient(): OkHttpClient {
-        var login = HttpLoggingInterceptor()
-        login.level = HttpLoggingInterceptor.Level.BODY
+        // Interceptor para registrar las solicitudes y respuestas
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
 
-        return OkHttpClient.Builder().addInterceptor(login).build()
+        // Interceptor para agregar el token de autenticación
+        val authInterceptor = okhttp3.Interceptor { chain ->
+            val original = chain.request()
+            val requestBuilder = original.newBuilder()
+                .header("xc-token", API_TOKEN) // Usar 'xc-auth' en lugar de 'Authorization'
+            val request = requestBuilder.build()
+            chain.proceed(request)
+        }
+
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .addInterceptor(authInterceptor) // Añade el interceptor de autenticación
+            .build()
     }
 
     private fun getRetrofit(): Retrofit {
@@ -49,7 +66,7 @@ class CrudApi() : CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 try {
-                    val response = getRetrofit().create(ApiService::class.java).GetNotesList()
+                    val response = getRetrofit().create(ApiService::class.java).getNotesList()
                     if (response.isSuccessful) {
                         connected = true
                     }
@@ -64,19 +81,40 @@ class CrudApi() : CoroutineScope {
     }
 
     fun getNotesList(): Notes? {
-        var response: Response<Notes>? = null
+        var response: Response<ApiResponse>? = null
 
         runBlocking {
             val corrutina = launch {
-                response = getRetrofit().create(ApiService::class.java).GetNotesList()
+                response = getRetrofit().create(ApiService::class.java).getNotesList()
+                if (response!!.isSuccessful) {
+                    val notes = Notes()
+                    response!!.body()!!.list.forEach { apiNote ->
+                        notes.add(
+                            Note(
+                                apiNote.id,
+                                apiNote.title,
+                                apiNote.textContent,
+                                apiNote.date
+                            )
+                        )
+                    }
+                    return@launch
+                }
             }
             corrutina.join()
         }
 
-        if (response!!.isSuccessful) {
-            return response!!.body()!!
-        } else {
-            return null
+        return response?.body()?.list?.let { list ->
+            val notes = Notes()
+            notes.addAll(list.map { apiNote ->
+                Note(
+                    apiNote.id,
+                    apiNote.title,
+                    apiNote.textContent,
+                    apiNote.date
+                )
+            })
+            notes
         }
     }
 
@@ -84,7 +122,7 @@ class CrudApi() : CoroutineScope {
         var response: Response<Note>? = null
         runBlocking {
             val corrutina = launch {
-                response = getRetrofit().create(ApiService::class.java).PostNote(note)
+                response = getRetrofit().create(ApiService::class.java).postNote(note)
             }
             corrutina.join()
         }
@@ -99,7 +137,7 @@ class CrudApi() : CoroutineScope {
         var response: Response<Note>? = null
         runBlocking {
             val corrutina = launch {
-                response = getRetrofit().create(ApiService::class.java).PutNote(note)
+                response = getRetrofit().create(ApiService::class.java).putNote(note)
             }
             corrutina.join()
         }
@@ -113,7 +151,7 @@ class CrudApi() : CoroutineScope {
     fun deleteNote(id: Int) {
         runBlocking {
             val corrutina = launch {
-                getRetrofit().create(ApiService::class.java).DeleteNote(id)
+                getRetrofit().create(ApiService::class.java).deleteNote(id)
             }
             corrutina.join()
         }
