@@ -110,6 +110,21 @@ class CrudApi() : CoroutineScope {
         }
     }
 
+    //Continuar función, probar con recoger todas las notas y tratarlas
+    fun getNoteById() {
+        var response: Response<Note>? = null
+        val notasList = getNotesList() as ArrayList<Note>
+        runBlocking {
+            val corrutina = launch {
+                notasList.forEach { nota ->
+
+                }
+//                response = getRetrofit().create(ApiService::class.java).getNoteById()
+            }
+            corrutina.join()
+        }
+    }
+
     fun postNote(note: Note): Note? {
         var response: Response<Note>? = null
         runBlocking {
