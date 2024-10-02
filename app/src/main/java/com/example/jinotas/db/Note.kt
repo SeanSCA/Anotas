@@ -21,7 +21,15 @@ data class Note(
 
     @SerializedName("UpdatedAt") var updatedAt: String? = null
 ) {
-    constructor(id: Int?, title: String, content: String, date: String) : this(
-        UUID.randomUUID().hashCode(), id, title, content, date
+    constructor(id: Int?, title: String, textContent: String, date: String) : this(
+        code = UUID.randomUUID().hashCode(),
+        id = id,
+        title = title,
+        textContent = textContent,
+        date = date
     )
+
+    override fun toString(): String {
+        return "Note(code=$code, id=$id, title='$title', textContent='$textContent', date='$date', createdAt=$createdAt, updatedAt=$updatedAt)"
+    }
 }

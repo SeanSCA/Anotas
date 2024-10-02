@@ -2,7 +2,6 @@ package com.example.jinotas
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,7 +47,7 @@ class AdapterNotes(
         holder.titleText.text = list[position].title
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, ShowNoteActivity::class.java)
-            intent.putExtra("id", list[position].id)
+            intent.putExtra("code", list[position].code)
             startActivity(holder.itemView.context, intent, null)
         }
 
@@ -61,7 +60,7 @@ class AdapterNotes(
                         val corrutina = launch {
                             db = AppDatabase.getDatabase(holder.itemView.context)
                             val note =
-                                list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
+                                list[position].code?.let { it1 -> db.noteDAO().getNoteByCode(it1) }
                             if (note != null) {
                                 db.noteDAO().deleteNote(note)
                                 updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
@@ -75,11 +74,12 @@ class AdapterNotes(
                             val corrutina = launch {
                                 val delNote = "Has eliminado la nota " + list[position].title
                                 //API
-                                CrudApi().deleteNote(list[position].id)
+                                CrudApi().deleteNote(list[position].id!!)
                                 //DB
                                 db = AppDatabase.getDatabase(holder.itemView.context)
-                                val note =
-                                    list[position].id?.let { it1 -> db.noteDAO().getNoteById(it1) }
+                                val note = list[position].code?.let { it1 ->
+                                    db.noteDAO().getNoteByCode(it1)
+                                }
                                 if (note != null) {
                                     db.noteDAO().deleteNote(note)
                                 }

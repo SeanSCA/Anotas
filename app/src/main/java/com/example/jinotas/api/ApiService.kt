@@ -1,7 +1,6 @@
 package com.example.jinotas.api
 
 import com.example.jinotas.api.notesnocodb.ApiResponse
-import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
 import com.example.jinotas.db.Note
 import retrofit2.Response
 import retrofit2.http.Body

@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                         val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                         if (notesListApi.size > 0) {
                             for (n in notesListApi) {
-                                if (notesListDB.none { it.id == n.id }) {
+                                if (notesListDB.none { it.code == n.code }) {
                                     counter++
                                     toDownload = true
                                 }
@@ -119,9 +119,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         runOnUiThread {
             Toast.makeText(this, "Desconectado", Toast.LENGTH_SHORT).show()
         }
-        lifecycleScope.launch(Dispatchers.Main) {
-            webSocketClient.connect(this@MainActivity)
-        }
+//        lifecycleScope.launch(Dispatchers.Main) {
+//            webSocketClient.connect(this@MainActivity)
+//        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -312,7 +312,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                     if (notesListApi.size > 0) {
                         for (n in notesListApi) {
-                            if (notesListDB.none { it.id == n.id }) {
+                            if (notesListDB.none { it.code == n.code }) {
                                 db.noteDAO().insertNote(n)
                                 inserted = true
                             }
@@ -364,7 +364,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                     if (notesListDB.size > 0) {
                         for (n in notesListDB) {
-                            if (notesListApi.none { it.id == n.id }) {
+                            if (notesListApi.none { it.code == n.code }) {
                                 CrudApi().postNote(n)
                                 inserted = true
                             }
@@ -402,7 +402,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             var delNotes = CrudApi().getNotesList() as ArrayList<Note>
             if (delNotes.size > 0) {
                 for (n in delNotes) {
-                    CrudApi().deleteNote(n.id)
+                    CrudApi().deleteNote(n.code!!)
                 }
                 Toast.makeText(this, "Has eliminado las notas de la nube", Toast.LENGTH_LONG).show()
             } else {

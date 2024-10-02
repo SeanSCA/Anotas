@@ -2,6 +2,7 @@ package com.example.jinotas
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -35,11 +36,11 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityShowNoteBinding.inflate(layoutInflater)
-        var idSearchUpdate = intent.getIntExtra("id", 0)
+        var codeSearchUpdate = intent.getIntExtra("code", 0)
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(this@ShowNoteActivity)
-                notesShow = db.noteDAO().getNoteById(idSearchUpdate!!)
+                notesShow = db.noteDAO().getNoteByCode(codeSearchUpdate)
             }
             corrutina.join()
         }
@@ -59,11 +60,15 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
                     val current = LocalDateTime.now().format(formatter).toString()
                     val noteUpdate = Note(
-                        idSearchUpdate!!,
+                        codeSearchUpdate,
+                        null,
                         binding.etTitle.text.toString(),
                         binding.etNoteContent.text.toString(),
-                        current
+                        current,
+                        null,
+                        null
                     )
+                    Log.i("notaUpdate", noteUpdate.toString())
                     db.noteDAO().updateNote(noteUpdate)
                     Toast.makeText(
                         this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT

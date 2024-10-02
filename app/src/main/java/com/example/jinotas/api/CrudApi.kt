@@ -1,9 +1,7 @@
 package com.example.jinotas.api
 
 import android.util.Log
-import com.example.jinotas.api.notesnocodb.ApiNote
 import com.example.jinotas.api.notesnocodb.ApiResponse
-import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.google.gson.GsonBuilder
@@ -87,7 +85,11 @@ class CrudApi() : CoroutineScope {
                     response!!.body()!!.list.forEach { apiNote ->
                         notes.add(
                             Note(
-                                apiNote.id, apiNote.title, apiNote.textContent, apiNote.date
+                                apiNote.code,
+                                apiNote.id,
+                                apiNote.title,
+                                apiNote.textContent,
+                                apiNote.date
                             )
                         )
                     }
@@ -101,7 +103,7 @@ class CrudApi() : CoroutineScope {
             val notes = Notes()
             notes.addAll(list.map { apiNote ->
                 Note(
-                    apiNote.id, apiNote.title, apiNote.textContent, apiNote.date
+                    apiNote.code, apiNote.id, apiNote.title, apiNote.textContent, apiNote.date
                 )
             })
             notes
