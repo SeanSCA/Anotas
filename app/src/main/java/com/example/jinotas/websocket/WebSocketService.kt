@@ -56,9 +56,9 @@ class WebSocketService : LifecycleService(), WebSocketListener {
     }
 
     override fun onDisconnected() {
-        lifecycleScope.launch(Dispatchers.Main) {
-            webSocketClient.connect(this@WebSocketService)
-        }
+//        lifecycleScope.launch(Dispatchers.Main) {
+//            webSocketClient.connect(this@WebSocketService)
+//        }
     }
 
     override fun onDestroy() {
