@@ -61,7 +61,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
                     val current = LocalDateTime.now().format(formatter).toString()
                     val noteUpdate = Note(
                         codeSearchUpdate,
-                        null,
+                        notesShow.id,
                         binding.etTitle.text.toString(),
                         binding.etNoteContent.text.toString(),
                         current,
