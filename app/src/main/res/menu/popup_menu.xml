@@ -4,10 +4,15 @@
     <item
         android:id="@+id/action_eliminar"
         android:title="Eliminar nota"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_eliminar_api"
         android:title="Eliminar notas compartidas"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_modificar_api"
+        android:title="Actualizar nota en la nube"
+        app:showAsAction="never" />
 </menu>

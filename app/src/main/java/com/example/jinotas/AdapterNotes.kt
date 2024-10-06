@@ -16,7 +16,6 @@ import com.example.jinotas.db.Note
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.ArrayList
 import kotlin.coroutines.CoroutineContext
 
 class AdapterNotes(
@@ -89,6 +88,13 @@ class AdapterNotes(
                             }
                             corrutina.join()
                         }
+                    } else {
+                        Print(holder.itemView.context, "No tienes conexión con la API")
+                    }
+
+                    R.id.action_modificar_api -> if (CrudApi().canConnectToApi()) {
+                        CrudApi().putNote(holder.itemView.context, list[position])
+                        Print(holder.itemView.context, "Has modificado la nota en la API")
                     } else {
                         Print(holder.itemView.context, "No tienes conexión con la API")
                     }
