@@ -6,6 +6,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -20,7 +21,7 @@ interface ApiService {
     @POST("?")
     suspend fun postNote(@Body note: Note): Response<Note>
 
-    @PUT("/api/Put")
+    @PATCH("?/")
     suspend fun putNote(@Body note: Note): Response<Note>
 
     @DELETE("/api/Delete/{id}")
