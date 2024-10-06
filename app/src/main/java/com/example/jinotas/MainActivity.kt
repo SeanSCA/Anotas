@@ -365,7 +365,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                     if (notesListDB.size > 0) {
                         for (n in notesListDB) {
                             if (notesListApi.none { it.code == n.code }) {
-                                CrudApi().postNote(n)
+                                CrudApi().postNote(n, this@MainActivity)
                                 inserted = true
                             }
                         }
