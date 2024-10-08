@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -70,6 +71,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
                     )
                     Log.i("notaUpdate", noteUpdate.toString())
                     db.noteDAO().updateNote(noteUpdate)
+                    CrudApi().patchNote(noteUpdate)
                     Toast.makeText(
                         this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT
                     ).show()
