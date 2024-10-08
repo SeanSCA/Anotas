@@ -2,8 +2,11 @@ package com.example.jinotas
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -23,6 +26,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var adapterNotes: AdapterNotes
     private lateinit var db: AppDatabase
     private var job: Job = Job()
+    private var canConnect: Boolean = false
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -59,10 +63,38 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                     notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                     adapterNotes = AdapterNotes(notesList, coroutineContext)
                     adapterNotes.updateList(notesList)
+                    uploadNoteApi(note)
                 }
                 corrutina.join()
             }
             finish()
         }
+    }
+
+    private fun uploadNoteApi(notePost: Note) {
+        if (tryConnection()) {
+            runBlocking {
+                val corrutina = launch {
+                    CrudApi().postNote(notePost, this@WriteNotesActivity)
+                    Toast.makeText(this@WriteNotesActivity, "Has subido la nota", Toast.LENGTH_LONG)
+                        .show()
+                }
+                corrutina.join()
+            }
+        }
+    }
+
+
+    /**
+     * Here checks if there's connection to the api
+     * @return Boolean if there's connection or not
+     */
+    fun tryConnection(): Boolean {
+        try {
+            canConnect = CrudApi().canConnectToApi()
+        } catch (e: Exception) {
+            Log.e("cantConnectToApi", "No tienes conexión con la API")
+        }
+        return canConnect
     }
 }
