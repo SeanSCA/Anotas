@@ -151,9 +151,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
 
 
 
-        binding.btDownloadNotesApi.setOnClickListener {
-            downloadNotesApi()
-        }
+//        binding.btDownloadNotesApi.setOnClickListener {
+//            downloadNotesApi()
+//        }
 
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
@@ -169,13 +169,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             showPopupMenuOrderBy(binding.btOrderBy)
         }
 
-        binding.btUploadNotesApi.setOnClickListener {
-            uploadNotesApi()
-        }
+//        binding.btUploadNotesApi.setOnClickListener {
+//            uploadNotesApi()
+//        }
 
-        binding.btDeleteApi.setOnClickListener {
-            deleteAllNotesApi()
-        }
+//        binding.btDeleteApi.setOnClickListener {
+//            deleteAllNotesApi()
+//        }
     }
 
     /**
