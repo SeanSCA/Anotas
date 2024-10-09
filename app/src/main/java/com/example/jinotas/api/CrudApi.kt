@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.example.jinotas.api.notesnocodb.ApiResponse
+import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
@@ -179,7 +180,7 @@ class CrudApi() : CoroutineScope {
         //Todas las notas de la api
         val apiNotesList = getNotesList() as ArrayList<Note>
         //Todas las notas de la db
-        var noteSearch: Note = noteUpdate
+        val noteSearch: Note = noteUpdate
         runBlocking {
             val corrutina = launch {
                 if (apiNotesList.size > 0) {
@@ -205,20 +206,16 @@ class CrudApi() : CoroutineScope {
     }
 
     //Esto es para una unica nota
-    fun putNote(mainContext: Context, noteUpdate: Note): Note? {
+    fun patchNote(noteUpdate: Note): Note? {
         var response: Response<Note>? = null
-        val noteToId = getIdFromNote(mainContext, noteUpdate)
+        //val noteToId = getIdFromNote(mainContext, noteUpdate)
         runBlocking {
             val corrutina = launch {
-                if (noteToId != null) {
-                    Log.e("id", noteToId.id.toString())
-                    Log.e("code", noteToId.code.toString())
-                    Log.e("title", noteToId.title)
-                    Log.e("textContent", noteToId.textContent)
-                    response = getRetrofit().create(ApiService::class.java).putNote(noteToId)
-                } else {
-                    Log.e("putNote", "LA NOTA QUE QUIERES MODIFICAR ES NULL")
-                }
+                Log.e("id", noteUpdate.id.toString())
+                Log.e("code", noteUpdate.code.toString())
+                Log.e("title", noteUpdate.title)
+                Log.e("textContent", noteUpdate.textContent)
+                response = getRetrofit().create(ApiService::class.java).putNote(noteUpdate)
             }
             corrutina.join()
         }
@@ -264,10 +261,12 @@ class CrudApi() : CoroutineScope {
     fun deleteNote(id: Int) {
         runBlocking {
             val corrutina = launch {
-                getRetrofit().create(ApiService::class.java).deleteNote(id)
+                val delete = DeleteNoteRequest(Id = id)
+                getRetrofit().create(ApiService::class.java).deleteNote(delete)
+                Log.e("idNote", id.toString())
             }
             corrutina.join()
         }
-
     }
+
 }

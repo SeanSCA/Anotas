@@ -2,6 +2,7 @@ package com.example.jinotas
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -59,44 +60,12 @@ class AdapterNotes(
                         val corrutina = launch {
                             db = AppDatabase.getDatabase(holder.itemView.context)
                             val note =
-                                list[position].code?.let { it1 -> db.noteDAO().getNoteByCode(it1) }
-                            if (note != null) {
-                                db.noteDAO().deleteNote(note)
-                                updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
-                            }
+                                list[position].code.let { it1 -> db.noteDAO().getNoteByCode(it1) }
+                            CrudApi().deleteNote(note.id!!)
+                            db.noteDAO().deleteNote(note)
+                            updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
                         }
                         corrutina.join()
-                    }
-
-                    R.id.action_eliminar_api -> if (CrudApi().canConnectToApi()) {
-                        runBlocking {
-                            val corrutina = launch {
-                                val delNote = "Has eliminado la nota " + list[position].title
-                                //API
-                                CrudApi().deleteNote(list[position].id!!)
-                                //DB
-                                db = AppDatabase.getDatabase(holder.itemView.context)
-                                val note = list[position].code?.let { it1 ->
-                                    db.noteDAO().getNoteByCode(it1)
-                                }
-                                if (note != null) {
-                                    db.noteDAO().deleteNote(note)
-                                }
-                                updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
-
-                                Print(holder.itemView.context, delNote)
-                            }
-                            corrutina.join()
-                        }
-                    } else {
-                        Print(holder.itemView.context, "No tienes conexión con la API")
-                    }
-
-                    R.id.action_modificar_api -> if (CrudApi().canConnectToApi()) {
-                        CrudApi().putNote(holder.itemView.context, list[position])
-                        Print(holder.itemView.context, "Has modificado la nota en la API")
-                    } else {
-                        Print(holder.itemView.context, "No tienes conexión con la API")
                     }
                 }
                 true
