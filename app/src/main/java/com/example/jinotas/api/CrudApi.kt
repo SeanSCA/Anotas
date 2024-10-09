@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.example.jinotas.api.notesnocodb.ApiResponse
+import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
@@ -260,11 +261,12 @@ class CrudApi() : CoroutineScope {
     fun deleteNote(id: Int) {
         runBlocking {
             val corrutina = launch {
-                getRetrofit().create(ApiService::class.java).deleteNote(id)
+                val delete = DeleteNoteRequest(Id = id)
+                getRetrofit().create(ApiService::class.java).deleteNote(delete)
                 Log.e("idNote", id.toString())
             }
             corrutina.join()
         }
-
     }
+
 }
