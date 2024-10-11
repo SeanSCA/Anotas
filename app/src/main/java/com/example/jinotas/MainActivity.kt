@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                         val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                         if (notesListApi.size > 0) {
                             for (n in notesListApi) {
-                                if (notesListDB.none { it.id == n.id }) {
+                                if (notesListDB.none { it.code == n.code }) {
                                     counter++
                                     toDownload = true
                                 }
@@ -111,13 +111,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
 
     override fun onMessage(message: String) {
         Log.e("WebSocket", "Message received: $message")
-        // Ejecutar en el hilo principal
-//        runOnUiThread {
-//            if (message == "newNote") {
-//                notification()
-//                scheduleWebSocketWorker()
-//            }
-//        }
     }
 
     override fun onDisconnected() {
@@ -126,32 +119,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         runOnUiThread {
             Toast.makeText(this, "Desconectado", Toast.LENGTH_SHORT).show()
         }
-        lifecycleScope.launch(Dispatchers.Main) {
-            webSocketClient.connect(this@MainActivity)
-        }
+//        lifecycleScope.launch(Dispatchers.Main) {
+//            webSocketClient.connect(this@MainActivity)
+//        }
     }
-
-//    private fun scheduleWebSocketWorker() {
-////        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
-////        WorkManager.getInstance(this).enqueueUniqueWork(
-////            "WebSocketWorker", ExistingWorkPolicy.KEEP, workRequest
-////        )
-//        val worker = workManager.beginUniqueWork(
-//            "WebSocketWorker",
-//            ExistingWorkPolicy.REPLACE,
-//            OneTimeWorkRequest.from(NotificationWorker::class.java)
-//        )
-//
-//        worker.enqueue()
-//        Toast.makeText(this, "Ejecuta worker", Toast.LENGTH_LONG).show()
-//
-//    }
-
-//    private fun scheduleWebSocketWorker() {
-//        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
-//        workManager.enqueueUniqueWork("WebSocketWorker", ExistingWorkPolicy.REPLACE, workRequest)
-//        Toast.makeText(this, "Worker programado", Toast.LENGTH_LONG).show()
-//    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -168,9 +139,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                 this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
             )
         } else {
-//            Toast.makeText(
-//                this@MainActivity, "schedulePeriodicWork", Toast.LENGTH_LONG
-//            ).show()
+            Toast.makeText(this, "Necesitas aceptar los permisos", Toast.LENGTH_LONG).show()
         }
         //Esto es para las notificaciones
         val serviceIntent = Intent(this, WebSocketService::class.java)
@@ -182,9 +151,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
 
 
 
-        binding.btDownloadNotesApi.setOnClickListener {
-            downloadNotesApi()
-        }
+//        binding.btDownloadNotesApi.setOnClickListener {
+//            downloadNotesApi()
+//        }
 
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
@@ -200,13 +169,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             showPopupMenuOrderBy(binding.btOrderBy)
         }
 
-        binding.btUploadNotesApi.setOnClickListener {
-            uploadNotesApi()
-        }
+//        binding.btUploadNotesApi.setOnClickListener {
+//            uploadNotesApi()
+//        }
 
-        binding.btDeleteApi.setOnClickListener {
-            deleteAllNotesApi()
-        }
+//        binding.btDeleteApi.setOnClickListener {
+//            deleteAllNotesApi()
+//        }
     }
 
     /**
@@ -230,14 +199,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             }
             corrutina.join()
         }
-        binding.notesCounter.text = notesCounter
-    }
-
-    /**
-     * Here updates the notes counter from the api
-     */
-    private fun notesCounterApi() {
-        notesCounter = CrudApi().getNotesList()?.size.toString()
         binding.notesCounter.text = notesCounter
     }
 
@@ -287,8 +248,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                 loadFilteredNotes(searchNote.text.toString())
             }
         }
-
-
         // display the popup window at the specified location
         popup.showAsDropDown(view)
     }
@@ -353,7 +312,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                     if (notesListApi.size > 0) {
                         for (n in notesListApi) {
-                            if (notesListDB.none { it.id == n.id }) {
+                            if (notesListDB.none { it.code == n.code }) {
                                 db.noteDAO().insertNote(n)
                                 inserted = true
                             }
@@ -405,8 +364,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                     val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
                     if (notesListDB.size > 0) {
                         for (n in notesListDB) {
-                            if (notesListApi.none { it.id == n.id }) {
-                                CrudApi().postNote(n)
+                            if (notesListApi.none { it.code == n.code }) {
+                                CrudApi().postNote(n, this@MainActivity)
                                 inserted = true
                             }
                         }
@@ -417,14 +376,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                         return@launch
                     }
 
-                    if (inserted) {
-//                        webSocketClient.sendMessage("newNote")
-
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity, "No hay notas nuevas que subir", Toast.LENGTH_LONG
-                        ).show()
-                    }
+//                    if (inserted) {
+////                        webSocketClient.sendMessage("newNote")
+//
+//                    } else {
+//                        Toast.makeText(
+//                            this@MainActivity, "No hay notas nuevas que subir", Toast.LENGTH_LONG
+//                        ).show()
+//                    }
                 }
                 corrutina.join()
             }
@@ -443,7 +402,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             var delNotes = CrudApi().getNotesList() as ArrayList<Note>
             if (delNotes.size > 0) {
                 for (n in delNotes) {
-                    CrudApi().deleteNote(n.id)
+                    CrudApi().deleteNote(n.code!!)
                 }
                 Toast.makeText(this, "Has eliminado las notas de la nube", Toast.LENGTH_LONG).show()
             } else {
@@ -530,8 +489,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
                             arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                             notificationPermissionCode
                         )
-                    } else {
-//                        notify(1, notification())
                     }
                 }
             } else {

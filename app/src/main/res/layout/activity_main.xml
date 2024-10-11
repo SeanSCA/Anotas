@@ -55,7 +55,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageButton
+            <!--<ImageButton
                 android:id="@+id/btDownloadNotesApi"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -87,7 +87,7 @@
                 app:layout_constraintBottom_toBottomOf="@+id/btUploadNotesApi"
                 app:layout_constraintStart_toEndOf="@+id/btUploadNotesApi"
                 app:layout_constraintTop_toTopOf="@+id/btUploadNotesApi" />
-
+-->
             <ImageButton
                 android:id="@+id/btSearchNote"
                 android:layout_width="48dp"

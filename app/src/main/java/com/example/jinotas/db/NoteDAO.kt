@@ -3,6 +3,7 @@ package com.example.jinotas.db
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 
@@ -11,8 +12,8 @@ interface NoteDAO {
     @Query("SELECT * FROM notes")
     fun getNotesList(): List<Note>
 
-    @Query("SELECT * FROM notes WHERE id = :id")
-    fun getNoteById(id: Int): Note
+    @Query("SELECT * FROM notes WHERE code = :code")
+    fun getNoteByCode(code: Int): Note
 
     @Query("SELECT * FROM notes WHERE title  LIKE '%' || :title || '%'")
     fun getNoteByTitle(title: String): List<Note>
@@ -26,7 +27,7 @@ interface NoteDAO {
     @Query("SELECT COUNT(*) FROM notes")
     fun getNotesCount(): Int
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertNote(note: Note)
 
     @Delete
