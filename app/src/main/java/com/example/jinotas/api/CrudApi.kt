@@ -93,7 +93,8 @@ class CrudApi() : CoroutineScope {
                                 apiNote.id,
                                 apiNote.title,
                                 apiNote.textContent,
-                                apiNote.date
+                                apiNote.date,
+                                apiNote.user
                             )
                         )
                     }
@@ -107,7 +108,7 @@ class CrudApi() : CoroutineScope {
             val notes = Notes()
             notes.addAll(list.map { apiNote ->
                 Note(
-                    apiNote.code, apiNote.id, apiNote.title, apiNote.textContent, apiNote.date
+                    apiNote.code, apiNote.id, apiNote.title, apiNote.textContent, apiNote.date, apiNote.user
                 )
             })
             notes

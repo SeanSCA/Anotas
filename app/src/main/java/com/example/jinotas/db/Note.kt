@@ -17,19 +17,24 @@ data class Note(
 
     @SerializedName("date") var date: String,
 
+    @SerializedName("user") var user: String,
+
     @SerializedName("CreatedAt") var createdAt: String? = null,
 
     @SerializedName("UpdatedAt") var updatedAt: String? = null
+
 ) {
-    constructor(id: Int?, title: String, textContent: String, date: String) : this(
+    constructor(id: Int?, title: String, textContent: String, date: String, user: String) : this(
         code = UUID.randomUUID().hashCode(),
         id = id,
         title = title,
         textContent = textContent,
-        date = date
+        date = date,
+        user = user
     )
 
     override fun toString(): String {
-        return "Note(code=$code, id=$id, title='$title', textContent='$textContent', date='$date', createdAt=$createdAt, updatedAt=$updatedAt)"
+        return "Note(code=$code, id=$id, title='$title', textContent='$textContent', date='$date', user='$user', createdAt=$createdAt, updatedAt=$updatedAt)"
     }
+
 }

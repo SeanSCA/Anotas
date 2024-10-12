@@ -2,6 +2,7 @@ package com.example.jinotas
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +18,7 @@ import com.example.jinotas.db.Note
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
 class AdapterNotes(
@@ -47,7 +49,10 @@ class AdapterNotes(
         holder.titleText.text = list[position].title
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, ShowNoteActivity::class.java)
+            val sharedPreferences: SharedPreferences = holder.itemView.context.getSharedPreferences("MyPrefsFile", Context.MODE_PRIVATE)
+            val userName = sharedPreferences.getString("userName", "")
             intent.putExtra("code", list[position].code)
+            intent.putExtra("user", userName)
             startActivity(holder.itemView.context, intent, null)
         }
 

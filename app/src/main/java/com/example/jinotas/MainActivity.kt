@@ -1,12 +1,14 @@
 package com.example.jinotas
 
 import android.Manifest
+import android.app.AlertDialog
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -17,6 +19,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
@@ -55,12 +58,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         directory = "/assets"
         filename = "env" // instead of '.env', use 'env'
     }
+    private val PREFS_NAME = "MyPrefsFile"
+    // Variable para guardar el nombre de usuario
+    private var userName: String? = null
     private val webSocketClient = WebSocketClient(
         dotenv["WEB_SOCKET_CLIENT"], lifecycleScope
     )
 
     //Notifications
-    private val channelId = "i.apps.notifications"
     private val notificationPermissionCode = 250
 
     override val coroutineContext: CoroutineContext
@@ -138,9 +143,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             ActivityCompat.requestPermissions(
                 this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
             )
-        } else {
-            Toast.makeText(this, "Necesitas aceptar los permisos", Toast.LENGTH_LONG).show()
         }
+
         //Esto es para las notificaciones
         val serviceIntent = Intent(this, WebSocketService::class.java)
         startForegroundService(serviceIntent)
@@ -149,15 +153,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             webSocketClient.connect(this@MainActivity)
         }
 
-
-
-//        binding.btDownloadNotesApi.setOnClickListener {
-//            downloadNotesApi()
-//        }
-
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
             val intent = Intent(this, WriteNotesActivity::class.java)
+            intent.putExtra("user", userName)
             startActivity(intent)
         }
 
@@ -169,13 +168,61 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             showPopupMenuOrderBy(binding.btOrderBy)
         }
 
-//        binding.btUploadNotesApi.setOnClickListener {
-//            uploadNotesApi()
-//        }
+        // Acceder a las SharedPreferences
+        val sharedPreferences: SharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-//        binding.btDeleteApi.setOnClickListener {
-//            deleteAllNotesApi()
-//        }
+        // Verificar si es la primera vez que se lanza la aplicación
+        val isFirstTime = sharedPreferences.getBoolean("isFirstTime", true)
+
+        if (isFirstTime) {
+            // Si es la primera vez, mostrar el formulario
+            showFormDialog(sharedPreferences)
+        } else {
+            // Recuperar el nombre del usuario almacenado en SharedPreferences
+            userName = sharedPreferences.getString("userName", "")
+            // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
+            Log.e("userNameGuardado", userName!!)
+        }
+    }
+
+    // Método para mostrar el formulario en un AlertDialog
+    private fun showFormDialog(sharedPreferences: SharedPreferences) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Bienvenido")
+
+        // Crear un Layout para el formulario
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+
+        // Crear el campo del formulario
+        val nameInput = EditText(this)
+        nameInput.hint = "Nombre de usuario"
+        layout.addView(nameInput)
+
+        // Configurar el layout dentro del diálogo
+        builder.setView(layout)
+
+        // Botones del diálogo
+        builder.setPositiveButton("Aceptar") { dialog, _ ->
+            // Guardar el nombre de usuario en una variable
+            userName = nameInput.text.toString()
+
+            // Guardar el nombre de usuario en SharedPreferences
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("isFirstTime", false)  // Marcar que ya no es la primera vez
+            editor.putString("userName", userName)  // Guardar el nombre de usuario
+            editor.apply()
+
+            // Aquí puedes usar la variable userName en la lógica que necesites
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("Cancelar") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        // Mostrar el diálogo
+        builder.show()
     }
 
     /**
@@ -417,57 +464,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         }
     }
 
-    fun notification(): Notification {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = getString(R.string.channel_name)
-            val description_text = "Notificaciones del canal"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(channelId, name, importance).apply {
-                description = description_text
-            }
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val notifyIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        val notifyPendingIntent = PendingIntent.getActivity(
-            this, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notificacio =
-            NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.app_icon)
-                .setContentTitle("Notas").setContentText("Nueva nota").setStyle(
-                    NotificationCompat.BigTextStyle()
-                        .bigText("Se ha subido una nota nueva a la nube, recarga tus notas y la verás")
-                ).setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(notifyPendingIntent)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build()
-
-        with(
-            NotificationManagerCompat.from(this)
-        ) {
-            if (ActivityCompat.checkSelfPermission(
-                    this@MainActivity, Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this@MainActivity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    notificationPermissionCode
-                )
-            } else {
-                notify(1, notificacio)
-                return notificacio
-            }
-        }
-        Toast.makeText(this, "No tiene que llegar hasta aquí", Toast.LENGTH_SHORT).show()
-        return notificacio
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
@@ -475,8 +471,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
 
         if (requestCode == notificationPermissionCode) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted.
-                Toast.makeText(this, "ok", Toast.LENGTH_SHORT).show()
                 with(
                     NotificationManagerCompat.from(this)
                 ) {

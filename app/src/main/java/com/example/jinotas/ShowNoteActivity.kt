@@ -38,6 +38,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
         super.onCreate(savedInstanceState)
         binding = ActivityShowNoteBinding.inflate(layoutInflater)
         var codeSearchUpdate = intent.getIntExtra("code", 0)
+        var userName = intent.getStringExtra("user")
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(this@ShowNoteActivity)
@@ -66,6 +67,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope {
                         binding.etTitle.text.toString(),
                         binding.etNoteContent.text.toString(),
                         current,
+                        userName!!,
                         null,
                         null
                     )

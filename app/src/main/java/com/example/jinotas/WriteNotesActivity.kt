@@ -42,6 +42,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        var userName = intent.getStringExtra("user")
 
         binding.btReturnToNotes.setOnClickListener {
             finish()
@@ -56,7 +57,8 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                         null,
                         binding.etTitle.text.toString(),
                         binding.etNoteContent.text.toString(),
-                        current.toString()
+                        current.toString(),
+                        userName!!
                     )
                     db = AppDatabase.getDatabase(this@WriteNotesActivity)
                     db.noteDAO().insertNote(note)
