@@ -105,5 +105,6 @@ dependencies {
     implementation(libs.dotenv.kotlin)
 
     implementation("javax.inject:javax.inject:1")
+    implementation("com.google.firebase:firebase-messaging:24.0.2")
 
 }
