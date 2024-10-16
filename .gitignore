@@ -17,3 +17,5 @@ misc.xml
 deploymentTargetSelector.xml
 /environmentVariables.env
 /app/src/main/assets/env
+/app/src/main/assets/notemanager-15064-6b4b2ba119a0.json
+/app/src/google-services.json

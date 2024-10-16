@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "25967533994",
+    "project_id": "notemanager-15064",
+    "storage_bucket": "notemanager-15064.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:25967533994:android:6796501c9dc5373e1995d3",
+        "android_client_info": {
+          "package_name": "com.example.jinotas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCQfgaBg2QHQXrzuS43n1RTPm_P-tbalc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
