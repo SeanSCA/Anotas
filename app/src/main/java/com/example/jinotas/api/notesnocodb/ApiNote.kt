@@ -13,6 +13,8 @@ data class ApiNote(
 
     @SerializedName("date") val date: String,
 
+    @SerializedName("user") val user: String,
+
     @SerializedName("CreatedAt") val createdAt: String? = null,
 
     @SerializedName("UpdatedAt") val updatedAt: String? = null

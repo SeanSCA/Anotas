@@ -1,12 +1,10 @@
 package com.example.jinotas
 
 import android.Manifest
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -17,33 +15,47 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
-import com.example.jinotas.websocket.WebSocketClient
-import com.example.jinotas.websocket.WebSocketListener
-import com.example.jinotas.websocket.WebSocketService
+import com.example.jinotas.db.Token
+import com.google.api.client.json.JsonFactory
+import com.google.api.client.json.gson.GsonFactory
+import com.google.auth.oauth2.GoogleCredentials
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.initialize
+import com.google.firebase.messaging.FirebaseMessaging
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
+import java.util.Collections
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
-
-class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
+class MainActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
@@ -55,80 +67,24 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         directory = "/assets"
         filename = "env" // instead of '.env', use 'env'
     }
-    private val webSocketClient = WebSocketClient(
-        dotenv["WEB_SOCKET_CLIENT"], lifecycleScope
-    )
+    private val PREFS_NAME = "MyPrefsFile"
+
+    // Variable para guardar el nombre de usuario
+    private var userName: String? = null
 
     //Notifications
-    private val channelId = "i.apps.notifications"
     private val notificationPermissionCode = 250
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-        lifecycleScope.launch {
-            webSocketClient.disconnect()
-        }
-    }
-
-    override fun onConnected() {
-        Log.e("WebSocket", "Connected")
-        // Ejecutar en el hilo principal
-        var toDownload = false
-        var counter = 0
-        runOnUiThread {
-            Toast.makeText(this, "Conectado", Toast.LENGTH_SHORT).show()
-            if (tryConnection()) {
-                runBlocking {
-                    val corrutina = launch {
-                        db = AppDatabase.getDatabase(this@MainActivity)
-                        val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
-                        val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                        if (notesListApi.size > 0) {
-                            for (n in notesListApi) {
-                                if (notesListDB.none { it.code == n.code }) {
-                                    counter++
-                                    toDownload = true
-                                }
-                            }
-                        }
-                        if (toDownload) {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Tienes $counter nuevas que descargar",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                    corrutina.join()
-                }
-            }
-        }
-    }
-
-    override fun onMessage(message: String) {
-        Log.e("WebSocket", "Message received: $message")
-    }
-
-    override fun onDisconnected() {
-        Log.e("WebSocket", "Disconnected")
-        // Ejecutar en el hilo principal
-        runOnUiThread {
-            Toast.makeText(this, "Desconectado", Toast.LENGTH_SHORT).show()
-        }
-//        lifecycleScope.launch(Dispatchers.Main) {
-//            webSocketClient.connect(this@MainActivity)
-//        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        Firebase.initialize(this)
 
 //        // Solicitar permisos de notificación si no están concedidos
         if (ActivityCompat.checkSelfPermission(
@@ -138,26 +94,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             ActivityCompat.requestPermissions(
                 this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
             )
-        } else {
-            Toast.makeText(this, "Necesitas aceptar los permisos", Toast.LENGTH_LONG).show()
         }
-        //Esto es para las notificaciones
-        val serviceIntent = Intent(this, WebSocketService::class.java)
-        startForegroundService(serviceIntent)
-
-        lifecycleScope.launch(Dispatchers.Main) {
-            webSocketClient.connect(this@MainActivity)
-        }
-
-
-
-//        binding.btDownloadNotesApi.setOnClickListener {
-//            downloadNotesApi()
-//        }
 
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
             val intent = Intent(this, WriteNotesActivity::class.java)
+            intent.putExtra("user", userName)
             startActivity(intent)
         }
 
@@ -169,13 +111,79 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
             showPopupMenuOrderBy(binding.btOrderBy)
         }
 
-//        binding.btUploadNotesApi.setOnClickListener {
-//            uploadNotesApi()
-//        }
+        // Acceder a las SharedPreferences
+        val sharedPreferences: SharedPreferences =
+            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-//        binding.btDeleteApi.setOnClickListener {
-//            deleteAllNotesApi()
-//        }
+        // Verificar si es la primera vez que se lanza la aplicación
+        val isFirstTime = sharedPreferences.getBoolean("isFirstTime", true)
+
+        if (isFirstTime) {
+            // Si es la primera vez, mostrar el formulario
+            showFormDialog(sharedPreferences)
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    // Guarda este token en tu base de datos
+                    db.tokenDAO().insertNote(Token(token = token))
+                    Log.e("Token del dispositivo:", token)
+                }
+            }
+            FirebaseMessaging.getInstance().subscribeToTopic("global")
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.e("Topic", "Suscripción exitosa al topic global")
+                    } else {
+                        Log.e("Topic", "Error al suscribirse al topic")
+                    }
+                }
+        } else {
+            // Recuperar el nombre del usuario almacenado en SharedPreferences
+            userName = sharedPreferences.getString("userName", "")
+            // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
+            Log.e("userNameGuardado", userName!!)
+
+        }
+    }
+
+    // Método para mostrar el formulario en un AlertDialog
+    private fun showFormDialog(sharedPreferences: SharedPreferences) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Bienvenido")
+
+        // Crear un Layout para el formulario
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+
+        // Crear el campo del formulario
+        val nameInput = EditText(this)
+        nameInput.hint = "Nombre de usuario"
+        layout.addView(nameInput)
+
+        // Configurar el layout dentro del diálogo
+        builder.setView(layout)
+
+        // Botones del diálogo
+        builder.setPositiveButton("Aceptar") { dialog, _ ->
+            // Guardar el nombre de usuario en una variable
+            userName = nameInput.text.toString()
+
+            // Guardar el nombre de usuario en SharedPreferences
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("isFirstTime", false)  // Marcar que ya no es la primera vez
+            editor.putString("userName", userName)  // Guardar el nombre de usuario
+            editor.apply()
+
+            // Aquí puedes usar la variable userName en la lógica que necesites
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("Cancelar") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        // Mostrar el diálogo
+        builder.show()
     }
 
     /**
@@ -417,57 +425,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
         }
     }
 
-    fun notification(): Notification {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = getString(R.string.channel_name)
-            val description_text = "Notificaciones del canal"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(channelId, name, importance).apply {
-                description = description_text
-            }
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val notifyIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        val notifyPendingIntent = PendingIntent.getActivity(
-            this, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notificacio =
-            NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.app_icon)
-                .setContentTitle("Notas").setContentText("Nueva nota").setStyle(
-                    NotificationCompat.BigTextStyle()
-                        .bigText("Se ha subido una nota nueva a la nube, recarga tus notas y la verás")
-                ).setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(notifyPendingIntent)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build()
-
-        with(
-            NotificationManagerCompat.from(this)
-        ) {
-            if (ActivityCompat.checkSelfPermission(
-                    this@MainActivity, Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this@MainActivity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    notificationPermissionCode
-                )
-            } else {
-                notify(1, notificacio)
-                return notificacio
-            }
-        }
-        Toast.makeText(this, "No tiene que llegar hasta aquí", Toast.LENGTH_SHORT).show()
-        return notificacio
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
@@ -475,8 +432,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, WebSocketListener {
 
         if (requestCode == notificationPermissionCode) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted.
-                Toast.makeText(this, "ok", Toast.LENGTH_SHORT).show()
                 with(
                     NotificationManagerCompat.from(this)
                 ) {
