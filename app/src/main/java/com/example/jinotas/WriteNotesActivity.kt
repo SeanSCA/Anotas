@@ -3,6 +3,7 @@ package com.example.jinotas
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -11,6 +12,7 @@ import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.example.jinotas.utils.Utils
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.GoogleCredentials
@@ -107,39 +109,43 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         var accessToken: String = ""
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                accessToken = getAccessToken(this@WriteNotesActivity) // Pass the context
-                // Use the token as needed
+                accessToken = getAccessToken(this@WriteNotesActivity)
                 Log.e("accessToken", accessToken)
-                // Define the URL for the v1 API
-                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
-                // Obtain the access token (implement this method to get the token)
 
-                // Create the OkHttpClient
+                val deviceId = Utils.getIdDevice(context = this@WriteNotesActivity) // Obtén el ID del dispositivo
+
+                // Define la URL para la API v1 de FCM
+                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
+
+                // Crear el OkHttpClient
                 val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
 
-                // Create the JSON payload for the v1 API
+                // Crear la carga JSON para la API v1
                 val json = JSONObject().apply {
                     put("message", JSONObject().apply {
-                        put("topic", "global") // Send to the topic "global"
+                        put("topic", "global") // Enviar al tópico "global"
                         put("notification", JSONObject().apply {
-                            put("title", "Notificación Global")
+                            put("title", "Note Manager")
                             put("body", message)
+                        })
+                        // Agregar datos personalizados, incluyendo el deviceId
+                        put("data", JSONObject().apply {
+                            put("deviceId", deviceId) // Agregar el ID del dispositivo
                         })
                     })
                 }
 
-                // Create the request body
+                // Crear el cuerpo de la solicitud
                 val body = RequestBody.create(
                     "application/json; charset=utf-8".toMediaType(), json.toString()
                 )
 
-                // Build the request with the Authorization header
+                // Construir la solicitud con el encabezado de autorización
                 val request = Request.Builder().url(url).post(body).addHeader(
                     "Authorization", "Bearer $accessToken"
-                ) // Correctly format the Authorization header
-                    .build()
+                ).build()
 
-                // Execute the request asynchronously
+                // Ejecutar la solicitud de manera asíncrona
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         e.printStackTrace()
@@ -150,10 +156,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                     }
                 })
             } catch (e: Exception) {
-                e.printStackTrace() // Handle exceptions
+                e.printStackTrace() // Manejar excepciones
             }
         }
-
     }
 
     suspend fun getAccessToken(context: Context): String {
