@@ -11,6 +11,7 @@ import com.example.jinotas.MainActivity
 import com.example.jinotas.R
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Token
+import com.example.jinotas.utils.Utils
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -18,8 +19,12 @@ class FirebaseMessageService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Handle the received message and show a notification
-        remoteMessage.notification?.let {
-            sendNotification(it.body ?: "New Message")
+        val receivedDeviceId = remoteMessage.data["deviceId"]
+        val currentDeviceId = Utils.getIdDevice(context = this@FirebaseMessageService)
+        if(receivedDeviceId != currentDeviceId){
+            remoteMessage.notification?.let {
+                sendNotification(it.body ?: "New Message")
+            }
         }
     }
 
