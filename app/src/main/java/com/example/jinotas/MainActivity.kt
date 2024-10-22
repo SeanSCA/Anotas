@@ -25,6 +25,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.jinotas.api.CrudApi
+import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -99,7 +100,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
             val intent = Intent(this, WriteNotesActivity::class.java)
-            intent.putExtra("user", userName)
+            intent.putExtra("userFrom", userName)
             startActivity(intent)
         }
 
@@ -126,6 +127,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     val token = task.result
                     // Guarda este token en tu base de datos
                     db.tokenDAO().insertNote(Token(token = token))
+
                     Log.e("Token del dispositivo:", token)
                 }
             }
@@ -139,7 +141,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 }
         } else {
             // Recuperar el nombre del usuario almacenado en SharedPreferences
-            userName = sharedPreferences.getString("userName", "")
+            userName = sharedPreferences.getString("userFrom", "")
             // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
             Log.e("userNameGuardado", userName!!)
 
@@ -171,10 +173,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             // Guardar el nombre de usuario en SharedPreferences
             val editor = sharedPreferences.edit()
             editor.putBoolean("isFirstTime", false)  // Marcar que ya no es la primera vez
-            editor.putString("userName", userName)  // Guardar el nombre de usuario
+            editor.putString("userFrom", userName)  // Guardar el nombre de usuario
             editor.apply()
 
             // Aquí puedes usar la variable userName en la lógica que necesites
+            val userToken: ApiTokenUser
+            val token = db.tokenDAO().getToken()
+            userToken = ApiTokenUser(userName = userName!!, token = token)
+            CrudApi().postTokenByUser(userToken)
             dialog.dismiss()
         }
 

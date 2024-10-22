@@ -3,8 +3,8 @@ package com.example.jinotas.api
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.example.jinotas.api.notesnocodb.ApiResponse
 import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
+import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
@@ -21,6 +21,8 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.coroutines.CoroutineContext
+import com.example.jinotas.api.notesnocodb.ApiResponse as ApiResponseNotes
+import com.example.jinotas.api.tokenusernocodb.ApiResponse as ApiResponseTokenUser
 
 class CrudApi() : CoroutineScope {
     private val job: Job = Job()
@@ -32,7 +34,8 @@ class CrudApi() : CoroutineScope {
         directory = "/assets"
         filename = "env"
     }
-    private val URL_API = dotenv["URL_API"]
+    private val URL_API_NOTES = dotenv["URL_API_NOTES"]
+    private val URL_API_TOKEN_USER = dotenv["URL_API_USER_TOKEN"]
     private val API_TOKEN = dotenv["API_TOKEN"]
 
     private fun getClient(): OkHttpClient {
@@ -51,10 +54,17 @@ class CrudApi() : CoroutineScope {
             .addInterceptor(authInterceptor).build()
     }
 
-    private fun getRetrofit(): Retrofit {
+    private fun getRetrofitNotes(): Retrofit {
         val gson = GsonBuilder().setLenient().create()
 
-        return Retrofit.Builder().baseUrl(URL_API).client(getClient())
+        return Retrofit.Builder().baseUrl(URL_API_NOTES).client(getClient())
+            .addConverterFactory(GsonConverterFactory.create(gson)).build()
+    }
+
+    private fun getRetrofitUserToken(): Retrofit {
+        val gson = GsonBuilder().setLenient().create()
+
+        return Retrofit.Builder().baseUrl(URL_API_TOKEN_USER).client(getClient())
             .addConverterFactory(GsonConverterFactory.create(gson)).build()
     }
 
@@ -64,7 +74,7 @@ class CrudApi() : CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 try {
-                    val response = getRetrofit().create(ApiService::class.java).getNotesList()
+                    val response = getRetrofitNotes().create(ApiService::class.java).getNotesList()
                     if (response.isSuccessful) {
                         connected = true
                     }
@@ -79,22 +89,23 @@ class CrudApi() : CoroutineScope {
     }
 
     fun getNotesList(): Notes? {
-        var response: Response<ApiResponse>? = null
+        var response: Response<ApiResponseNotes>? = null
 
         runBlocking {
             val corrutina = launch {
-                response = getRetrofit().create(ApiService::class.java).getNotesList()
+                response = getRetrofitNotes().create(ApiService::class.java).getNotesList()
                 if (response!!.isSuccessful) {
                     val notes = Notes()
                     response!!.body()!!.list.forEach { apiNote ->
                         notes.add(
                             Note(
-                                apiNote.code,
-                                apiNote.id,
-                                apiNote.title,
-                                apiNote.textContent,
-                                apiNote.date,
-                                apiNote.user
+                                code = apiNote.code,
+                                id = apiNote.id,
+                                title = apiNote.title,
+                                textContent = apiNote.textContent,
+                                date = apiNote.date,
+                                userFrom = apiNote.userFrom,
+                                userTo = apiNote.userTo
                             )
                         )
                     }
@@ -108,7 +119,13 @@ class CrudApi() : CoroutineScope {
             val notes = Notes()
             notes.addAll(list.map { apiNote ->
                 Note(
-                    apiNote.code, apiNote.id, apiNote.title, apiNote.textContent, apiNote.date, apiNote.user
+                    code = apiNote.code,
+                    id = apiNote.id,
+                    title = apiNote.title,
+                    textContent = apiNote.textContent,
+                    date = apiNote.date,
+                    userFrom = apiNote.userFrom,
+                    userTo = apiNote.userTo
                 )
             })
             notes
@@ -163,7 +180,7 @@ class CrudApi() : CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 allNotesToId?.forEach { note ->
-                    response = getRetrofit().create(ApiService::class.java).putNote(note)
+                    response = getRetrofitNotes().create(ApiService::class.java).putNote(note)
                 }
             }
             corrutina.join()
@@ -216,7 +233,7 @@ class CrudApi() : CoroutineScope {
                 Log.e("code", noteUpdate.code.toString())
                 Log.e("title", noteUpdate.title)
                 Log.e("textContent", noteUpdate.textContent)
-                response = getRetrofit().create(ApiService::class.java).putNote(noteUpdate)
+                response = getRetrofitNotes().create(ApiService::class.java).putNote(noteUpdate)
             }
             corrutina.join()
         }
@@ -233,7 +250,7 @@ class CrudApi() : CoroutineScope {
         //Todas las notas de la db
         runBlocking {
             val corrutina = launch {
-                response = getRetrofit().create(ApiService::class.java).postNote(notePost)
+                response = getRetrofitNotes().create(ApiService::class.java).postNote(notePost)
 
                 val apiNotesList = getNotesList() as ArrayList<Note>
                 if (apiNotesList.size > 0) {
@@ -263,10 +280,40 @@ class CrudApi() : CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 val delete = DeleteNoteRequest(Id = id)
-                getRetrofit().create(ApiService::class.java).deleteNote(delete)
+                getRetrofitNotes().create(ApiService::class.java).deleteNote(delete)
                 Log.e("idNote", id.toString())
             }
             corrutina.join()
+        }
+    }
+
+    fun getTokenByUser(user: String): List<ApiTokenUser>? {
+        var response: Response<ApiResponseTokenUser>? = null
+        runBlocking {
+            val corrutina = launch {
+                response = getRetrofitNotes().create(ApiService::class.java).getTokenByUser()
+            }
+            corrutina.join()
+        }
+        if (response!!.isSuccessful) {
+            return response!!.body()!!.list
+        } else {
+            return null
+        }
+    }
+
+    fun postTokenByUser(tokenUser: ApiTokenUser): ApiTokenUser? {
+        var response: Response<ApiTokenUser>? = null
+        runBlocking {
+            val corrutina = launch {
+                response = getRetrofitUserToken().create(ApiService::class.java).postUserToken(tokenUser)
+            }
+            corrutina.join()
+        }
+        return if (response!!.isSuccessful) {
+            response!!.body()!!
+        } else {
+            null
         }
     }
 

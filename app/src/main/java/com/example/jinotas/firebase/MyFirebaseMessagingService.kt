@@ -10,20 +10,41 @@ import androidx.core.app.NotificationCompat
 import com.example.jinotas.MainActivity
 import com.example.jinotas.R
 import com.example.jinotas.db.AppDatabase
+import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.gson.Gson
 
 class FirebaseMessageService : FirebaseMessagingService() {
 
+    //    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+//        // Handle the received message and show a notification
+//        val receivedDeviceId = remoteMessage.data["deviceId"]
+//        val currentDeviceId = Utils.getIdDevice(context = this@FirebaseMessageService)
+//        if(receivedDeviceId != currentDeviceId){
+//            remoteMessage.notification?.let {
+//                sendNotification(it.body ?: "New Message")
+//            }
+//        }
+//    }
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        // Handle the received message and show a notification
-        val receivedDeviceId = remoteMessage.data["deviceId"]
-        val currentDeviceId = Utils.getIdDevice(context = this@FirebaseMessageService)
-        if(receivedDeviceId != currentDeviceId){
-            remoteMessage.notification?.let {
-                sendNotification(it.body ?: "New Message")
+        // Verificar si el mensaje contiene datos personalizados
+        remoteMessage.data.isNotEmpty().let {
+            val receivedDeviceId = remoteMessage.data["deviceId"]
+            val currentDeviceId = Utils.getIdDevice(context = this@FirebaseMessageService)
+
+            if (receivedDeviceId != currentDeviceId) {
+                // Extraer los datos del objeto Note enviado
+                val noteJson =
+                    remoteMessage.data["note"] // Asumiendo que el objeto Note se mandó como "note"
+
+                // Convertir el JSON de vuelta a un objeto Note
+                val note = Gson().fromJson(noteJson, Note::class.java)
+
+                // Mostrar la notificación usando los datos de la nota
+                sendNotificationNewNote(note.title, note.textContent)
             }
         }
     }
@@ -52,6 +73,32 @@ class FirebaseMessageService : FirebaseMessagingService() {
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Android Oreo and above requires a notification channel
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId, "Channel human readable title", NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        notificationManager.notify(0, notificationBuilder.build())
+    }
+
+    private fun sendNotificationNewNote(title: String, messageBody: String) {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val channelId = "Default"
+        val notificationBuilder =
+            NotificationCompat.Builder(this, channelId).setContentTitle(title)
+                .setContentText(messageBody).setSmallIcon(R.drawable.ic_notification)
+                .setAutoCancel(true).setContentIntent(pendingIntent)
+
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId, "Channel human readable title", NotificationManager.IMPORTANCE_DEFAULT

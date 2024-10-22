@@ -1,9 +1,7 @@
 package com.example.jinotas
 
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -13,15 +11,12 @@ import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.Utils
-import com.google.api.client.json.JsonFactory
-import com.google.api.client.json.gson.GsonFactory
-import com.google.auth.oauth2.GoogleCredentials
+import com.example.jinotas.utils.Utils.getAccessToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -33,7 +28,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Collections
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
@@ -60,7 +54,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        var userName = intent.getStringExtra("user")
+        val userNameFrom = intent.getStringExtra("userFrom")
 
         binding.btReturnToNotes.setOnClickListener {
             finish()
@@ -72,11 +66,12 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
             runBlocking {
                 val corrutina = launch {
                     val note = Note(
-                        null,
-                        binding.etTitle.text.toString(),
-                        binding.etNoteContent.text.toString(),
-                        current.toString(),
-                        userName!!
+                        id = null,
+                        title = binding.etTitle.text.toString(),
+                        textContent = binding.etNoteContent.text.toString(),
+                        date= current.toString(),
+                        userFrom = userNameFrom!!,
+                        userTo = null
                     )
                     db = AppDatabase.getDatabase(this@WriteNotesActivity)
                     db.noteDAO().insertNote(note)
@@ -161,22 +156,22 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         }
     }
 
-    suspend fun getAccessToken(context: Context): String {
-        return withContext(Dispatchers.IO) {
-            val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance()
-
-            // Load the service account credentials from assets
-            val inputStream = context.assets.open("notemanager-15064-6b4b2ba119a0.json")
-            val credentials = GoogleCredentials.fromStream(inputStream)
-                .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"))
-
-            // Refresh the token if it's expired
-            credentials.refreshIfExpired()
-
-            // Return the access token
-            credentials.accessToken.tokenValue
-        }
-    }
+//    suspend fun getAccessToken(context: Context): String {
+//        return withContext(Dispatchers.IO) {
+//            val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance()
+//
+//            // Load the service account credentials from assets
+//            val inputStream = context.assets.open("notemanager-15064-6b4b2ba119a0.json")
+//            val credentials = GoogleCredentials.fromStream(inputStream)
+//                .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"))
+//
+//            // Refresh the token if it's expired
+//            credentials.refreshIfExpired()
+//
+//            // Return the access token
+//            credentials.accessToken.tokenValue
+//        }
+//    }
 
     /**
      * Here checks if there's connection to the api
