@@ -168,7 +168,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         // Botones del diálogo
         builder.setPositiveButton("Aceptar") { dialog, _ ->
             // Guardar el nombre de usuario en una variable
-            userName = nameInput.text.toString()
+            userName = nameInput.text.toString().lowercase()
 
             // Guardar el nombre de usuario en SharedPreferences
             val editor = sharedPreferences.edit()

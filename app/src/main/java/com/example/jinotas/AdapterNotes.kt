@@ -136,8 +136,10 @@ class AdapterNotes(
         // Botones del diálogo
         builder.setPositiveButton("Aceptar") { dialog, _ ->
             // Guardar el nombre de usuario en una variable
-            userToSend = nameInput.text.toString()
+            userToSend = nameInput.text.toString().lowercase()
+
             Log.e("userToSend", userToSend)
+
             if (getTokenByUser(userToSend) != null) {
                 runBlocking {
                     val corrutina = launch {
