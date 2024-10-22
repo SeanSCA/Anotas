@@ -138,15 +138,20 @@ class AdapterNotes(
             // Guardar el nombre de usuario en una variable
             userToSend = nameInput.text.toString()
             Log.e("userToSend", userToSend)
-
-            runBlocking {
-                val corrutina = launch {
-                    sendPushNotificationToUserWithNote(userToSend, note, context)
+            if (getTokenByUser(userToSend) != null) {
+                runBlocking {
+                    val corrutina = launch {
+                        sendPushNotificationToUserWithNote(userToSend, note, context)
+                    }
+                    corrutina.join()
                 }
-                corrutina.join()
+                dialog.dismiss()
+            }else{
+                dialog.dismiss()
+                Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
             }
 
-            dialog.dismiss()
+
         }
 
         builder.setNegativeButton("Cancelar") { dialog, _ ->
@@ -157,21 +162,22 @@ class AdapterNotes(
         builder.show()
     }
 
-    private fun getTokenByUser(userName: String): String {
+    private fun getTokenByUser(userName: String): String? {
 //        var userToken: List<ApiTokenUser>? = null
         var userToken: ApiTokenUser? = null
         runBlocking {
             val corrutina = launch {
-                userToken = CrudApi().getTokenByUser(userName)!!
+                userToken = CrudApi().getTokenByUser(userName)
             }
             corrutina.join()
         }
-        return userToken!!.token
+        return userToken?.token
     }
 
     private fun sendPushNotificationToUserWithNote(userName: String, note: Note, context: Context) {
         var accessToken: String = ""
         val tokenReceptor = getTokenByUser(userName)
+
         Log.i("userFrom", note.userFrom)
         CoroutineScope(Dispatchers.Main).launch {
             try {
