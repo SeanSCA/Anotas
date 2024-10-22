@@ -82,7 +82,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                 }
                 corrutina.join()
             }
-            sendPushNotificationToTopic("Tienes una nota nueva")
+//            sendPushNotificationToTopic("Tienes una nota nueva")
             finish()
         }
     }
@@ -100,76 +100,59 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         }
     }
 
-    private fun sendPushNotificationToTopic(message: String) {
-        var accessToken: String = ""
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                accessToken = getAccessToken(this@WriteNotesActivity)
-                Log.e("accessToken", accessToken)
-
-                val deviceId = Utils.getIdDevice(context = this@WriteNotesActivity) // Obtén el ID del dispositivo
-
-                // Define la URL para la API v1 de FCM
-                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
-
-                // Crear el OkHttpClient
-                val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
-
-                // Crear la carga JSON para la API v1
-                val json = JSONObject().apply {
-                    put("message", JSONObject().apply {
-                        put("topic", "global") // Enviar al tópico "global"
-                        put("notification", JSONObject().apply {
-                            put("title", "Note Manager")
-                            put("body", message)
-                        })
-                        // Agregar datos personalizados, incluyendo el deviceId
-                        put("data", JSONObject().apply {
-                            put("deviceId", deviceId) // Agregar el ID del dispositivo
-                        })
-                    })
-                }
-
-                // Crear el cuerpo de la solicitud
-                val body = RequestBody.create(
-                    "application/json; charset=utf-8".toMediaType(), json.toString()
-                )
-
-                // Construir la solicitud con el encabezado de autorización
-                val request = Request.Builder().url(url).post(body).addHeader(
-                    "Authorization", "Bearer $accessToken"
-                ).build()
-
-                // Ejecutar la solicitud de manera asíncrona
-                client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        e.printStackTrace()
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        println("Response: ${response.body?.string()}")
-                    }
-                })
-            } catch (e: Exception) {
-                e.printStackTrace() // Manejar excepciones
-            }
-        }
-    }
-
-//    suspend fun getAccessToken(context: Context): String {
-//        return withContext(Dispatchers.IO) {
-//            val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance()
+//    private fun sendPushNotificationToTopic(message: String) {
+//        var accessToken: String = ""
+//        CoroutineScope(Dispatchers.Main).launch {
+//            try {
+//                accessToken = getAccessToken(this@WriteNotesActivity)
+//                Log.e("accessToken", accessToken)
 //
-//            // Load the service account credentials from assets
-//            val inputStream = context.assets.open("notemanager-15064-6b4b2ba119a0.json")
-//            val credentials = GoogleCredentials.fromStream(inputStream)
-//                .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"))
+//                val deviceId = Utils.getIdDevice(context = this@WriteNotesActivity) // Obtén el ID del dispositivo
 //
-//            // Refresh the token if it's expired
-//            credentials.refreshIfExpired()
+//                // Define la URL para la API v1 de FCM
+//                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
 //
-//            // Return the access token
-//            credentials.accessToken.tokenValue
+//                // Crear el OkHttpClient
+//                val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
+//
+//                // Crear la carga JSON para la API v1
+//                val json = JSONObject().apply {
+//                    put("message", JSONObject().apply {
+//                        put("topic", "global") // Enviar al tópico "global"
+//                        put("notification", JSONObject().apply {
+//                            put("title", "Note Manager")
+//                            put("body", message)
+//                        })
+//                        // Agregar datos personalizados, incluyendo el deviceId
+//                        put("data", JSONObject().apply {
+//                            put("deviceId", deviceId) // Agregar el ID del dispositivo
+//                        })
+//                    })
+//                }
+//
+//                // Crear el cuerpo de la solicitud
+//                val body = RequestBody.create(
+//                    "application/json; charset=utf-8".toMediaType(), json.toString()
+//                )
+//
+//                // Construir la solicitud con el encabezado de autorización
+//                val request = Request.Builder().url(url).post(body).addHeader(
+//                    "Authorization", "Bearer $accessToken"
+//                ).build()
+//
+//                // Ejecutar la solicitud de manera asíncrona
+//                client.newCall(request).enqueue(object : Callback {
+//                    override fun onFailure(call: Call, e: IOException) {
+//                        e.printStackTrace()
+//                    }
+//
+//                    override fun onResponse(call: Call, response: Response) {
+//                        println("Response: ${response.body?.string()}")
+//                    }
+//                })
+//            } catch (e: Exception) {
+//                e.printStackTrace() // Manejar excepciones
+//            }
 //        }
 //    }
 

@@ -117,9 +117,9 @@ class AdapterNotes(
     // Método para mostrar el formulario en un AlertDialog
     private fun showFormDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("Bienvenido")
+        builder.setTitle("¿A quien se lo quieres enviar? ")
 
-        var userToSend: String = ""
+        var userToSend: String
 
         // Crear un Layout para el formulario
         val layout = LinearLayout(context)
@@ -158,19 +158,21 @@ class AdapterNotes(
     }
 
     private fun getTokenByUser(userName: String): String {
-        var userToken: List<ApiTokenUser>? = null
+//        var userToken: List<ApiTokenUser>? = null
+        var userToken: ApiTokenUser? = null
         runBlocking {
             val corrutina = launch {
                 userToken = CrudApi().getTokenByUser(userName)!!
             }
             corrutina.join()
         }
-        return userToken!!.find { it.userName == userName }!!.token
+        return userToken!!.token
     }
 
     private fun sendPushNotificationToUserWithNote(userName: String, note: Note, context: Context) {
         var accessToken: String = ""
         val tokenReceptor = getTokenByUser(userName)
+        Log.i("userFrom", note.userFrom)
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 accessToken = getAccessToken(context)
@@ -192,8 +194,20 @@ class AdapterNotes(
                             put("title", "Nueva Nota")
                             put("body", "${note.userFrom} te ha enviado una nueva nota")
                         })
-                        // Agregar los datos personalizados
-                        put("data", JSONObject(noteJson)) // Agregar el objeto Note como datos
+                        // Agregar los datos personalizados, asegurándose de convertir los valores numéricos a cadenas
+                        put("data", JSONObject().apply {
+                            put("code", note.code.toString())  // Convertir a String
+                            put(
+                                "id", note.id?.toString() ?: ""
+                            )  // Convertir a String o manejar null
+                            put("title", note.title)
+                            put("textContent", note.textContent)
+                            put("date", note.date)
+                            put("userFrom", note.userFrom)
+                            put("userTo", note.userTo ?: "")  // Manejar null
+                            put("createdAt", note.createdAt ?: "")
+                            put("updatedAt", note.updatedAt ?: "")
+                        })
                     })
                 }
 
@@ -222,6 +236,7 @@ class AdapterNotes(
             }
         }
     }
+
 
     /**
      * Here checks if there's connection to the api

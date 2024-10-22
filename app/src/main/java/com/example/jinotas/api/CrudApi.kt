@@ -287,16 +287,31 @@ class CrudApi() : CoroutineScope {
         }
     }
 
-    fun getTokenByUser(user: String): List<ApiTokenUser>? {
+//    fun getAllTokens(): Response<ApiResponseTokenUser>? {
+//        var response: Response<ApiResponseTokenUser>? = null
+//
+//        runBlocking {
+//            val corrutina = launch {
+//                response = getRetrofitNotes()
+//            }
+//            corrutina.join()
+//        }
+//    }
+
+    fun getTokenByUser(user: String): ApiTokenUser? {
         var response: Response<ApiResponseTokenUser>? = null
+        var tokenUserList: List<ApiTokenUser>? = null
+        var tokenUser: ApiTokenUser? = null
         runBlocking {
             val corrutina = launch {
-                response = getRetrofitNotes().create(ApiService::class.java).getTokenByUser()
+                response = getRetrofitUserToken().create(ApiService::class.java).getTokenByUser()
             }
             corrutina.join()
         }
         if (response!!.isSuccessful) {
-            return response!!.body()!!.list
+            tokenUserList = response!!.body()?.list
+            tokenUser = tokenUserList!!.find { it.userName == user }
+            return tokenUser
         } else {
             return null
         }
@@ -306,7 +321,8 @@ class CrudApi() : CoroutineScope {
         var response: Response<ApiTokenUser>? = null
         runBlocking {
             val corrutina = launch {
-                response = getRetrofitUserToken().create(ApiService::class.java).postUserToken(tokenUser)
+                response =
+                    getRetrofitUserToken().create(ApiService::class.java).postUserToken(tokenUser)
             }
             corrutina.join()
         }
