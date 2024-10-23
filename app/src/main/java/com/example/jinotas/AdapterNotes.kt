@@ -200,10 +200,10 @@ class AdapterNotes(
                 val json = JSONObject().apply {
                     put("message", JSONObject().apply {
                         put("token", tokenReceptor) // Enviar a un token específico
-                        put("notification", JSONObject().apply {
-                            put("title", "Nueva Nota")
-                            put("body", "${note.userFrom} te ha enviado una nueva nota")
-                        })
+//                        put("notification", JSONObject().apply {
+//                            put("title", "Nueva Nota")
+//                            put("body", "${note.userFrom} te ha enviado una nueva nota")
+//                        })
                         // Agregar los datos personalizados, asegurándose de convertir los valores numéricos a cadenas
                         put("data", JSONObject().apply {
                             put("code", note.code.toString())  // Convertir a String
@@ -214,12 +214,14 @@ class AdapterNotes(
                             put("textContent", note.textContent)
                             put("date", note.date)
                             put("userFrom", note.userFrom)
-                            put("userTo", note.userTo ?: "")  // Manejar null
+                            put("userTo", userName)  // Manejar null
                             put("createdAt", note.createdAt ?: "")
                             put("updatedAt", note.updatedAt ?: "")
                         })
                     })
                 }
+
+                updateNoteUserTo(note, userName, context)
 
                 // Crear el cuerpo de la solicitud
                 val body = RequestBody.create(
@@ -241,7 +243,6 @@ class AdapterNotes(
                         println("Response: ${response.body?.string()}")
                     }
                 })
-                updateNoteUserTo(note, userName, context)
             } catch (e: Exception) {
                 e.printStackTrace() // Manejar excepciones
             }
