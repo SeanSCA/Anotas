@@ -69,7 +69,7 @@ class AdapterNotes(
             val intent = Intent(context, ShowNoteActivity::class.java)
             val sharedPreferences: SharedPreferences =
                 context.getSharedPreferences("MyPrefsFile", Context.MODE_PRIVATE)
-            val userNameFrom = sharedPreferences.getString("userName", "")
+            val userNameFrom = sharedPreferences.getString("userFrom", "")
             intent.putExtra("code", list[position].code)
             intent.putExtra("userFrom", userNameFrom)
             startActivity(context, intent, null)
@@ -94,6 +94,8 @@ class AdapterNotes(
 
                     R.id.action_send -> if (tryConnection()) {
                         showFormDialog(context, list[position])
+                    } else {
+                        Toast.makeText(context, "No tienes conexión", Toast.LENGTH_LONG).show()
                     }
                 }
                 true
@@ -148,7 +150,7 @@ class AdapterNotes(
                     corrutina.join()
                 }
                 dialog.dismiss()
-            }else{
+            } else {
                 dialog.dismiss()
                 Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
             }
@@ -239,12 +241,25 @@ class AdapterNotes(
                         println("Response: ${response.body?.string()}")
                     }
                 })
+                updateNoteUserTo(note, userName, context)
             } catch (e: Exception) {
                 e.printStackTrace() // Manejar excepciones
             }
         }
     }
 
+    private fun updateNoteUserTo(note: Note, userTo: String, context: Context) {
+        note.userTo = userTo
+        runBlocking {
+            val corrutina = launch {
+                db = AppDatabase.getDatabase(context)
+                db.noteDAO().updateNote(note)
+                CrudApi().patchNote(note)
+                Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
+            }
+            corrutina.join()
+        }
+    }
 
     /**
      * Here checks if there's connection to the api

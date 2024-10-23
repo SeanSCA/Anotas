@@ -15,6 +15,8 @@ import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class FirebaseMessageService : FirebaseMessagingService() {
 
@@ -38,6 +40,12 @@ class FirebaseMessageService : FirebaseMessagingService() {
                     updatedAt = remoteMessage.data["updatedAt"]
                 )
 
+                runBlocking {
+                    val corrutina = launch {
+
+                    }
+                    corrutina.join()
+                }
                 // Mostrar la notificación usando los datos de la nota
                 sendNotificationNewNote(note.title, note.textContent)
             }
