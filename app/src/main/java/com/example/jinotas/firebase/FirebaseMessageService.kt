@@ -5,25 +5,40 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Handler
-import android.os.Looper
+import android.content.SharedPreferences
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import com.example.jinotas.AdapterNotes
 import com.example.jinotas.MainActivity
+import com.example.jinotas.NotesFragment
 import com.example.jinotas.R
+import com.example.jinotas.api.CrudApi
+import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 
 
-class FirebaseMessageService : FirebaseMessagingService() {
+class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
     private lateinit var db: AppDatabase
+    private lateinit var adapterNotes: AdapterNotes
+    private lateinit var fragment: NotesFragment
+    private lateinit var newNotes: ArrayList<Note>
+    private val activity = MainActivity.instance
+
+    private var job: Job = Job()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         db = AppDatabase.getDatabase(this@FirebaseMessageService)
@@ -46,10 +61,6 @@ class FirebaseMessageService : FirebaseMessagingService() {
                     updatedAt = remoteMessage.data["updatedAt"]
                 )
 
-                // Si la app está en primer plano, mostrar la notificación manualmente
-//                if (Utils.isAppInForeground(this)) {
-//                    sendNotificationNewNote(note.title, note.textContent)
-//                }
                 sendNotification(note.title, "${note.userFrom} te ha enviado una nueva nota")
                 handleReceivedNote(note)
             }
@@ -60,26 +71,53 @@ class FirebaseMessageService : FirebaseMessagingService() {
         // Aquí puedes manejar lo que quieres hacer con la nota
         // Por ejemplo, actualizar la UI si la app está en primer plano, guardar la nota, etc.
         Log.i("FirebaseMessageService", "Nota recibida: $note")
-        runBlocking {
-            val corrutina = launch {
-                db.noteDAO().insertNote(note)
-            }
-            corrutina.join()
-        }
 
-        Handler(Looper.getMainLooper()).post {
-            Toast.makeText(
-                this@FirebaseMessageService,
-                "Has recibido una nota de ${note.userFrom}",
-                Toast.LENGTH_LONG
-            ).show()
+        // Inserta la nota en la base de datos en un hilo de IO
+        CoroutineScope(Dispatchers.IO).launch {
+            db.noteDAO().insertNote(note)
+            newNotes = db.noteDAO().getNotesList() as ArrayList<Note>
+
+            // Actualizar la UI en el hilo principal
+            withContext(Dispatchers.Main) {
+                if (activity != null) {
+                    val fragment =
+                        activity.supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment
+                    fragment?.let {
+                        // Llamar a loadNotes si existe
+                        it.loadNotes()
+
+                        // Actualizar el Adapter en el hilo principal
+                        adapterNotes = AdapterNotes(newNotes, coroutineContext)
+                        adapterNotes.updateList(newNotes)
+                    }
+                }
+
+                // Mostrar el Toast en el hilo principal
+                Toast.makeText(
+                    this@FirebaseMessageService,
+                    "Has recibido una nota de ${note.userFrom}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
+
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         val db: AppDatabase = AppDatabase.getDatabase(this@FirebaseMessageService)
-        db.tokenDAO().updateToken(token = Token(token = token))
+        CoroutineScope(Dispatchers.IO).launch {
+            db.tokenDAO().updateToken(token = Token(token = token))
+            val sharedPreferences: SharedPreferences =
+                this@FirebaseMessageService.getSharedPreferences(
+                    "MyPrefsFile", Context.MODE_PRIVATE
+                )
+            val userNameFrom = sharedPreferences.getString("userFrom", null) ?: ""
+            if (userNameFrom.isNotEmpty()) {
+                val actualToken = ApiTokenUser(userName = userNameFrom!!, token = token)
+                CrudApi().patchUserToken(actualToken)
+            }
+        }
         Log.i("OnNewToken", "New Token -> $token")
     }
 
@@ -91,12 +129,10 @@ class FirebaseMessageService : FirebaseMessagingService() {
         )
 
         val channelId = "Default"
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
+        val notificationBuilder =
+            NotificationCompat.Builder(this, channelId).setContentTitle(title).setContentText(body)
+                .setSmallIcon(R.drawable.ic_notification).setAutoCancel(true)
+                .setContentIntent(pendingIntent)
 
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
