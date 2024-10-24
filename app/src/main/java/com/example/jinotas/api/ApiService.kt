@@ -35,4 +35,7 @@ interface ApiService {
 
     @POST("?")
     suspend fun postUserToken(@Body tokenUser: ApiTokenUser): Response<ApiTokenUser>
+
+    @PATCH("?/")
+    suspend fun putUserToken(@Body userToken: ApiTokenUser): Response<ApiTokenUser>
 }

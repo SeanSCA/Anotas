@@ -333,4 +333,21 @@ class CrudApi() : CoroutineScope {
         }
     }
 
+    fun patchUserToken(userTokenUpdate: ApiTokenUser): ApiTokenUser? {
+        var response: Response<ApiTokenUser>? = null
+        runBlocking {
+            val corrutina = launch {
+                Log.e("id", userTokenUpdate.token)
+                Log.e("code", userTokenUpdate.userName)
+                response = getRetrofitUserToken().create(ApiService::class.java).putUserToken(userTokenUpdate)
+            }
+            corrutina.join()
+        }
+        return if (response!!.isSuccessful) {
+            response!!.body()!!
+        } else {
+            null
+        }
+    }
+
 }
