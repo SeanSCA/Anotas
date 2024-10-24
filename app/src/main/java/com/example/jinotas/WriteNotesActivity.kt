@@ -1,9 +1,7 @@
 package com.example.jinotas
 
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -13,15 +11,12 @@ import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.Utils
-import com.google.api.client.json.JsonFactory
-import com.google.api.client.json.gson.GsonFactory
-import com.google.auth.oauth2.GoogleCredentials
+import com.example.jinotas.utils.Utils.getAccessToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -33,7 +28,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Collections
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
@@ -60,7 +54,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        var userName = intent.getStringExtra("user")
+        val userNameFrom = intent.getStringExtra("userFrom")
 
         binding.btReturnToNotes.setOnClickListener {
             finish()
@@ -72,11 +66,12 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
             runBlocking {
                 val corrutina = launch {
                     val note = Note(
-                        null,
-                        binding.etTitle.text.toString(),
-                        binding.etNoteContent.text.toString(),
-                        current.toString(),
-                        userName!!
+                        id = null,
+                        title = binding.etTitle.text.toString(),
+                        textContent = binding.etNoteContent.text.toString(),
+                        date= current.toString(),
+                        userFrom = userNameFrom!!,
+                        userTo = null
                     )
                     db = AppDatabase.getDatabase(this@WriteNotesActivity)
                     db.noteDAO().insertNote(note)
@@ -87,7 +82,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
                 }
                 corrutina.join()
             }
-            sendPushNotificationToTopic("Tienes una nota nueva")
+//            sendPushNotificationToTopic("Tienes una nota nueva")
             finish()
         }
     }
@@ -105,78 +100,61 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope {
         }
     }
 
-    private fun sendPushNotificationToTopic(message: String) {
-        var accessToken: String = ""
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                accessToken = getAccessToken(this@WriteNotesActivity)
-                Log.e("accessToken", accessToken)
-
-                val deviceId = Utils.getIdDevice(context = this@WriteNotesActivity) // Obtén el ID del dispositivo
-
-                // Define la URL para la API v1 de FCM
-                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
-
-                // Crear el OkHttpClient
-                val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
-
-                // Crear la carga JSON para la API v1
-                val json = JSONObject().apply {
-                    put("message", JSONObject().apply {
-                        put("topic", "global") // Enviar al tópico "global"
-                        put("notification", JSONObject().apply {
-                            put("title", "Note Manager")
-                            put("body", message)
-                        })
-                        // Agregar datos personalizados, incluyendo el deviceId
-                        put("data", JSONObject().apply {
-                            put("deviceId", deviceId) // Agregar el ID del dispositivo
-                        })
-                    })
-                }
-
-                // Crear el cuerpo de la solicitud
-                val body = RequestBody.create(
-                    "application/json; charset=utf-8".toMediaType(), json.toString()
-                )
-
-                // Construir la solicitud con el encabezado de autorización
-                val request = Request.Builder().url(url).post(body).addHeader(
-                    "Authorization", "Bearer $accessToken"
-                ).build()
-
-                // Ejecutar la solicitud de manera asíncrona
-                client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        e.printStackTrace()
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        println("Response: ${response.body?.string()}")
-                    }
-                })
-            } catch (e: Exception) {
-                e.printStackTrace() // Manejar excepciones
-            }
-        }
-    }
-
-    suspend fun getAccessToken(context: Context): String {
-        return withContext(Dispatchers.IO) {
-            val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance()
-
-            // Load the service account credentials from assets
-            val inputStream = context.assets.open("notemanager-15064-6b4b2ba119a0.json")
-            val credentials = GoogleCredentials.fromStream(inputStream)
-                .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"))
-
-            // Refresh the token if it's expired
-            credentials.refreshIfExpired()
-
-            // Return the access token
-            credentials.accessToken.tokenValue
-        }
-    }
+//    private fun sendPushNotificationToTopic(message: String) {
+//        var accessToken: String = ""
+//        CoroutineScope(Dispatchers.Main).launch {
+//            try {
+//                accessToken = getAccessToken(this@WriteNotesActivity)
+//                Log.e("accessToken", accessToken)
+//
+//                val deviceId = Utils.getIdDevice(context = this@WriteNotesActivity) // Obtén el ID del dispositivo
+//
+//                // Define la URL para la API v1 de FCM
+//                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
+//
+//                // Crear el OkHttpClient
+//                val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
+//
+//                // Crear la carga JSON para la API v1
+//                val json = JSONObject().apply {
+//                    put("message", JSONObject().apply {
+//                        put("topic", "global") // Enviar al tópico "global"
+//                        put("notification", JSONObject().apply {
+//                            put("title", "Note Manager")
+//                            put("body", message)
+//                        })
+//                        // Agregar datos personalizados, incluyendo el deviceId
+//                        put("data", JSONObject().apply {
+//                            put("deviceId", deviceId) // Agregar el ID del dispositivo
+//                        })
+//                    })
+//                }
+//
+//                // Crear el cuerpo de la solicitud
+//                val body = RequestBody.create(
+//                    "application/json; charset=utf-8".toMediaType(), json.toString()
+//                )
+//
+//                // Construir la solicitud con el encabezado de autorización
+//                val request = Request.Builder().url(url).post(body).addHeader(
+//                    "Authorization", "Bearer $accessToken"
+//                ).build()
+//
+//                // Ejecutar la solicitud de manera asíncrona
+//                client.newCall(request).enqueue(object : Callback {
+//                    override fun onFailure(call: Call, e: IOException) {
+//                        e.printStackTrace()
+//                    }
+//
+//                    override fun onResponse(call: Call, response: Response) {
+//                        println("Response: ${response.body?.string()}")
+//                    }
+//                })
+//            } catch (e: Exception) {
+//                e.printStackTrace() // Manejar excepciones
+//            }
+//        }
+//    }
 
     /**
      * Here checks if there's connection to the api

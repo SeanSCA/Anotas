@@ -25,13 +25,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.jinotas.api.CrudApi
+import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
-import com.google.api.client.json.JsonFactory
-import com.google.api.client.json.gson.GsonFactory
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -41,18 +39,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.Response
-import org.json.JSONObject
-import java.io.IOException
-import java.util.Collections
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
@@ -78,6 +64,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
+    companion object {
+        var instance: MainActivity? = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        instance = null
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +80,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         setContentView(binding.root)
 
         Firebase.initialize(this)
+
+        instance = this
 
 //        // Solicitar permisos de notificación si no están concedidos
         if (ActivityCompat.checkSelfPermission(
@@ -99,7 +96,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
             val intent = Intent(this, WriteNotesActivity::class.java)
-            intent.putExtra("user", userName)
+            intent.putExtra("userFrom", userName)
             startActivity(intent)
         }
 
@@ -126,6 +123,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     val token = task.result
                     // Guarda este token en tu base de datos
                     db.tokenDAO().insertNote(Token(token = token))
+
                     Log.e("Token del dispositivo:", token)
                 }
             }
@@ -139,7 +137,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 }
         } else {
             // Recuperar el nombre del usuario almacenado en SharedPreferences
-            userName = sharedPreferences.getString("userName", "")
+            userName = sharedPreferences.getString("userFrom", "")
             // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
             Log.e("userNameGuardado", userName!!)
 
@@ -166,15 +164,19 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         // Botones del diálogo
         builder.setPositiveButton("Aceptar") { dialog, _ ->
             // Guardar el nombre de usuario en una variable
-            userName = nameInput.text.toString()
+            userName = nameInput.text.toString().lowercase()
 
             // Guardar el nombre de usuario en SharedPreferences
             val editor = sharedPreferences.edit()
             editor.putBoolean("isFirstTime", false)  // Marcar que ya no es la primera vez
-            editor.putString("userName", userName)  // Guardar el nombre de usuario
+            editor.putString("userFrom", userName)  // Guardar el nombre de usuario
             editor.apply()
 
             // Aquí puedes usar la variable userName en la lógica que necesites
+            val userToken: ApiTokenUser
+            val token = db.tokenDAO().getToken()
+            userToken = ApiTokenUser(userName = userName!!, token = token)
+            CrudApi().postTokenByUser(userToken)
             dialog.dismiss()
         }
 

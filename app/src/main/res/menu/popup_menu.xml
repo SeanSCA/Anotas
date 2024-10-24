@@ -5,4 +5,9 @@
         android:id="@+id/action_eliminar"
         android:title="Eliminar nota"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_send"
+        android:title="Enviar nota"
+        app:showAsAction="never"/>
 </menu>
