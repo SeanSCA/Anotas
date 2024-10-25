@@ -30,6 +30,7 @@ import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
+import com.example.jinotas.utils.Utils.lastClickTime
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -60,6 +61,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     //Notifications
     private val notificationPermissionCode = 250
+
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -95,17 +97,29 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
-            val intent = Intent(this, WriteNotesActivity::class.java)
-            intent.putExtra("userFrom", userName)
-            startActivity(intent)
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastClickTime > 1000) { // Set the minimum click interval to 1 second
+                val intent = Intent(this, WriteNotesActivity::class.java)
+                intent.putExtra("userFrom", userName)
+                startActivity(intent)
+            }
+            lastClickTime = currentTime
         }
 
         binding.btSearchNote.setOnClickListener {
-            showPopupMenuSearch(this@MainActivity, binding.btSearchNote)
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastClickTime > 1000) { // Set the minimum click interval to 1 second
+                showPopupMenuSearch(this@MainActivity, binding.btSearchNote)
+            }
+            lastClickTime = currentTime
         }
 
         binding.btOrderBy.setOnClickListener {
-            showPopupMenuOrderBy(binding.btOrderBy)
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastClickTime > 1000) { // Set the minimum click interval to 1 second
+                showPopupMenuOrderBy(binding.btOrderBy)
+            }
+            lastClickTime = currentTime
         }
 
         // Acceder a las SharedPreferences

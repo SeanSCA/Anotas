@@ -93,7 +93,8 @@ class AdapterNotes(
                     }
 
                     R.id.action_send -> if (tryConnection()) {
-                        showFormDialog(context, list[position])
+//                        showFormDialog(context, list[position])
+                        showNestedAlertDialog(context, note = list[position])
                     } else {
                         Toast.makeText(context, "No tienes conexión", Toast.LENGTH_LONG).show()
                     }
@@ -116,11 +117,9 @@ class AdapterNotes(
 
     override fun getItemCount() = list.size
 
-    // Método para mostrar el formulario en un AlertDialog
-    private fun showFormDialog(context: Context, note: Note) {
+    fun showNestedAlertDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("¿A quien se lo quieres enviar? ")
-
         var userToSend: String
 
         // Crear un Layout para el formulario
@@ -131,40 +130,100 @@ class AdapterNotes(
         val nameInput = EditText(context)
         nameInput.hint = "Nombre de usuario"
         layout.addView(nameInput)
-
-        // Configurar el layout dentro del diálogo
         builder.setView(layout)
 
-        // Botones del diálogo
-        builder.setPositiveButton("Aceptar") { dialog, _ ->
-            // Guardar el nombre de usuario en una variable
-            userToSend = nameInput.text.toString().lowercase()
+        builder.setTitle("¿A quien se lo quieres enviar?")
+            .setPositiveButton("Aceptar") { _, _ ->
+                // Acción al pulsar "Aceptar"
+                // Guardar el nombre de usuario en una variable
+                userToSend = nameInput.text.toString().lowercase()
 
-            Log.e("userToSend", userToSend)
+                Log.e("userToSend", userToSend)
 
-            if (getTokenByUser(userToSend) != null) {
-                runBlocking {
-                    val corrutina = launch {
-                        sendPushNotificationToUserWithNote(userToSend, note, context)
+                if (getTokenByUser(userToSend) != null) {
+                    runBlocking {
+                        val corrutina = launch {
+                            sendPushNotificationToUserWithNote(userToSend, note, context)
+                        }
+                        corrutina.join()
                     }
-                    corrutina.join()
+                } else {
+                    Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
                 }
-                dialog.dismiss()
-            } else {
-                dialog.dismiss()
-                Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
             }
-
-
-        }
-
-        builder.setNegativeButton("Cancelar") { dialog, _ ->
-            dialog.cancel()
-        }
-
-        // Mostrar el diálogo
-        builder.show()
+            .setNegativeButton("Cancelar") { _, _ ->
+                // Mostrar el segundo diálogo
+                showConfirmationDialog(context, note)
+            }
+            .show()
     }
+
+    fun showConfirmationDialog(context: Context, note: Note) {
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Confirmación")
+            .setMessage("¿Estás seguro de que quieres cancelar?")
+            .setPositiveButton("Sí") { _, _ ->
+                // Cerrar ambos diálogos
+                // ... (Código para cerrar ambos diálogos, si es necesario)
+                Toast.makeText(context, "Has cancelado", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("No") { _, _ ->
+                // Cerrar el segundo diálogo y volver al primero
+                showNestedAlertDialog(context, note)
+//                Toast.makeText(context, "Has cambiado de opinión", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
+    // Método para mostrar el formulario en un AlertDialog
+//    private fun showFormDialog(context: Context, note: Note) {
+//        val builder = AlertDialog.Builder(context)
+//        builder.setTitle("¿A quien se lo quieres enviar? ")
+//
+//        var userToSend: String
+//
+//        // Crear un Layout para el formulario
+//        val layout = LinearLayout(context)
+//        layout.orientation = LinearLayout.VERTICAL
+//
+//        // Crear el campo del formulario
+//        val nameInput = EditText(context)
+//        nameInput.hint = "Nombre de usuario"
+//        layout.addView(nameInput)
+//
+//        // Configurar el layout dentro del diálogo
+//        builder.setView(layout)
+//
+//        // Botones del diálogo
+//        builder.setPositiveButton("Aceptar") { dialog, _ ->
+//            // Guardar el nombre de usuario en una variable
+//            userToSend = nameInput.text.toString().lowercase()
+//
+//            Log.e("userToSend", userToSend)
+//
+//            if (getTokenByUser(userToSend) != null) {
+//                runBlocking {
+//                    val corrutina = launch {
+//                        sendPushNotificationToUserWithNote(userToSend, note, context)
+//                    }
+//                    corrutina.join()
+//                }
+//                dialog.dismiss()
+//            } else {
+//                dialog.dismiss()
+//                Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
+//            }
+//
+//
+//        }
+//
+//        builder.setNegativeButton("Cancelar") { dialog, _ ->
+//            dialog.cancel()
+//        }
+//
+//        // Mostrar el diálogo
+//        builder.show()
+//    }
 
     private fun getTokenByUser(userName: String): String? {
 //        var userToken: List<ApiTokenUser>? = null

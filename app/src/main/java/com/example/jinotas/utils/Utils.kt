@@ -12,6 +12,11 @@ import kotlinx.coroutines.withContext
 import java.util.Collections
 
 object Utils {
+    var lastClickTime: Long = 0
+//    fun lastClickTime(): Long {
+//        return 0
+//    }
+
     // Método para obtener el ID del dispositivo
     fun getIdDevice(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
