@@ -66,6 +66,7 @@ class AdapterNotes(
             val resultContent = content.substring(startIndex = 0, endIndex = content.length)
             holder.notesText.text = resultContent
         }
+
         holder.titleText.text = list[position].title
         holder.itemView.setOnClickListener {
             val intent = Intent(context, ShowNoteActivity::class.java)
@@ -82,18 +83,7 @@ class AdapterNotes(
             popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
             popupMenu.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
-                    R.id.action_eliminar -> runBlocking {
-                        val corrutina = launch {
-                            db = AppDatabase.getDatabase(context)
-                            val note =
-                                list[position].code.let { it1 -> db.noteDAO().getNoteByCode(it1) }
-                            CrudApi().deleteNote(note.id!!)
-                            db.noteDAO().deleteNote(note)
-                            updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
-                        }
-                        corrutina.join()
-                    }
-
+                    R.id.action_eliminar -> deleteNoteDBApi(context, list[position])
                     R.id.action_send -> if (tryConnection()) {
 //                        showFormDialog(context, list[position])
                         showNestedAlertDialog(context, note = list[position])
@@ -113,13 +103,29 @@ class AdapterNotes(
         notifyDataSetChanged()
     }
 
+    fun deleteNoteDBApi(context: Context, note: Note) {
+        runBlocking {
+            db = AppDatabase.getDatabase(context)
+
+            // Llamamos a la transacción de borrado en la base de datos
+            try {
+                val existingNote = note.code.let { it1 -> db.noteDAO().getNoteByCode(it1) }
+                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota
+                db.noteDAO()
+                    .deleteNoteWithTransaction(existingNote)  // Usamos la función transaccional
+                updateList(db.noteDAO().getNotesList() as ArrayList<Note>)  // Actualizamos la lista
+            } catch (e: Exception) {
+                // Manejo de errores en caso de fallo de la transacción
+                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+            }
+        }
+    }
+
     private fun Print(context: Context, text: String) {
         return Toast.makeText(context, text, Toast.LENGTH_LONG).show()
     }
 
     override fun getItemCount() = list.size
-
-
 
     fun showNestedAlertDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
@@ -136,8 +142,7 @@ class AdapterNotes(
         layout.addView(nameInput)
         builder.setView(layout)
 
-        builder.setTitle("¿A quien se lo quieres enviar?")
-            .setPositiveButton("Aceptar") { _, _ ->
+        builder.setTitle("¿A quien se lo quieres enviar?").setPositiveButton("Aceptar") { _, _ ->
                 // Acción al pulsar "Aceptar"
                 // Guardar el nombre de usuario en una variable
                 userToSend = nameInput.text.toString().lowercase()
@@ -152,31 +157,27 @@ class AdapterNotes(
                         corrutina.join()
                     }
                 } else {
-                    Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG)
+                        .show()
                 }
-            }
-            .setNegativeButton("Cancelar") { _, _ ->
+            }.setNegativeButton("Cancelar") { _, _ ->
                 // Mostrar el segundo diálogo
                 showConfirmationDialog(context, note)
-            }
-            .show()
+            }.show()
     }
 
     fun showConfirmationDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("Confirmación")
-            .setMessage("¿Estás seguro de que quieres cancelar?")
+        builder.setTitle("Confirmación").setMessage("¿Estás seguro de que quieres cancelar?")
             .setPositiveButton("Sí") { _, _ ->
                 // Cerrar ambos diálogos
                 // ... (Código para cerrar ambos diálogos, si es necesario)
                 Toast.makeText(context, "Has cancelado", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("No") { _, _ ->
+            }.setNegativeButton("No") { _, _ ->
                 // Cerrar el segundo diálogo y volver al primero
                 showNestedAlertDialog(context, note)
 //                Toast.makeText(context, "Has cambiado de opinión", Toast.LENGTH_SHORT).show()
-            }
-            .show()
+            }.show()
     }
 
     // Método para mostrar el formulario en un AlertDialog

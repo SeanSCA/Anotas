@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 
 @Dao
@@ -35,4 +36,13 @@ interface NoteDAO {
 
     @Update
     fun updateNote(note: Note)
+
+    @Transaction
+    suspend fun deleteNoteWithTransaction(note: Note) {
+        try {
+            deleteNote(note)
+        } catch (e: Exception) {
+            throw Exception("Error eliminando la nota: ${e.message}")
+        }
+    }
 }

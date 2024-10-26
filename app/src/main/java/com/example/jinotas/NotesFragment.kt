@@ -52,47 +52,45 @@ class NotesFragment : Fragment(), CoroutineScope {
                 viewHolder: RecyclerView.ViewHolder,
                 target: RecyclerView.ViewHolder
             ): Boolean {
-                // this method is called
-                // when the item is moved.
                 return false
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                // this method is called when we swipe our item to right direction.
-                // on below line we are getting the item at a particular position.
-                val deletedCourse: Note =
-                    notesList[viewHolder.adapterPosition]
-
-                // below line is to get the position
-                // of the item at that position.
                 val position = viewHolder.adapterPosition
+                val deletedNote: Note = notesList[position]
 
-                // this method is called when item is swiped.
-                // below line is to remove item from our array list.
-                notesList.removeAt(viewHolder.adapterPosition)
+                // Eliminar de la lista y actualizar el RecyclerView
+                notesList.removeAt(position)
+                adapterNotes.notifyItemRemoved(position)
 
-                // below line is to notify our item is removed from adapter.
-                adapterNotes.notifyItemRemoved(viewHolder.adapterPosition)
+                // Mostrar Snackbar con opción de "Deshacer"
+                val snackbar = Snackbar.make(
+                    binding.rvNotes,
+                    "Has eliminado la nota ${deletedNote.title}",
+                    Snackbar.LENGTH_LONG
+                )
 
-                // below line is to display our snackbar with action.
-                binding.rvNotes.layoutManager = LinearLayoutManager(context)
+                snackbar.setAction("Deshacer") {
+                    // Agregar nuevamente la nota en la posición original
+                    notesList.add(position, deletedNote)
+                    adapterNotes.notifyItemInserted(position)
+                }
 
-                Snackbar.make(binding.rvNotes, "Deleted " + deletedCourse.title, Snackbar.LENGTH_LONG)
-                    .setAction(
-                        "Undo",
-                        View.OnClickListener {
-                            // adding on click listener to our action of snack bar.
-                            // below line is to add our item to array list with a position.
-                            notesList.add(position, deletedCourse)
+                snackbar.addCallback(object : Snackbar.Callback() {
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
+                        if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                            adapterNotes.deleteNoteDBApi(
+                                this@NotesFragment.requireContext(), deletedNote
+                            )
+                        }
+                    }
+                })
 
-                            // below line is to notify item is
-                            // added to our adapter class.
-                            adapterNotes.notifyItemInserted(position)
-                        }).show()
+                snackbar.show()
             }
-            // at last we are adding this
-            // to our recycler view.
         }).attachToRecyclerView(binding.rvNotes)
+
 
         return binding.root
     }
