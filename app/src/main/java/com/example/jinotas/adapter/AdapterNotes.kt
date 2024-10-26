@@ -1,4 +1,4 @@
-package com.example.jinotas
+package com.example.jinotas.adapter
 
 import android.app.AlertDialog
 import android.content.Context
@@ -15,6 +15,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.example.jinotas.R
+import com.example.jinotas.ShowNoteActivity
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
@@ -116,6 +118,8 @@ class AdapterNotes(
     }
 
     override fun getItemCount() = list.size
+
+
 
     fun showNestedAlertDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
