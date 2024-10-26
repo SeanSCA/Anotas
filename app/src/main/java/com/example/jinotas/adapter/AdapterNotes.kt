@@ -78,24 +78,24 @@ class AdapterNotes(
             startActivity(context, intent, null)
         }
 
-        holder.itemView.setOnLongClickListener {
-            val popupMenu = PopupMenu(context, holder.itemView)
-            popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
-            popupMenu.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    R.id.action_eliminar -> deleteNoteDBApi(context, list[position])
-                    R.id.action_send -> if (tryConnection()) {
-//                        showFormDialog(context, list[position])
-                        showNestedAlertDialog(context, note = list[position])
-                    } else {
-                        Toast.makeText(context, "No tienes conexión", Toast.LENGTH_LONG).show()
-                    }
-                }
-                true
-            }
-            popupMenu.show()
-            true
-        }
+//        holder.itemView.setOnLongClickListener {
+//            val popupMenu = PopupMenu(context, holder.itemView)
+//            popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
+//            popupMenu.setOnMenuItemClickListener { item ->
+//                when (item.itemId) {
+//                    R.id.action_eliminar -> deleteNoteDBApi(context, list[position])
+//                    R.id.action_send -> if (tryConnection()) {
+////                        showFormDialog(context, list[position])
+//                        showNestedAlertDialog(context, note = list[position])
+//                    } else {
+//                        Toast.makeText(context, "No tienes conexión", Toast.LENGTH_LONG).show()
+//                    }
+//                }
+//                true
+//            }
+//            popupMenu.show()
+//            true
+//        }
     }
 
     fun updateList(newList: ArrayList<Note>) {
@@ -119,6 +119,10 @@ class AdapterNotes(
                 Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
             }
         }
+    }
+
+    fun sendNote(context: Context, note: Note){
+        showNestedAlertDialog(context, note = note)
     }
 
     private fun Print(context: Context, text: String) {
