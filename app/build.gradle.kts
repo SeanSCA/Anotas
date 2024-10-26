@@ -137,6 +137,8 @@ dependencies {
     implementation("com.google.api-client:google-api-client:1.32.1") // Latest version may vary
 
     implementation("com.google.api-client:google-api-client-gson:1.32.1") // For JSON support
+
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
 }
 kapt {
     correctErrorTypes = true
