@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.databinding.ActivityMainBinding

@@ -9,7 +9,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import com.example.jinotas.AdapterNotes
+import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.MainActivity
 import com.example.jinotas.NotesFragment
 import com.example.jinotas.R

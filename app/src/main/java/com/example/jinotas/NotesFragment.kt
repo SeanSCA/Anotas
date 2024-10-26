@@ -3,16 +3,22 @@ package com.example.jinotas
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +47,70 @@ class NotesFragment : Fragment(), CoroutineScope {
     ): View? {
         binding = FragmentNotesBinding.inflate(inflater)
         loadNotes()
+
+        ItemTouchHelper(object :
+            ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val note: Note = notesList[position]
+
+                if (direction == ItemTouchHelper.LEFT) {
+                    // Eliminar de la lista y actualizar el RecyclerView
+                    notesList.removeAt(position)
+                    adapterNotes.notifyItemRemoved(position)
+
+                    // Mostrar Snackbar con opción de "Deshacer"
+                    val snackbar = Snackbar.make(
+                        binding.rvNotes,
+                        "Has eliminado la nota ${note.title}",
+                        Snackbar.LENGTH_LONG
+                    )
+
+                    snackbar.setAction("Deshacer") {
+                        // Agregar nuevamente la nota en la posición original
+                        notesList.add(position, note)
+                        adapterNotes.notifyItemInserted(position)
+                    }
+
+                    snackbar.addCallback(object : Snackbar.Callback() {
+                        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                            // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
+                            if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                                adapterNotes.deleteNoteDBApi(
+                                    this@NotesFragment.requireContext(), note
+                                )
+                            }
+                        }
+                    })
+
+                    snackbar.show()
+                } else if (direction == ItemTouchHelper.RIGHT) {
+                    Log.e("tamañoListaAntes", notesList.size.toString())
+                    notesList.removeAt(position)
+                    adapterNotes.notifyItemRemoved(position)
+                    notesList.add(position, note)
+                    adapterNotes.notifyItemInserted(position)
+//                    Toast.makeText(
+//                        this@NotesFragment.requireContext(),
+//                        "Has deslizado a la derecha",
+//                        Toast.LENGTH_LONG
+//                    ).show()
+                        adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
+                    Log.e("tamañoListaDespues", notesList.size.toString())
+                }
+
+            }
+        }).attachToRecyclerView(binding.rvNotes)
+
+
         return binding.root
     }
 
