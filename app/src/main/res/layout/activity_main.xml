@@ -32,13 +32,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title" />
 
-
     <LinearLayout
         android:id="@+id/optionsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintBottom_toTopOf="@+id/fragment_container_view"
+        app:layout_constraintBottom_toTopOf="@+id/swipe_refresh_layout"
         app:layout_constraintTop_toBottomOf="@+id/notesCounter">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -55,39 +54,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <!--<ImageButton
-                android:id="@+id/btDownloadNotesApi"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="45dp"
-                android:background="@drawable/download_notes_api_roundcorner"
-                android:contentDescription="Botón para descargar notas de la api"
-                app:layout_constraintBottom_toBottomOf="@+id/btCreateNote"
-                app:layout_constraintStart_toEndOf="@+id/btCreateNote"
-                app:layout_constraintTop_toTopOf="@+id/btCreateNote" />
-
-            <ImageButton
-                android:id="@+id/btUploadNotesApi"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="45dp"
-                android:contentDescription="Subir notas a la api"
-                android:background="@drawable/upload_notes_api_roundcorner"
-                app:layout_constraintBottom_toBottomOf="@+id/btDownloadNotesApi"
-                app:layout_constraintStart_toEndOf="@+id/btDownloadNotesApi"
-                app:layout_constraintTop_toTopOf="@+id/btDownloadNotesApi" />
-
-            <ImageButton
-                android:id="@+id/btDeleteApi"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="45dp"
-                android:background="@drawable/delete_api_roundcorner"
-                android:contentDescription="Eliminar uno o todas las notas de la api"
-                app:layout_constraintBottom_toBottomOf="@+id/btUploadNotesApi"
-                app:layout_constraintStart_toEndOf="@+id/btUploadNotesApi"
-                app:layout_constraintTop_toTopOf="@+id/btUploadNotesApi" />
--->
             <ImageButton
                 android:id="@+id/btSearchNote"
                 android:layout_width="48dp"
@@ -112,13 +78,24 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragment_container_view"
-        android:name="com.example.jinotas.NotesFragment"
-        android:layout_width="match_parent"
-        android:layout_height="600dp"
-        android:layout_margin="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <!-- Agrega el SwipeRefreshLayout envolviendo el FragmentContainerView -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         app:layout_constraintTop_toBottomOf="@+id/optionsContainer"
-        tools:layout="@layout/fragment_notes" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragment_container_view"
+            android:name="com.example.jinotas.NotesFragment"
+            android:layout_width="match_parent"
+            android:layout_height="600dp"
+            android:layout_margin="10dp"
+            tools:layout="@layout/fragment_notes" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

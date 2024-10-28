@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
@@ -43,7 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope {
+class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
@@ -156,6 +157,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
             Log.e("userNameGuardado", userName!!)
 
+        }
+
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            Log.i("recarga", "onRefresh called from SwipeRefreshLayout")
+
+//            fragment =
+//                (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+            fragment.loadNotes()
+            binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
@@ -471,5 +481,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 )
             }
         }
+    }
+
+    override fun onRefresh() {
+
     }
 }
