@@ -205,10 +205,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             dialog.dismiss()
         }
 
-        builder.setNegativeButton("Cancelar") { dialog, _ ->
-            dialog.cancel()
-        }
+//        builder.setNegativeButton("Cancelar") { dialog, _ ->
+//            dialog.cancel()
+//        }
 
+        builder.setCancelable(false)
         // Mostrar el diálogo
         builder.show()
     }
