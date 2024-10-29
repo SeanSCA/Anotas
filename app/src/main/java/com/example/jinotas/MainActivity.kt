@@ -12,18 +12,24 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ExpandableListView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
@@ -32,6 +38,7 @@ import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
+import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.lastClickTime
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
@@ -52,6 +59,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     private var job: Job = Job()
     private lateinit var fragment: NotesFragment
     private var canConnect: Boolean = false
+    lateinit var drawerLayout: DrawerLayout
+    lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
+    lateinit var expandableListView: ExpandableListView
     val dotenv = dotenv {
         directory = "/assets"
         filename = "env" // instead of '.env', use 'env'
@@ -82,6 +92,26 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //Esto es para el menu desplegable
+        drawerLayout = binding.myDrawerLayout
+        expandableListView = binding.expandableListView
+        val toolbar: Toolbar = binding.toolbar
+        setSupportActionBar(toolbar)
+
+        val toggle = ActionBarDrawerToggle(
+            this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close
+        )
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+
+        Utils.setupExpandableListView(
+            expandableListView, this, drawerLayout
+        )
+
+        drawerLayout.closeDrawer(GravityCompat.START)
+        //Hasta aqui
+
 
         Firebase.initialize(this)
 
@@ -231,7 +261,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         runBlocking {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(this@MainActivity)
-                notesCounter = db.noteDAO().getNotesCount().toString() + " notas"
+                notesCounter = db.noteDAO().getNotesCount()
+                    .toString() + " " + this@MainActivity.getString(R.string.notes_counter)
             }
             corrutina.join()
         }
@@ -287,7 +318,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         // display the popup window at the specified location
         popup.showAsDropDown(view)
     }
-
 
     /**
      * shows a popup with a few options to order the notes
@@ -487,4 +517,26 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     override fun onRefresh() {
 
     }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        super.onOptionsItemSelected(item)
+        // Maneja el clic en el botón de hamburguesa
+        return if (item.itemId == android.R.id.home) {
+            drawerLayout.openDrawer(GravityCompat.START)
+            true
+        } else {
+            super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
+        Log.i("OnBackPressed", "Has pulsado retroceder")
+    }
+
 }
