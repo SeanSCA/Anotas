@@ -1,9 +1,19 @@
 package com.example.jinotas.utils
 
 import android.app.ActivityManager
+import android.app.LocaleManager
 import android.content.Context
+import android.os.Build
+import android.os.LocaleList
 import android.provider.Settings
-import com.example.jinotas.api.CrudApi
+import android.widget.ExpandableListView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import com.example.jinotas.DrawerExpandableListAdapter
+import com.example.jinotas.R
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.GoogleCredentials
@@ -50,5 +60,41 @@ object Utils {
             }
         }
         return false
+    }
+
+    fun setupExpandableListView(
+        expandableListView: ExpandableListView,
+        context: Context,
+        drawerLayout: DrawerLayout // Nuevo parámetro
+    ) {
+        val titleList: List<String> = listOf(context.getString(R.string.change_language))
+        val childMap = mapOf(
+            context.getString(R.string.change_language) to getLanguageStrings(context)
+        )
+
+        val adapter = DrawerExpandableListAdapter(context, titleList, childMap)
+        expandableListView.setAdapter(adapter)
+
+        expandableListView.setOnChildClickListener { _, _, groupPosition, childPosition, _ ->
+            val group = titleList[groupPosition]
+            val child = childMap[group]?.get(childPosition)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.getSystemService(LocaleManager::class.java).applicationLocales =
+                    LocaleList.forLanguageTags(child)
+            } else {
+                AppCompatDelegate.setApplicationLocales(
+                    LocaleListCompat.forLanguageTags(child)
+                )
+            }
+
+            Toast.makeText(context, "Seleccionaste: $child", Toast.LENGTH_SHORT).show()
+
+            drawerLayout.closeDrawer(GravityCompat.START)
+
+            expandableListView.collapseGroup(groupPosition)
+
+            true
+        }
     }
 }

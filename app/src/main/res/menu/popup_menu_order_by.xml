@@ -3,12 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_order_by_date"
-        android:title="Ordenar por fecha"
+        android:title="@string/order_by_date"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_order_by_title"
-        android:title="Ordenar por título"
+        android:title="@string/order_by_title"
         app:showAsAction="never" />
 
 </menu>

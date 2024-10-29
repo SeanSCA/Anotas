@@ -48,6 +48,11 @@ android {
             excludes += "/META-INF/NOTICE"
         }
     }
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
 }
 
 

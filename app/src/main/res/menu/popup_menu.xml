@@ -3,11 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_eliminar"
-        android:title="Eliminar nota"
+        android:title="@string/delete_nota"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_send"
-        android:title="Enviar nota"
+        android:title="@string/send_nota"
         app:showAsAction="never"/>
 </menu>

@@ -1,9 +1,26 @@
 <resources>
-    <string name="app_name">Jinotas</string>
+    <string name="app_name" translatable="false">Jinotas</string>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="hello_blank_fragment" translatable="false">Hello blank fragment</string>
     <string name="title">Todas las notas</string>
     <string name="title_hint">Título</string>
     <string name="start_writing_hint">Comienza a escribir</string>
     <string name="channel_name">notesChannel</string>
+    <string name="btn_crear_nota">Botón para crear una nota</string>
+    <string name="btn_buscar_nota">Botón para buscar</string>
+    <string name="btn_ordenar_nota">Botón para ordenar</string>
+    <string name="buscar_por_titulo">Buscar por título</string>
+    <string name="buscar">Buscar…</string>
+    <string name="nav_open">Abrir</string>
+    <string name="nav_close">Cerrar</string>
+    <string name="cambiar_idioma">Idioma</string>
+    <string name="language_english" translatable="false">en</string>
+    <string name="language_spanish" translatable="false">es</string>
+    <string name="change_language">Cambiar idioma</string>
+    <string name="drawer_options">Más opciones</string>
+    <string name="delete_nota">Eliminar nota</string>
+    <string name="send_nota">Enviar nota</string>
+    <string name="order_by_date">Ordenar por fecha</string>
+    <string name="order_by_title">Ordenar por título</string>
+    <string name="notes_counter">notas</string>
 </resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">All the notes</string>
+    <string name="title_hint">Title</string>
+    <string name="start_writing_hint">Start writing</string>
+    <string name="channel_name">notesChannel</string>
+    <string name="btn_crear_nota">Button to create a note</string>
+    <string name="btn_buscar_nota">Button to search</string>
+    <string name="btn_ordenar_nota">Button to order</string>
+    <string name="buscar_por_titulo">Search by title</string>
+    <string name="buscar">Search...</string>
+    <string name="nav_open">Open</string>
+    <string name="nav_close">Close</string>
+    <string name="cambiar_idioma">Language</string>
+    <string name="change_language">Change Language</string>
+    <string name="drawer_options">More Options</string>
+    <string name="delete_nota">Deletet Note</string>
+    <string name="send_nota">Send Note</string>
+    <string name="order_by_date">Order By Date</string>
+    <string name="order_by_title">Order By Title</string>
+    <string name="notes_counter">notes</string>
+</resources>

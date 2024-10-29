@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-smallcaps"
         android:textColor="@color/white"
-        android:text="Buscar por título"
+        android:text="@string/buscar_por_titulo"
         android:textStyle="bold|normal|italic" />
 
     <com.google.android.material.textfield.TextInputEditText
@@ -19,6 +19,6 @@
         android:layout_height="wrap_content"
         android:textColor="@color/white"
         android:layout_gravity="start"
-        android:hint="Buscar..."/>
+        android:hint="@string/buscar"/>
 
 </LinearLayout>

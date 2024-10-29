@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group
+        android:id="@+id/drawer_group"
+        android:title="@string/cambiar_idioma">
+        <item
+            android:id="@+id/idioma_ingles"
+            android:title="@string/language_english" />
+        <item
+            android:id="@+id/idioma_espanol"
+            android:title="@string/language_spanish" />
+    </group>
+</menu>
