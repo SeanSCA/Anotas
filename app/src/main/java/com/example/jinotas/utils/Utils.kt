@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Build
 import android.os.LocaleList
 import android.provider.Settings
+import android.webkit.WebView
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
@@ -96,5 +97,9 @@ object Utils {
 
             true
         }
+    }
+
+    fun addCheckbox(webView: WebView) {
+        webView.evaluateJavascript("addCheckbox()", null)
     }
 }

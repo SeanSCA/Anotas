@@ -46,5 +46,4 @@ data class Note(
     override fun toString(): String {
         return "Note(code=$code, id=$id, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, createdAt=$createdAt, updatedAt=$updatedAt)"
     }
-
 }

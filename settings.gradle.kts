@@ -15,7 +15,12 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        maven { url = uri("https://jitpack.io") }
+        maven {
+            url = uri("https://jitpack.io")
+        }
+        maven {
+            url = uri("https://s3.amazonaws.com/repo.commonsware.com")
+        }
         google()
         mavenCentral()
     }
