@@ -103,14 +103,24 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <WebView
-                    android:id="@+id/textViewMarkdown"
+                <com.example.jinotas.widgets.SimplenoteEditText
+                    android:id="@+id/noteContent"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
+                    android:inputType="textMultiLine|textCapSentences"
                     android:layout_weight="1"
+                    android:gravity="top"
+                    android:scrollHorizontally="false"
                     android:background="@color/editContentBackground"
                     android:padding="16dp"
-                    android:textColor="@android:color/white" />
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:textIsSelectable="true"
+                    android:longClickable="true"
+                    android:cursorVisible="true"
+                    android:imeOptions="flagNoExtractUi"
+                    android:textColor="@android:color/white"
+                    tools:context=".WriteNotesActivity"/>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 

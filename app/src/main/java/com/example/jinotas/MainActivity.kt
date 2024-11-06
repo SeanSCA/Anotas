@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     private lateinit var adapterNotes: AdapterNotes
     private var notesCounter: String? = null
     private var job: Job = Job()
-    private lateinit var fragment: NotesFragment
+    private lateinit var fragmentNotes: NotesFragment
     private var canConnect: Boolean = false
     lateinit var drawerLayout: DrawerLayout
     lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
@@ -194,7 +194,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
 //            fragment =
 //                (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-            fragment.loadNotes()
+            fragmentNotes.loadNotes()
             binding.swipeRefreshLayout.isRefreshing = false
         }
     }
@@ -249,9 +249,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
      */
     override fun onResume() {
         super.onResume()
-        fragment =
+        fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        fragment.loadNotes()
+        fragmentNotes.loadNotes()
     }
 
     /**
@@ -308,9 +308,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         popup.isTouchable = true
 
 
-        fragment =
+        fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        fragment.apply {
+        fragmentNotes.apply {
             searchNote.afterTextChanged {
                 loadFilteredNotes(searchNote.text.toString())
             }
@@ -324,7 +324,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
      * @param view The view to anchor the popup
      */
     fun showPopupMenuOrderBy(view: View) {
-        fragment =
+        fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
         val popupMenu = PopupMenu(this@MainActivity, view)
         popupMenu.menuInflater.inflate(R.menu.popup_menu_order_by, popupMenu.menu)
@@ -333,7 +333,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 R.id.action_order_by_date -> runBlocking {
                     val corrutina = launch {
                         db = AppDatabase.getDatabase(this@MainActivity)
-                        fragment.orderByNotes("date")
+                        fragmentNotes.orderByNotes("date")
                     }
                     corrutina.join()
                 }
@@ -341,7 +341,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 R.id.action_order_by_title -> runBlocking {
                     val corrutina = launch {
                         db = AppDatabase.getDatabase(this@MainActivity)
-                        fragment.orderByNotes("title")
+                        fragmentNotes.orderByNotes("title")
                     }
                     corrutina.join()
                 }
@@ -398,9 +398,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                         ).show()
                         val newNotes = db.noteDAO().getNotesList() as ArrayList<Note>
 
-                        fragment =
+                        fragmentNotes =
                             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-                        fragment.loadNotes()
+                        fragmentNotes.loadNotes()
                         adapterNotes = AdapterNotes(newNotes, coroutineContext)
                         adapterNotes.updateList(notesListDB)
                     } else {

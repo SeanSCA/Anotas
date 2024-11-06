@@ -104,7 +104,7 @@
                 android:orientation="vertical">
 
                 <WebView
-                    android:id="@+id/textViewMarkdown"
+                    android:id="@+id/note_content"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="1"

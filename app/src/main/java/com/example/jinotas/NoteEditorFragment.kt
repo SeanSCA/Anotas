@@ -1,7 +1,9 @@
 package com.example.jinotas
 
+import android.content.Context
+import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.graphics.Typeface
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
@@ -10,114 +12,145 @@ import android.text.TextWatcher
 import android.text.style.MetricAffectingSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
-import android.util.Log
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.View.OnFocusChangeListener
-import android.widget.Toast
-import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatActivity
-import com.commonsware.cwac.anddown.AndDown
-import com.example.jinotas.adapter.AdapterNotes
-import com.example.jinotas.api.CrudApi
-import com.example.jinotas.databinding.ActivityWriteNotesBinding
-import com.example.jinotas.db.AppDatabase
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.view.inputmethod.InputMethodManager
+import android.webkit.WebView
+import android.widget.LinearLayout
+import androidx.appcompat.view.ActionMode
+import androidx.fragment.app.Fragment
 import com.example.jinotas.db.Note
-import com.example.jinotas.utils.ChecklistUtils
-import com.example.jinotas.utils.DrawableUtils
+import com.example.jinotas.utils.AppLog
+import com.example.jinotas.utils.DisplayUtils
+import com.example.jinotas.utils.PrefUtils
+import com.example.jinotas.utils.SimplenoteMovementMethod
 import com.example.jinotas.widgets.SimplenoteEditText
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlin.coroutines.CoroutineContext
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import kotlin.math.max
 
-
-class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
+@AndroidEntryPoint
+class NoteEditorFragment() : Fragment(), TextWatcher, OnFocusChangeListener,
     SimplenoteEditText.OnSelectionChangedListener, SimplenoteEditText.OnCheckboxToggledListener {
-    private lateinit var binding: ActivityWriteNotesBinding
-    private lateinit var notesList: ArrayList<Note>
     private var mNote: Note? = null
-    private lateinit var adapterNotes: AdapterNotes
-    private lateinit var db: AppDatabase
-    private var job: Job = Job()
-    private lateinit var andDown: AndDown
-    private var canConnect: Boolean = false
+    private var mRootView: View? = null
+    private var mContentEditText: SimplenoteEditText? = null
+    private var mHistoryTimeoutHandler: Handler? = null
+    private var mMatchOffsets: String? = null
     private var mCurrentCursorPosition = 0
+    private var mIsPaused = false
 
-    //Markdown
-    private lateinit var mContentEditText: SimplenoteEditText
-    private val mAutoSaveHandler: Handler? = null
-    private val mCss: String? = null
-    private val mRootView: View? = null
+    // Hides the history bottom sheet if no revisions are loaded
+    private val mHistoryTimeoutRunnable: Runnable = Runnable {
+        if (!isAdded) {
+            return@Runnable
+        }
+    }
 
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        AppLog.add(AppLog.Type.SCREEN, "Created (NoteEditorFragment)")
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
+        mRootView = inflater.inflate(R.layout.fragment_note_editor, container, false)
+        mContentEditText = mRootView!!.findViewById(R.id.note_content)
+        mContentEditText!!.addOnSelectionChangedListener(this)
+        mContentEditText!!.setOnCheckboxToggledListener(this)
+        mContentEditText!!.movementMethod = SimplenoteMovementMethod.instance
+        mContentEditText!!.onFocusChangeListener = this
+        mContentEditText!!.setTextSize(
+            TypedValue.COMPLEX_UNIT_SP, PrefUtils.getFontSize(requireContext()).toFloat()
+        )
+
+        setHasOptionsMenu(true)
+        return mRootView
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // If the user changes configuration and is still traversing keywords, we need to keep the scroll to the last
+        // keyword checked
+        if (mMatchOffsets != null) {
+            // mContentEditText.getLayout() can be null after a configuration change, thus, we need to check when the
+            // layout becomes available so that the scroll position can be set.
+            mRootView!!.viewTreeObserver.addOnPreDrawListener(object :
+                ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    if (mContentEditText!!.getLayout() != null) {
+                        mRootView!!.viewTreeObserver.removeOnPreDrawListener(this)
+                    }
+                    return true
+                }
+            })
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mIsPaused = false
+
+        if (mContentEditText != null) {
+            mContentEditText!!.setTextSize(
+                TypedValue.COMPLEX_UNIT_SP, PrefUtils.getFontSize(requireContext()).toFloat()
+            )
+
+            if (mContentEditText!!.hasFocus()) {
+                showSoftKeyboard()
+            }
+        }
+    }
+
+    private fun showSoftKeyboard() {
+        Handler().postDelayed({
+            if (getActivity() == null) {
+                return@postDelayed
+            }
+            val inputMethodManager: InputMethodManager? =
+                requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+            if (inputMethodManager != null) {
+                inputMethodManager.showSoftInput(mContentEditText, 0)
+            }
+        }, 100)
+    }
+
+    override fun onPause() {
+        super.onPause() // Always call the superclass method first
+        mIsPaused = true
+
+        // Hide soft keyboard if it is showing...
+        DisplayUtils().hideKeyboard(mContentEditText)
+
+        if (mHistoryTimeoutHandler != null) {
+            mHistoryTimeoutHandler!!.removeCallbacks(mHistoryTimeoutRunnable)
+        }
+
+        AppLog.add(AppLog.Type.SCREEN, "Paused (NoteEditorFragment)")
+    }
 
     override fun onDestroy() {
         super.onDestroy()
-        job.cancel()
+        AppLog.add(AppLog.Type.SYNC, "Removed note bucket listener (NoteEditorFragment)")
+        AppLog.add(AppLog.Type.SCREEN, "Destroyed (NoteEditorFragment)")
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityWriteNotesBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        val userNameFrom = intent.getStringExtra("userFrom")
-        andDown = AndDown()
-//        setupWebView()
-        val inflater = this.layoutInflater
-//        mRootView = inflater.inflate()
-        mContentEditText = binding.noteContent
-        binding.btReturnToNotes.setOnClickListener {
-            finish()
-        }
-
-        binding.btAddCheckbox.setOnClickListener {
-            insertChecklist()
-        }
-
-//        binding.btSaveNote.setOnClickListener {
-//            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-//            val current = LocalDateTime.now().format(formatter)
-//
-//            // Obtener el contenido Markdown del WebView
-//            getMarkdownFromWebView { markdownContent ->
-//                Log.i(
-//                    "MarkdownToSave", "Markdown que se guardará: $markdownContent"
-//                ) // Verifica el contenido antes de guardar
-//
-//                runBlocking {
-//                    val corrutina = launch {
-//                        val note = Note(
-//                            id = null,
-//                            title = binding.etTitle.text.toString(),
-//                            textContent = markdownContent, // Guardar el Markdown en textContent
-//                            date = current.toString(),
-//                            userFrom = userNameFrom ?: "",
-//                            userTo = null
-//                        )
-//                        db = AppDatabase.getDatabase(this@WriteNotesActivity)
-//                        db.noteDAO().insertNote(note)
-//                        notesList = db.noteDAO().getNotesList() as ArrayList<Note>
-//                        adapterNotes = AdapterNotes(notesList, coroutineContext)
-//                        adapterNotes.updateList(notesList)
-//                        uploadNoteApi(note)
-//                    }
-//                    corrutina.join()
-//                }
-//                finish()
-//            }
-//        }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
     }
 
     fun insertChecklist() {
+
         try {
             mContentEditText!!.insertChecklist()
-            mContentEditText!!.processChecklists()
         } catch (e: Exception) {
             e.printStackTrace()
             return
@@ -133,13 +166,13 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         if (mNote != null) {
             // Restore the cursor position if possible.
             val cursorPosition = newCursorLocation(
-                mNote!!.textContent, noteContentString, mContentEditText!!.selectionEnd
+                mNote!!.textContent, noteContentString, mContentEditText!!.getSelectionEnd()
             )
             mContentEditText!!.setText(mNote!!.textContent)
             // Set the scroll position after the note's content has been rendered
 
             if (isNoteUpdate) {
-                if ((mContentEditText!!.hasFocus() && cursorPosition != mContentEditText!!.selectionEnd) && cursorPosition < mContentEditText!!.getText()!!.length) {
+                if ((mContentEditText!!.hasFocus() && cursorPosition != mContentEditText!!.getSelectionEnd()) && cursorPosition < mContentEditText!!.getText()!!.length) {
                     mContentEditText!!.setSelection(cursorPosition)
                 }
             }
@@ -193,18 +226,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
     }
 
     override fun afterTextChanged(editable: Editable) {
-        // Aplica el regex para checklists
-        val updatedEditable = ChecklistUtils.addChecklistSpansForRegexAndColor(
-            context = this,
-            editable = editable,
-            regex = ChecklistUtils.CHECKLIST_REGEX,
-            color = R.color.green, // Asegúrate de tener un color definido
-            isList = true // Cambia a `true` si necesitas estilo de lista
-        )
-
-        mContentEditText.removeTextChangedListener(this)  // Evita bucles de llamada recursiva
-        mContentEditText.text = updatedEditable
-        mContentEditText.addTextChangedListener(this)  // Restaura el TextWatcher después del cambio
+        attemptAutoList(editable)
+        setTitleSpan(editable)
+        mContentEditText!!.fixLineSpacing()
     }
 
     override fun onTextChanged(charSequence: CharSequence, start: Int, before: Int, count: Int) {
@@ -256,10 +280,10 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
 
     private val noteContentString: String
         get() {
-            return if (mContentEditText == null || mContentEditText!!.getText() == null) {
-                ""
+            if (mContentEditText == null || mContentEditText!!.getText() == null) {
+                return ""
             } else {
-                mContentEditText!!.getText().toString()
+                return mContentEditText!!.getText().toString()
             }
         }
 
@@ -284,27 +308,5 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         TODO("Not yet implemented")
-    }
-
-    private fun uploadNoteApi(notePost: Note) {
-        if (tryConnection()) {
-            runBlocking {
-                val corrutina = launch {
-                    CrudApi().postNote(notePost, this@WriteNotesActivity)
-                    Toast.makeText(this@WriteNotesActivity, "Has subido la nota", Toast.LENGTH_LONG)
-                        .show()
-                }
-                corrutina.join()
-            }
-        }
-    }
-
-    fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
     }
 }
