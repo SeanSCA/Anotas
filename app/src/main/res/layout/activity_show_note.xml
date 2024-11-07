@@ -97,20 +97,30 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/noteOptions">
 
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            <LinearLayout
                 android:id="@+id/etNoteContainer"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <WebView
-                    android:id="@+id/note_content"
+                <com.example.jinotas.widgets.SimplenoteEditText
+                    android:id="@+id/noteContent"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
+                    android:inputType="textMultiLine|textCapSentences"
                     android:layout_weight="1"
+                    android:gravity="top"
+                    android:scrollHorizontally="false"
                     android:background="@color/editContentBackground"
                     android:padding="16dp"
-                    android:textColor="@android:color/white" />
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:textIsSelectable="true"
+                    android:longClickable="true"
+                    android:cursorVisible="true"
+                    android:imeOptions="flagNoExtractUi"
+                    android:textColor="@android:color/white"
+                    tools:context=".WriteNotesActivity"/>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 

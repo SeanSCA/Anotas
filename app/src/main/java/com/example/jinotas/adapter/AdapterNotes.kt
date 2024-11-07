@@ -4,6 +4,11 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.text.Editable
+import android.text.Spanned
+import android.text.style.ImageSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +18,7 @@ import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.R
@@ -21,7 +27,13 @@ import com.example.jinotas.api.CrudApi
 import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.example.jinotas.utils.ChecklistUtils
+import com.example.jinotas.utils.DisplayUtils
+import com.example.jinotas.utils.DrawableUtils
+import com.example.jinotas.utils.ThemeUtils
 import com.example.jinotas.utils.Utils.getAccessToken
+import com.example.jinotas.widgets.CenteredImageSpan
+import com.example.jinotas.widgets.CheckableSpan
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,8 +59,8 @@ class AdapterNotes(
     private var canConnect: Boolean = false
 
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
-        val titleText = vista.findViewById<TextView>(R.id.tv_show_note_title)
-        val notesText = vista.findViewById<TextView>(R.id.tv_show_note_content_resume)
+        val titleText: TextView = vista.findViewById<TextView>(R.id.tv_show_note_title)
+        val notesText: TextView = vista.findViewById<TextView>(R.id.tv_show_note_content_resume)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -59,15 +71,19 @@ class AdapterNotes(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val context: Context = holder.itemView.context
         val content = list[position].textContent
+        holder.titleText.text = list[position].title
+
         if (content.length >= 49) {
             val resultContent = content.substring(startIndex = 0, endIndex = 48) + "..."
-            holder.notesText.text = resultContent
+//            holder.notesText.text = resultContent
+
         } else {
             val resultContent = content.substring(startIndex = 0, endIndex = content.length)
-            holder.notesText.text = resultContent
+//            holder.notesText.text = resultContent
+            val textoEditable: Editable = Editable.Factory.getInstance().newEditable(resultContent)
+            processChecklists(textoEditable, context, holder.notesText)
         }
 
-        holder.titleText.text = list[position].title
         holder.itemView.setOnClickListener {
             val intent = Intent(context, ShowNoteActivity::class.java)
             val sharedPreferences: SharedPreferences =
@@ -121,7 +137,7 @@ class AdapterNotes(
         }
     }
 
-    fun sendNote(context: Context, note: Note){
+    fun sendNote(context: Context, note: Note) {
         showNestedAlertDialog(context, note = note)
     }
 
@@ -147,27 +163,26 @@ class AdapterNotes(
         builder.setView(layout)
 
         builder.setTitle("¿A quien se lo quieres enviar?").setPositiveButton("Aceptar") { _, _ ->
-                // Acción al pulsar "Aceptar"
-                // Guardar el nombre de usuario en una variable
-                userToSend = nameInput.text.toString().lowercase()
+            // Acción al pulsar "Aceptar"
+            // Guardar el nombre de usuario en una variable
+            userToSend = nameInput.text.toString().lowercase()
 
-                Log.e("userToSend", userToSend)
+            Log.e("userToSend", userToSend)
 
-                if (getTokenByUser(userToSend) != null) {
-                    runBlocking {
-                        val corrutina = launch {
-                            sendPushNotificationToUserWithNote(userToSend, note, context)
-                        }
-                        corrutina.join()
+            if (getTokenByUser(userToSend) != null) {
+                runBlocking {
+                    val corrutina = launch {
+                        sendPushNotificationToUserWithNote(userToSend, note, context)
                     }
-                } else {
-                    Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG)
-                        .show()
+                    corrutina.join()
                 }
-            }.setNegativeButton("Cancelar") { _, _ ->
-                // Mostrar el segundo diálogo
-                showConfirmationDialog(context, note)
-            }.show()
+            } else {
+                Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
+            }
+        }.setNegativeButton("Cancelar") { _, _ ->
+            // Mostrar el segundo diálogo
+            showConfirmationDialog(context, note)
+        }.show()
     }
 
     fun showConfirmationDialog(context: Context, note: Note) {
@@ -327,6 +342,37 @@ class AdapterNotes(
                 Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
             }
             corrutina.join()
+        }
+    }
+
+    fun processChecklists(content: Editable, context: Context, textView: TextView) {
+        if (content.isEmpty()) {
+            return
+        }
+
+        try {
+            ChecklistUtils.addChecklistSpansForRegexAndColor(
+                context,
+                content,
+                ChecklistUtils.CHECKLIST_REGEX_LINES_CHECKED,
+                ThemeUtils().getColorResourceFromAttribute(
+                    context, com.onesignal.R.attr.colorAccent
+                ),
+                false
+            )
+            ChecklistUtils.addChecklistSpansForRegexAndColor(
+                context,
+                content,
+                ChecklistUtils.CHECKLIST_REGEX_LINES_UNCHECKED,
+                ThemeUtils().getColorResourceFromAttribute(
+                    context, androidx.appcompat.R.attr.colorAccent
+                ),
+                false
+            )
+
+            textView.text = content
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

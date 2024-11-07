@@ -23,13 +23,14 @@ import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
-import com.example.jinotas.utils.DrawableUtils
 import com.example.jinotas.widgets.SimplenoteEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
@@ -80,49 +81,42 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             insertChecklist()
         }
 
-//        binding.btSaveNote.setOnClickListener {
-//            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-//            val current = LocalDateTime.now().format(formatter)
-//
-//            // Obtener el contenido Markdown del WebView
-//            getMarkdownFromWebView { markdownContent ->
-//                Log.i(
-//                    "MarkdownToSave", "Markdown que se guardará: $markdownContent"
-//                ) // Verifica el contenido antes de guardar
-//
-//                runBlocking {
-//                    val corrutina = launch {
-//                        val note = Note(
-//                            id = null,
-//                            title = binding.etTitle.text.toString(),
-//                            textContent = markdownContent, // Guardar el Markdown en textContent
-//                            date = current.toString(),
-//                            userFrom = userNameFrom ?: "",
-//                            userTo = null
-//                        )
-//                        db = AppDatabase.getDatabase(this@WriteNotesActivity)
-//                        db.noteDAO().insertNote(note)
-//                        notesList = db.noteDAO().getNotesList() as ArrayList<Note>
-//                        adapterNotes = AdapterNotes(notesList, coroutineContext)
-//                        adapterNotes.updateList(notesList)
-//                        uploadNoteApi(note)
-//                    }
-//                    corrutina.join()
-//                }
-//                finish()
-//            }
-//        }
+        binding.btSaveNote.setOnClickListener {
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            val current = LocalDateTime.now().format(formatter)
+
+            runBlocking {
+                val corrutina = launch {
+                    val note = Note(
+                        id = null,
+                        title = binding.etTitle.text.toString(),
+                        textContent = binding.noteContent.getPlainTextContent(),
+                        date = current.toString(),
+                        userFrom = userNameFrom ?: "",
+                        userTo = null
+                    )
+                    db = AppDatabase.getDatabase(this@WriteNotesActivity)
+                    db.noteDAO().insertNote(note)
+                    notesList = db.noteDAO().getNotesList() as ArrayList<Note>
+                    adapterNotes = AdapterNotes(notesList, coroutineContext)
+                    adapterNotes.updateList(notesList)
+                    uploadNoteApi(note)
+                }
+                corrutina.join()
+            }
+            finish()
+        }
     }
 
-    fun insertChecklist() {
+    private fun insertChecklist() {
         try {
-            mContentEditText!!.insertChecklist()
-            mContentEditText!!.processChecklists()
+            mContentEditText.insertChecklist()
+            mContentEditText.processChecklists()
+            mContentEditText.setSelection(mContentEditText.length())
         } catch (e: Exception) {
             e.printStackTrace()
             return
         }
-
     }
 
     override fun onCheckboxToggled() {
@@ -133,19 +127,19 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         if (mNote != null) {
             // Restore the cursor position if possible.
             val cursorPosition = newCursorLocation(
-                mNote!!.textContent, noteContentString, mContentEditText!!.selectionEnd
+                mNote!!.textContent, noteContentString, mContentEditText.selectionEnd
             )
-            mContentEditText!!.setText(mNote!!.textContent)
+            mContentEditText.setText(mNote!!.textContent)
             // Set the scroll position after the note's content has been rendered
 
             if (isNoteUpdate) {
-                if ((mContentEditText!!.hasFocus() && cursorPosition != mContentEditText!!.selectionEnd) && cursorPosition < mContentEditText!!.getText()!!.length) {
-                    mContentEditText!!.setSelection(cursorPosition)
+                if ((mContentEditText.hasFocus() && cursorPosition != mContentEditText.selectionEnd) && cursorPosition < mContentEditText.getText()!!.length) {
+                    mContentEditText.setSelection(cursorPosition)
                 }
             }
 
-            afterTextChanged(mContentEditText!!.getText()!!)
-            mContentEditText!!.processChecklists()
+            afterTextChanged(mContentEditText.getText()!!)
+            mContentEditText.processChecklists()
         }
     }
 
@@ -199,7 +193,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             editable = editable,
             regex = ChecklistUtils.CHECKLIST_REGEX,
             color = R.color.green, // Asegúrate de tener un color definido
-            isList = true // Cambia a `true` si necesitas estilo de lista
+            isList = false // Cambia a `true` si necesitas estilo de lista
         )
 
         mContentEditText.removeTextChangedListener(this)  // Evita bucles de llamada recursiva
@@ -211,9 +205,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         // When text changes, start timer that will fire after AUTOSAVE_DELAY_MILLIS passes
 
         // Temporarily remove the text watcher as we process checklists to prevent callback looping
-        mContentEditText!!.removeTextChangedListener(this)
-        mContentEditText!!.processChecklists()
-        mContentEditText!!.addTextChangedListener(this)
+        mContentEditText.removeTextChangedListener(this)
+        mContentEditText.processChecklists()
+        mContentEditText.addTextChangedListener(this)
     }
 
     /**
@@ -249,17 +243,16 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
 
     private fun attemptAutoList(editable: Editable) {
         val oldCursorPosition = mCurrentCursorPosition
-        mCurrentCursorPosition = mContentEditText!!.selectionStart
-//        AutoBullet.apply(editable, oldCursorPosition, mCurrentCursorPosition)
-        mCurrentCursorPosition = mContentEditText!!.selectionStart
+        mCurrentCursorPosition = mContentEditText.selectionStart
+        mCurrentCursorPosition = mContentEditText.selectionStart
     }
 
     private val noteContentString: String
         get() {
-            return if (mContentEditText == null || mContentEditText!!.getText() == null) {
+            return if (mContentEditText.getText() == null) {
                 ""
             } else {
-                mContentEditText!!.getText().toString()
+                mContentEditText.getText().toString()
             }
         }
 
@@ -299,7 +292,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         }
     }
 
-    fun tryConnection(): Boolean {
+    private fun tryConnection(): Boolean {
         try {
             canConnect = CrudApi().canConnectToApi()
         } catch (e: Exception) {

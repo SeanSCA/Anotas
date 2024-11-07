@@ -18,6 +18,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.AdapterView
 import androidx.annotation.DrawableRes
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.appcompat.widget.AppCompatMultiAutoCompleteTextView
 import com.example.jinotas.R
 import com.example.jinotas.utils.AppLog
@@ -34,7 +35,7 @@ import kotlin.math.min
 class SimplenoteEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-) : AppCompatMultiAutoCompleteTextView(context, attrs), AdapterView.OnItemClickListener {
+) : AppCompatEditText(context, attrs), AdapterView.OnItemClickListener {
 
     companion object {
         private val INTERNOTE_LINK_PATTERN_EDIT =
@@ -102,26 +103,27 @@ class SimplenoteEditText @JvmOverloads constructor(
     }
 
     override fun onFocusChanged(focused: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
-        if (focused) setCursorVisible(true)
+        if (focused) isCursorVisible = true
         super.onFocusChanged(focused, direction, previouslyFocusedRect)
     }
 
     fun toggleCheckbox(checkableSpan: CheckableSpan) {
         isCursorVisible = false
+        setSelection(length())
 
         val editable = text
 
-        val checkboxStart = editable.getSpanStart(checkableSpan)
+        val checkboxStart = editable!!.getSpanStart(checkableSpan)
         val checkboxEnd = editable.getSpanEnd(checkableSpan)
 
         val selectionStart = selectionStart
         val selectionEnd = selectionEnd
 
         val imageSpans = editable.getSpans(
-            checkboxStart, checkboxEnd,
-            ImageSpan::class.java
+            checkboxStart, checkboxEnd, ImageSpan::class.java
         )
-        if (imageSpans.size > 0) {
+
+        if (imageSpans.isNotEmpty()) {
             val context = context
             // ImageSpans are static, so we need to remove the old one and replace :|
             @DrawableRes val resDrawable =
@@ -136,17 +138,13 @@ class SimplenoteEditText @JvmOverloads constructor(
             val newImageSpan = CenteredImageSpan(context, iconDrawable)
             Handler().post {
                 editable.setSpan(
-                    newImageSpan,
-                    checkboxStart,
-                    checkboxEnd,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    newImageSpan, checkboxStart, checkboxEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
                 editable.removeSpan(imageSpans[0])
                 fixLineSpacing()
 
                 // Restore the selection
-                if (selectionStart >= 0 && selectionStart <= editable.length && selectionEnd <= editable.length && hasFocus()
-                ) {
+                if (selectionStart >= 0 && selectionStart <= editable.length && selectionEnd <= editable.length && hasFocus()) {
                     setSelection(selectionStart, selectionEnd)
                     isCursorVisible = true
                 }
@@ -190,11 +188,11 @@ class SimplenoteEditText @JvmOverloads constructor(
                 workingString.removeSpan(span)
             }
 
-            editable!!.replace(start, end, workingString)
+            editable.replace(start, end, workingString)
 
             if (checkableSpans.size == 1) {
                 val newSelection = maxOf(previousSelection - CHECKBOX_LENGTH, 0)
-                if (editable!!.length >= newSelection) setSelection(newSelection)
+                if (editable.length >= newSelection) setSelection(newSelection)
             }
         } else {
             val lines = workingString.toString().split("(?<=\n)".toRegex())
@@ -215,10 +213,10 @@ class SimplenoteEditText @JvmOverloads constructor(
                     .append(lineString.substring(leadingSpaceCount))
             }
 
-            editable!!.replace(start, end, resultString)
+            editable.replace(start, end, resultString)
 
             val newSelection = maxOf(previousSelection, 0) + (lines.size * CHECKBOX_LENGTH)
-            if (editable!!.length >= newSelection) setSelection(newSelection)
+            if (editable.length >= newSelection) setSelection(newSelection)
         }
     }
 
@@ -278,12 +276,15 @@ class SimplenoteEditText @JvmOverloads constructor(
         if (text!!.isEmpty() || context == null) {
             return
         }
+
         try {
             ChecklistUtils.addChecklistSpansForRegexAndColor(
                 context,
                 text,
                 ChecklistUtils.CHECKLIST_REGEX_LINES_CHECKED,
-                ThemeUtils().getColorResourceFromAttribute(context, com.onesignal.R.attr.colorAccent),
+                ThemeUtils().getColorResourceFromAttribute(
+                    context, com.onesignal.R.attr.colorAccent
+                ),
                 false
             )
             ChecklistUtils.addChecklistSpansForRegexAndColor(
@@ -317,7 +318,10 @@ class SimplenoteEditText @JvmOverloads constructor(
         val end = max(selectionEnd.toDouble(), 0.0).toInt()
         editableText.replace(
             min(start.toDouble(), end.toDouble()).toInt(),
-            max(start.toDouble(), end.toDouble()).toInt(), text, 0, text.length
+            max(start.toDouble(), end.toDouble()).toInt(),
+            text,
+            0,
+            text!!.length
         )
     }
 }
