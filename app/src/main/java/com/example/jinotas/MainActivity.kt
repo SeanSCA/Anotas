@@ -1,6 +1,7 @@
 package com.example.jinotas
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -10,6 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -39,7 +42,7 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
-import com.example.jinotas.utils.Utils.lastClickTime
+import com.example.jinotas.utils.Utils.vibratePhone
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -61,7 +64,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     private var canConnect: Boolean = false
     lateinit var drawerLayout: DrawerLayout
     lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
-    lateinit var expandableListView: ExpandableListView
+    private lateinit var expandableListView: ExpandableListView
     val dotenv = dotenv {
         directory = "/assets"
         filename = "env" // instead of '.env', use 'env'
@@ -129,29 +132,18 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         updateNotesCounter()
         binding.btCreateNote.setOnClickListener {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime - lastClickTime > 1000) { // Set the minimum click interval to 1 second
-                val intent = Intent(this, WriteNotesActivity::class.java)
-                intent.putExtra("userFrom", userName)
-                startActivity(intent)
-            }
-            lastClickTime = currentTime
+            vibratePhone(this)
+            val intent = Intent(this, WriteNotesActivity::class.java)
+            intent.putExtra("userFrom", userName)
+            startActivity(intent)
         }
 
         binding.btSearchNote.setOnClickListener {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime - lastClickTime > 1000) { // Set the minimum click interval to 1 second
-                showPopupMenuSearch(this@MainActivity, binding.btSearchNote)
-            }
-            lastClickTime = currentTime
+            showPopupMenuSearch(this@MainActivity, binding.btSearchNote)
         }
 
         binding.btOrderBy.setOnClickListener {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime - lastClickTime > 1000) { // Set the minimum click interval to 1 second
-                showPopupMenuOrderBy(binding.btOrderBy)
-            }
-            lastClickTime = currentTime
+            showPopupMenuOrderBy(binding.btOrderBy)
         }
 
         // Acceder a las SharedPreferences
@@ -356,7 +348,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
      * Here checks if there's connection to the api
      * @return Boolean if there's connection or not
      */
-    fun tryConnection(): Boolean {
+    private fun tryConnection(): Boolean {
         try {
             canConnect = CrudApi().canConnectToApi()
         } catch (e: Exception) {
@@ -538,5 +530,4 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         }
         Log.i("OnBackPressed", "Has pulsado retroceder")
     }
-
 }

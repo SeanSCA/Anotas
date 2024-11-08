@@ -1,18 +1,21 @@
 package com.example.jinotas.utils
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
-import android.webkit.WebView
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import com.example.jinotas.DrawerExpandableListAdapter
 import com.example.jinotas.R
 import com.google.api.client.json.JsonFactory
@@ -81,9 +84,11 @@ object Utils {
             val child = childMap[group]?.get(childPosition)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                vibratePhone(context)
                 context.getSystemService(LocaleManager::class.java).applicationLocales =
                     LocaleList.forLanguageTags(child)
             } else {
+                vibratePhone(context)
                 AppCompatDelegate.setApplicationLocales(
                     LocaleListCompat.forLanguageTags(child)
                 )
@@ -99,7 +104,30 @@ object Utils {
         }
     }
 
-    fun addCheckbox(webView: WebView) {
-        webView.evaluateJavascript("addCheckbox()", null)
+    fun Activity.vibratePhone(context: Context) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(100)
+        }
+    }
+
+    fun Fragment.vibratePhone(context: Context) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(100)
+        }
+    }
+
+    fun Utils.vibratePhone(context: Context) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(100)
+        }
     }
 }
