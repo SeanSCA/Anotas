@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: black;
+            background-color: black;
+        }
+        #editor {
+            width: 100%;
+            height: 100vh;
+            padding: 16px;
+            overflow-y: auto;
+            outline: none;
+            color: white;
+        }
+        p { margin: 0.5em 0; }
+        input[type="checkbox"] { margin-right: 8px; }
+    </style>
+</head>
+<body>
+<div id="editor" contenteditable="true" placeholder="Escribe tu Markdown aquí..."></div>
+
+<script>
+    const editor = document.getElementById('editor');
+    const checkboxStates = new Map();
+
+    function initializeMarkdown(content) {
+    editor.innerHTML = ''; // Limpiar el contenido anterior
+    const lines = content.split('\n').filter(line => line.trim() !== ''); // Filtrar líneas vacías
+
+    // Procesar cada línea para convertir a checkbox
+    lines.forEach((line, index) => {
+        line = line.trim(); // Limpiar espacios alrededor de la línea
+        if (line.startsWith('- [x]')) {
+            // Checkbox marcado
+            editor.innerHTML += `<input type='checkbox' data-index='${index}' checked /> ${line.slice(5).trim()}`;
+        } else if (line.startsWith('- [ ]')) {
+            // Checkbox desmarcado
+            editor.innerHTML += `<input type='checkbox' data-index='${index}' /> ${line.slice(5).trim()}`;
+        } else if (line) {
+            // Texto normal
+            editor.innerHTML += `${line}`;
+        }
+        editor.innerHTML += '<br>'; // Agregar un salto de línea solo al final de cada línea procesada
+    });
+    attachCheckboxListeners(); // Añadir escuchadores después de cargar el contenido
+}
+
+    function attachCheckboxListeners() {
+        const checkboxes = editor.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.checked = checkboxStates.get(index) || false; // Sincroniza el estado
+            checkbox.addEventListener('change', (event) => {
+                checkboxStates.set(index, event.target.checked);
+                updateMarkdownFromCheckboxes(); // Actualiza Markdown al cambiar
+            });
+        });
+    }
+
+    function updateMarkdownFromCheckboxes() {
+        const lines = editor.innerHTML.split('<br>');
+        const updatedLines = lines.map((line, index) => {
+            if (line.includes('<input type="checkbox"')) {
+                const isChecked = checkboxStates.get(index) || false;
+                const text = line.split('>')[1]?.trim(); // Obtener el texto después del checkbox
+                return isChecked ? `- [x] ${text}` : `- [ ] ${text}`; // Formato Markdown
+            }
+            return line.trim(); // Para líneas que no son checkboxes
+        });
+        editor.dataset.markdownContent = updatedLines.join('\n'); // Guardar contenido Markdown
+    }
+
+    function getMarkdownContent() {
+    const lines = editor.innerHTML.split('<br>').filter(line => line.trim() !== ''); // Filtrar líneas vacías
+    const markdownLines = lines.map((line, index) => {
+        if (line.includes('<input type="checkbox"')) {
+            const isChecked = checkboxStates.get(index) || false;
+            const text = line.split('>')[1]?.trim(); // Obtener el texto después de la etiqueta
+            return isChecked ? `- [x] ${text}` : `- [ ] ${text}`; // Formato Markdown
+        }
+        return line.trim(); // Para líneas que no son checkboxes
+    });
+    return markdownLines.join('\n'); // Retornar el contenido Markdown
+}
+
+    function addCheckbox() {
+    const checkboxHtml = `<input type='checkbox' data-index='${editor.children.length}' /> `;
+    editor.innerHTML += checkboxHtml; // Añadir el checkbox al final
+    attachCheckboxListeners(); // Asegúrate de añadir los listeners después de añadir un checkbox
+    updateMarkdownFromCheckboxes(); // Actualizar el contenido en Markdown
+}
+</script>
+</body>
+</html>

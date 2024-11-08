@@ -53,6 +53,9 @@ android {
             enableSplit = false
         }
     }
+    packagingOptions {
+        resources.excludes.add("META-INF/*")
+    }
 }
 
 
@@ -144,6 +147,10 @@ dependencies {
     implementation("com.google.api-client:google-api-client-gson:1.32.1") // For JSON support
 
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
+
+    implementation ("com.commonsware.cwac:anddown:0.4.0")
+
+    implementation ("org.commonmark:commonmark:0.18.2")
 }
 kapt {
     correctErrorTypes = true
