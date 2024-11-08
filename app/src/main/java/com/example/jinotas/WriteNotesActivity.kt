@@ -23,6 +23,7 @@ import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
+import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,17 +75,19 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
 //        mRootView = inflater.inflate()
         mContentEditText = binding.noteContent
         binding.btReturnToNotes.setOnClickListener {
+            vibratePhone(this)
             finish()
         }
 
         binding.btAddCheckbox.setOnClickListener {
+            vibratePhone(this)
             insertChecklist()
         }
 
         binding.btSaveNote.setOnClickListener {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val current = LocalDateTime.now().format(formatter)
-
+            vibratePhone(this)
             runBlocking {
                 val corrutina = launch {
                     val note = Note(

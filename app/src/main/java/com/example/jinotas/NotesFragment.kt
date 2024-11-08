@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -18,6 +17,7 @@ import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.example.jinotas.utils.Utils.vibratePhone
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +61,7 @@ class NotesFragment : Fragment(), CoroutineScope {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val note: Note = notesList[position]
+                vibratePhone(requireContext())
 
                 if (direction == ItemTouchHelper.LEFT) {
                     // Eliminar de la lista y actualizar el RecyclerView
@@ -103,7 +104,7 @@ class NotesFragment : Fragment(), CoroutineScope {
 //                        "Has deslizado a la derecha",
 //                        Toast.LENGTH_LONG
 //                    ).show()
-                        adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
+                    adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
                     Log.e("tamañoListaDespues", notesList.size.toString())
                 }
 

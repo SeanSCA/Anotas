@@ -139,7 +139,7 @@ class AdapterNotes(
 
     override fun getItemCount() = list.size
 
-    fun showNestedAlertDialog(context: Context, note: Note) {
+    private fun showNestedAlertDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("¿A quien se lo quieres enviar? ")
         var userToSend: String
@@ -177,7 +177,7 @@ class AdapterNotes(
         }.show()
     }
 
-    fun showConfirmationDialog(context: Context, note: Note) {
+    private fun showConfirmationDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("Confirmación").setMessage("¿Estás seguro de que quieres cancelar?")
             .setPositiveButton("Sí") { _, _ ->
