@@ -12,8 +12,6 @@ import android.text.style.StyleSpan
 import android.util.Log
 import android.view.View
 import android.view.View.OnFocusChangeListener
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -23,8 +21,7 @@ import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
-import com.example.jinotas.utils.Utils.addCheckbox
-import com.example.jinotas.widgets.SimplenoteEditText
+import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,14 +33,14 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
 class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
-    SimplenoteEditText.OnSelectionChangedListener, SimplenoteEditText.OnCheckboxToggledListener {
+    CustomEditText.OnSelectionChangedListener, CustomEditText.OnCheckboxToggledListener {
     private lateinit var binding: ActivityShowNoteBinding
     private lateinit var notesShow: Note
     private lateinit var db: AppDatabase
     private var job: Job = Job()
     private var focusedEditText: EditText? = null
     private var mCurrentCursorPosition = 0
-    private lateinit var mContentEditText: SimplenoteEditText
+    private lateinit var mContentEditText: CustomEditText
     private var mNote: Note? = null
 
     override val coroutineContext: CoroutineContext

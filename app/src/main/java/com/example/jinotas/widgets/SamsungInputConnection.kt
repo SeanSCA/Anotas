@@ -17,7 +17,7 @@ import android.view.inputmethod.InputContentInfo
 import com.example.jinotas.utils.AppLog
 
 class SamsungInputConnection(
-    private val mTextView: SimplenoteEditText,
+    private val mTextView: CustomEditText,
     private val baseInputConnection: InputConnection,
 ) : BaseInputConnection(mTextView, true) {
 

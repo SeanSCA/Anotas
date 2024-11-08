@@ -12,7 +12,7 @@ class CheckableSpan : ClickableSpan() {
 
     override fun onClick(view: View) {
         isChecked = !isChecked
-        if (view is SimplenoteEditText) {
+        if (view is CustomEditText) {
             try {
                 view.toggleCheckbox(this)
                 view.invalidate()

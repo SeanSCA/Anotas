@@ -19,27 +19,26 @@ import android.view.inputmethod.InputConnection
 import android.widget.AdapterView
 import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.appcompat.widget.AppCompatMultiAutoCompleteTextView
 import com.example.jinotas.R
 import com.example.jinotas.utils.AppLog
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.DisplayUtils
 import com.example.jinotas.utils.DrawableUtils
 import com.example.jinotas.utils.ThemeUtils
-import com.example.jinotas.widgets.SimplenoteLinkify.SIMPLENOTE_LINK_ID
-import com.example.jinotas.widgets.SimplenoteLinkify.SIMPLENOTE_LINK_PREFIX
+import com.example.jinotas.widgets.CustomLinkify.CUSTOM_LINK_ID
+import com.example.jinotas.widgets.CustomLinkify.CUSTOM_LINK_PREFIX
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
 
-class SimplenoteEditText @JvmOverloads constructor(
+class CustomEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : AppCompatEditText(context, attrs), AdapterView.OnItemClickListener {
 
     companion object {
         private val INTERNOTE_LINK_PATTERN_EDIT =
-            Pattern.compile("([^]]*)(]\\($SIMPLENOTE_LINK_PREFIX$SIMPLENOTE_LINK_ID\\))")
+            Pattern.compile("([^]]*)(]\\($CUSTOM_LINK_PREFIX$CUSTOM_LINK_ID\\))")
         private val INTERNOTE_LINK_PATTERN_FULL =
             Pattern.compile("(?s)(.)*(\\[)$INTERNOTE_LINK_PATTERN_EDIT")
         private const val CHECKBOX_LENGTH = 2 // one ClickableSpan character + one space character

@@ -4,21 +4,15 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.drawable.Drawable
-import android.os.Handler
 import android.text.Editable
-import android.text.Spanned
-import android.text.style.ImageSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.R
@@ -28,12 +22,8 @@ import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
-import com.example.jinotas.utils.DisplayUtils
-import com.example.jinotas.utils.DrawableUtils
 import com.example.jinotas.utils.ThemeUtils
 import com.example.jinotas.utils.Utils.getAccessToken
-import com.example.jinotas.widgets.CenteredImageSpan
-import com.example.jinotas.widgets.CheckableSpan
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,6 +66,8 @@ class AdapterNotes(
         if (content.length >= 49) {
             val resultContent = content.substring(startIndex = 0, endIndex = 48) + "..."
 //            holder.notesText.text = resultContent
+            val textoEditable: Editable = Editable.Factory.getInstance().newEditable(resultContent)
+            processChecklists(textoEditable, context, holder.notesText)
 
         } else {
             val resultContent = content.substring(startIndex = 0, endIndex = content.length)
@@ -345,7 +337,7 @@ class AdapterNotes(
         }
     }
 
-    fun processChecklists(content: Editable, context: Context, textView: TextView) {
+    private fun processChecklists(content: Editable, context: Context, textView: TextView) {
         if (content.isEmpty()) {
             return
         }

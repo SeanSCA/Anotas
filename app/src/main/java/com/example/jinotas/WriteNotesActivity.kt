@@ -23,7 +23,7 @@ import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
-import com.example.jinotas.widgets.SimplenoteEditText
+import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,7 +36,7 @@ import kotlin.math.max
 
 
 class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
-    SimplenoteEditText.OnSelectionChangedListener, SimplenoteEditText.OnCheckboxToggledListener {
+    CustomEditText.OnSelectionChangedListener, CustomEditText.OnCheckboxToggledListener {
     private lateinit var binding: ActivityWriteNotesBinding
     private lateinit var notesList: ArrayList<Note>
     private var mNote: Note? = null
@@ -48,7 +48,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
     private var mCurrentCursorPosition = 0
 
     //Markdown
-    private lateinit var mContentEditText: SimplenoteEditText
+    private lateinit var mContentEditText: CustomEditText
     private val mAutoSaveHandler: Handler? = null
     private val mCss: String? = null
     private val mRootView: View? = null

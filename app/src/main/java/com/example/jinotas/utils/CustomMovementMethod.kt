@@ -6,7 +6,7 @@ import android.view.MotionEvent
 import android.widget.TextView
 import com.example.jinotas.widgets.CheckableSpan
 
-class SimplenoteMovementMethod : ArrowKeyMovementMethod() {
+class CustomMovementMethod : ArrowKeyMovementMethod() {
     override fun onTouchEvent(textView: TextView, buffer: Spannable, event: MotionEvent): Boolean {
         var x = event.x.toInt()
         var y = event.y.toInt()
@@ -48,12 +48,12 @@ class SimplenoteMovementMethod : ArrowKeyMovementMethod() {
     }
 
     companion object {
-        private var mInstance: SimplenoteMovementMethod? = null
+        private var mInstance: CustomMovementMethod? = null
 
-        val instance: SimplenoteMovementMethod?
+        val instance: CustomMovementMethod?
             get() {
                 if (mInstance == null) {
-                    mInstance = SimplenoteMovementMethod()
+                    mInstance = CustomMovementMethod()
                 }
 
                 return mInstance
