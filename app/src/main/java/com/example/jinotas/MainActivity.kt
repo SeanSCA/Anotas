@@ -33,6 +33,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
@@ -173,6 +174,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                         Log.e("Topic", "Error al suscribirse al topic")
                     }
                 }
+            lifecycleScope.launch {
+                Utils.saveValues("Vertical", this@MainActivity)
+            }
         } else {
             // Recuperar el nombre del usuario almacenado en SharedPreferences
             userName = sharedPreferences.getString("userFrom", "")

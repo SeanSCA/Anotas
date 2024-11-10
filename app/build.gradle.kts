@@ -151,6 +151,11 @@ dependencies {
     implementation ("com.commonsware.cwac:anddown:0.4.0")
 
     implementation ("org.commonmark:commonmark:0.18.2")
+
+    implementation("androidx.datastore:datastore-preferences-core:1.1.1")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
 }
 kapt {
     correctErrorTypes = true

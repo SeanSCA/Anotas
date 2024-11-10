@@ -9,29 +9,45 @@ import android.os.LocaleList
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import android.util.Log
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.GravityCompat
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.MutableLiveData
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.DrawerExpandableListAdapter
 import com.example.jinotas.R
+import com.example.jinotas.adapter.AdapterNotes
+import com.example.jinotas.db.Note
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.GoogleCredentials
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.ArrayList
 import java.util.Collections
+import kotlin.coroutines.CoroutineContext
 
 object Utils {
-    var lastClickTime: Long = 0
-//    fun lastClickTime(): Long {
-//        return 0
-//    }
+    var noteListStyle: MutableLiveData<String> = MutableLiveData("Vertical")
+    val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")    // Método para obtener el ID del dispositivo
+    val FILE = stringPreferencesKey("notes_list_style")
 
-    // Método para obtener el ID del dispositivo
     fun getIdDevice(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
@@ -71,38 +87,82 @@ object Utils {
         context: Context,
         drawerLayout: DrawerLayout // Nuevo parámetro
     ) {
-        val titleList: List<String> = listOf(context.getString(R.string.change_language))
-        val childMap = mapOf(
-            context.getString(R.string.change_language) to getLanguageStrings(context)
+        // Lista combinada de títulos de grupo
+        val titleList: List<String> = listOf(
+            context.getString(R.string.change_language), context.getString(R.string.tipo_de_lista)
         )
 
+        // Mapa combinado de hijos
+        val childMap = mapOf(
+            context.getString(R.string.change_language) to getLanguageStrings(context),
+            context.getString(R.string.tipo_de_lista) to getNotesListStyles(context)
+        )
+
+        // Adaptador único usando la lista y el mapa combinados
         val adapter = DrawerExpandableListAdapter(context, titleList, childMap)
         expandableListView.setAdapter(adapter)
 
+        // Configurar el listener para manejar clics en los hijos de los grupos
         expandableListView.setOnChildClickListener { _, _, groupPosition, childPosition, _ ->
             val group = titleList[groupPosition]
             val child = childMap[group]?.get(childPosition)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                vibratePhone(context)
-                context.getSystemService(LocaleManager::class.java).applicationLocales =
-                    LocaleList.forLanguageTags(child)
-            } else {
-                vibratePhone(context)
-                AppCompatDelegate.setApplicationLocales(
-                    LocaleListCompat.forLanguageTags(child)
-                )
+//            Log.e("SelectedChild", child ?: "Ningún valor seleccionado")
+//            Toast.makeText(context, child, Toast.LENGTH_SHORT).show()
+            if (group == context.getString(R.string.change_language)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    vibratePhone(context)
+                    context.getSystemService(LocaleManager::class.java).applicationLocales =
+                        LocaleList.forLanguageTags(child)
+                } else {
+                    vibratePhone(context)
+                    AppCompatDelegate.setApplicationLocales(
+                        LocaleListCompat.forLanguageTags(child)
+                    )
+                }
+            } else if (group == context.getString(R.string.tipo_de_lista)) {
+                if (child == context.getString(R.string.notes_list_styles_vertical)) {
+                    noteListStyle.value = context.getString(R.string.notes_list_styles_vertical)
+//                    Toast.makeText(context, noteListStyle, Toast.LENGTH_SHORT).show()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        saveValues(child, context)
+                    }
+                } else if (child == context.getString(R.string.notes_list_styles_widget)) {
+                    noteListStyle.value = context.getString(R.string.notes_list_styles_widget)
+//                    Toast.makeText(context, noteListStyle, Toast.LENGTH_SHORT).show()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        saveValues(child, context)
+                    }
+                }
             }
 
-            Toast.makeText(context, "Seleccionaste: $child", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, "Seleccionaste: $child", Toast.LENGTH_SHORT).show()
 
+            // Cerrar el drawer después de la selección
             drawerLayout.closeDrawer(GravityCompat.START)
 
+            // Colapsar el grupo seleccionado
             expandableListView.collapseGroup(groupPosition)
 
             true
         }
     }
+
+    // Función para leer el valor almacenado en DataStore
+    fun getValues(context: Context): Flow<String> {
+        return context.dataStore.data
+            .map { preferences ->
+                preferences[FILE] ?: "Valor no encontrado"
+            }
+    }
+
+    suspend fun saveValues(name: String, context: Context) {
+        context.dataStore.edit { settings ->
+            settings[FILE] = name
+            Log.d("saveValue", "Valor guardado: $name")
+        }
+    }
+
 
     fun Activity.vibratePhone(context: Context) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
