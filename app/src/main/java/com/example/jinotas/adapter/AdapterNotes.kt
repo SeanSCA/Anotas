@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.R
 import com.example.jinotas.ShowNoteActivity
 import com.example.jinotas.api.CrudApi
-import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
@@ -28,7 +27,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -112,18 +111,22 @@ class AdapterNotes(
     }
 
     fun deleteNoteDBApi(context: Context, note: Note) {
-        runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
             db = AppDatabase.getDatabase(context)
 
-            // Llamamos a la transacción de borrado en la base de datos
             try {
-                val existingNote = note.code.let { it1 -> db.noteDAO().getNoteByCode(it1) }
+                val existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
                 CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota
-                db.noteDAO()
-                    .deleteNoteWithTransaction(existingNote)  // Usamos la función transaccional
-                updateList(db.noteDAO().getNotesList() as ArrayList<Note>)  // Actualizamos la lista
+
+                db.noteDAO().deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+
+                // Actualización de la lista y notificación en el hilo principal
+                withContext(Dispatchers.Main) {
+                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+                }
+
             } catch (e: Exception) {
-                // Manejo de errores en caso de fallo de la transacción
+                // Manejo de errores
                 Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
             }
         }
@@ -142,40 +145,33 @@ class AdapterNotes(
     private fun showNestedAlertDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("¿A quien se lo quieres enviar? ")
-        var userToSend: String
 
-        // Crear un Layout para el formulario
+        // Crear el campo de entrada
         val layout = LinearLayout(context)
         layout.orientation = LinearLayout.VERTICAL
-
-        // Crear el campo del formulario
-        val nameInput = EditText(context)
-        nameInput.hint = "Nombre de usuario"
+        val nameInput = EditText(context).apply { hint = "Nombre de usuario" }
         layout.addView(nameInput)
         builder.setView(layout)
 
-        builder.setTitle("¿A quien se lo quieres enviar?").setPositiveButton("Aceptar") { _, _ ->
-            // Acción al pulsar "Aceptar"
-            // Guardar el nombre de usuario en una variable
-            userToSend = nameInput.text.toString().lowercase()
-
-            Log.e("userToSend", userToSend)
-
-            if (getTokenByUser(userToSend) != null) {
-                runBlocking {
-                    val corrutina = launch {
-                        sendPushNotificationToUserWithNote(userToSend, note, context)
+        builder.setPositiveButton("Aceptar") { _, _ ->
+            // Llamar a la función suspensiva dentro de una corrutina
+            val userToSend = nameInput.text.toString().lowercase()
+            CoroutineScope(Dispatchers.IO).launch {
+                val token = getTokenByUser(userToSend)
+                if (token != null) {
+                    sendPushNotificationToUserWithNote(userToSend, note, context)
+                } else {
+                    // Se asegura de que el código de UI se ejecute en el hilo principal
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
                     }
-                    corrutina.join()
                 }
-            } else {
-                Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
             }
-        }.setNegativeButton("Cancelar") { _, _ ->
-            // Mostrar el segundo diálogo
-            showConfirmationDialog(context, note)
-        }.show()
+        }
+            .setNegativeButton("Cancelar") { _, _ -> showConfirmationDialog(context, note) }
+            .show()
     }
+
 
     private fun showConfirmationDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
@@ -241,55 +237,32 @@ class AdapterNotes(
 //        builder.show()
 //    }
 
-    private fun getTokenByUser(userName: String): String? {
-//        var userToken: List<ApiTokenUser>? = null
-        var userToken: ApiTokenUser? = null
-        runBlocking {
-            val corrutina = launch {
-                userToken = CrudApi().getTokenByUser(userName)
-            }
-            corrutina.join()
-        }
-        return userToken?.token
+    private suspend fun getTokenByUser(userName: String): String? = withContext(Dispatchers.IO) {
+        return@withContext CrudApi().getTokenByUser(userName)?.token
     }
 
+
     private fun sendPushNotificationToUserWithNote(userName: String, note: Note, context: Context) {
-        var accessToken: String = ""
-        val tokenReceptor = getTokenByUser(userName)
+        CoroutineScope(Dispatchers.IO).launch {
+            val accessToken = getAccessToken(context)
+            val tokenReceptor = getTokenByUser(userName)
 
-        Log.i("userFrom", note.userFrom)
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                accessToken = getAccessToken(context)
-
-                // Definir la URL para la API v1 de FCM
+            if (tokenReceptor != null) {
                 val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
-
-                // Convertir el objeto Note a JSON usando Gson
                 val noteJson = Gson().toJson(note)
 
-                // Crear el OkHttpClient
                 val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
-
-                // Crear la carga JSON para enviar la notificación con datos
                 val json = JSONObject().apply {
                     put("message", JSONObject().apply {
-                        put("token", tokenReceptor) // Enviar a un token específico
-//                        put("notification", JSONObject().apply {
-//                            put("title", "Nueva Nota")
-//                            put("body", "${note.userFrom} te ha enviado una nueva nota")
-//                        })
-                        // Agregar los datos personalizados, asegurándose de convertir los valores numéricos a cadenas
+                        put("token", tokenReceptor)
                         put("data", JSONObject().apply {
-                            put("code", note.code.toString())  // Convertir a String
-                            put(
-                                "id", note.id?.toString() ?: ""
-                            )  // Convertir a String o manejar null
+                            put("code", note.code.toString())
+                            put("id", note.id?.toString() ?: "")
                             put("title", note.title)
                             put("textContent", note.textContent)
                             put("date", note.date)
                             put("userFrom", note.userFrom)
-                            put("userTo", userName)  // Manejar null
+                            put("userTo", userName)
                             put("createdAt", note.createdAt ?: "")
                             put("updatedAt", note.updatedAt ?: "")
                         })
@@ -298,35 +271,26 @@ class AdapterNotes(
 
                 updateNoteUserTo(note, userName, context)
 
-                // Crear el cuerpo de la solicitud
-                val body = RequestBody.create(
-                    "application/json; charset=utf-8".toMediaType(), json.toString()
-                )
+                val body = RequestBody.create("application/json; charset=utf-8".toMediaType(), json.toString())
+                val request = Request.Builder().url(url).post(body)
+                    .addHeader("Authorization", "Bearer $accessToken").build()
 
-                // Construir la solicitud con el encabezado de autorización
-                val request = Request.Builder().url(url).post(body).addHeader(
-                    "Authorization", "Bearer $accessToken"
-                ).build()
-
-                // Ejecutar la solicitud de manera asíncrona
                 client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        e.printStackTrace()
-                    }
-
+                    override fun onFailure(call: Call, e: IOException) { e.printStackTrace() }
                     override fun onResponse(call: Call, response: Response) {
-                        println("Response: ${response.body?.string()}")
+                        Log.i("sendNotification", "Response: ${response.body?.string()}")
                     }
                 })
-            } catch (e: Exception) {
-                e.printStackTrace() // Manejar excepciones
+            } else {
+                Log.e("sendNotification", "Token receptor es nulo")
             }
         }
     }
 
+
     private fun updateNoteUserTo(note: Note, userTo: String, context: Context) {
         note.userTo = userTo
-        runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
             val corrutina = launch {
                 db = AppDatabase.getDatabase(context)
                 db.noteDAO().updateNote(note)

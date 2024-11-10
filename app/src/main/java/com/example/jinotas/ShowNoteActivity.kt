@@ -16,6 +16,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.AppDatabase
@@ -27,7 +28,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.coroutines.CoroutineContext
@@ -60,8 +60,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         val userName = intent.getStringExtra("userFrom")
         mContentEditText = binding.noteContent
 
-        runBlocking {
-            val corrutina = launch {
+        lifecycleScope.launch {
                 db = AppDatabase.getDatabase(this@ShowNoteActivity)
                 notesShow = db.noteDAO().getNoteByCode(codeSearchUpdate)
                 notesShow.let {
@@ -69,8 +68,6 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                     binding.noteContent.setText(notesShow.textContent)
                 }
                 mContentEditText.processChecklists()
-            }
-            corrutina.join()
         }
 
         binding.btReturnToNotes.setOnClickListener {
@@ -82,26 +79,24 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val current = LocalDateTime.now().format(formatter)
             vibratePhone(this)
-            runBlocking {
-                val corrutina = launch {
-                    val noteUpdate = Note(
-                        codeSearchUpdate,
-                        notesShow.id,
-                        binding.etTitle.text.toString(),
-                        binding.noteContent.getPlainTextContent(),
-                        current,
-                        userName!!,
-                        null,
-                        null
-                    )
-                    Log.i("notaUpdate", noteUpdate.toString())
-                    db.noteDAO().updateNote(noteUpdate)
-                    CrudApi().patchNote(noteUpdate)
-                    Toast.makeText(
-                        this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT
-                    ).show()
-                }
-                corrutina.join()
+            lifecycleScope.launch {
+                val noteUpdate = Note(
+                    codeSearchUpdate,
+                    notesShow.id,
+                    binding.etTitle.text.toString(),
+                    binding.noteContent.getPlainTextContent(),
+                    current,
+                    userName!!,
+                    null,
+                    null
+                )
+                Log.i("notaUpdate", noteUpdate.toString())
+                db.noteDAO().updateNote(noteUpdate)
+                CrudApi().patchNote(noteUpdate)
+                Toast.makeText(
+                    this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT
+                ).show()
+
             }
             finish()
 

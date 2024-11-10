@@ -1,6 +1,5 @@
 package com.example.jinotas
 
-import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -9,12 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.Toast
-import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -22,25 +15,17 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.adapter.AdapterNotes
-import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.Utils
-import com.example.jinotas.utils.Utils.dataStore
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toCollection
-import kotlinx.coroutines.flow.toList
+
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
 
@@ -116,7 +101,6 @@ class NotesFragment : Fragment(), CoroutineScope {
                             }
                         }
                     })
-
                     snackbar.show()
                 } else if (direction == ItemTouchHelper.RIGHT) {
                     Log.e("tamañoListaAntes", notesList.size.toString())

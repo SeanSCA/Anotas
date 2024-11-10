@@ -16,6 +16,7 @@ import android.view.View.OnFocusChangeListener
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.commonsware.cwac.anddown.AndDown
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
@@ -29,7 +30,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.coroutines.CoroutineContext
@@ -88,24 +88,22 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val current = LocalDateTime.now().format(formatter)
             vibratePhone(this)
-            runBlocking {
-                val corrutina = launch {
-                    val note = Note(
-                        id = null,
-                        title = binding.etTitle.text.toString(),
-                        textContent = binding.noteContent.getPlainTextContent(),
-                        date = current.toString(),
-                        userFrom = userNameFrom ?: "",
-                        userTo = null
-                    )
-                    db = AppDatabase.getDatabase(this@WriteNotesActivity)
-                    db.noteDAO().insertNote(note)
-                    notesList = db.noteDAO().getNotesList() as ArrayList<Note>
-                    adapterNotes = AdapterNotes(notesList, coroutineContext)
-                    adapterNotes.updateList(notesList)
-                    uploadNoteApi(note)
-                }
-                corrutina.join()
+            lifecycleScope.launch {
+                val note = Note(
+                    id = null,
+                    title = binding.etTitle.text.toString(),
+                    textContent = binding.noteContent.getPlainTextContent(),
+                    date = current.toString(),
+                    userFrom = userNameFrom ?: "",
+                    userTo = null
+                )
+                db = AppDatabase.getDatabase(this@WriteNotesActivity)
+                db.noteDAO().insertNote(note)
+                notesList = db.noteDAO().getNotesList() as ArrayList<Note>
+                adapterNotes = AdapterNotes(notesList, coroutineContext)
+                adapterNotes.updateList(notesList)
+                uploadNoteApi(note)
+
             }
             finish()
         }
@@ -284,13 +282,10 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
 
     private fun uploadNoteApi(notePost: Note) {
         if (tryConnection()) {
-            runBlocking {
-                val corrutina = launch {
-                    CrudApi().postNote(notePost, this@WriteNotesActivity)
-                    Toast.makeText(this@WriteNotesActivity, "Has subido la nota", Toast.LENGTH_LONG)
-                        .show()
-                }
-                corrutina.join()
+            lifecycleScope.launch {
+                CrudApi().postNote(notePost, this@WriteNotesActivity)
+                Toast.makeText(this@WriteNotesActivity, "Has subido la nota", Toast.LENGTH_LONG)
+                    .show()
             }
         }
     }
