@@ -29,6 +29,7 @@ import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -85,10 +86,18 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         }
 
         binding.btSaveNote.setOnClickListener {
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val current = LocalDateTime.now().format(formatter)
+            binding.btSaveNote.setBackgroundColor(this.getColor(R.color.disabled))
+            binding.btSaveNote.isEnabled = false
+            binding.btSaveNote.isClickable = false
+
             vibratePhone(this)
+
             lifecycleScope.launch {
+                delay(1)
+
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val current = LocalDateTime.now().format(formatter)
+
                 val note = Note(
                     id = null,
                     title = binding.etTitle.text.toString(),
@@ -103,7 +112,6 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                 adapterNotes = AdapterNotes(notesList, coroutineContext)
                 adapterNotes.updateList(notesList)
                 uploadNoteApi(note)
-
             }
             finish()
         }

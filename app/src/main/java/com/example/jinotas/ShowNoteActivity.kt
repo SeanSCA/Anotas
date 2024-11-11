@@ -27,7 +27,9 @@ import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.coroutines.CoroutineContext
@@ -61,13 +63,13 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         mContentEditText = binding.noteContent
 
         lifecycleScope.launch {
-                db = AppDatabase.getDatabase(this@ShowNoteActivity)
-                notesShow = db.noteDAO().getNoteByCode(codeSearchUpdate)
-                notesShow.let {
-                    binding.etTitle.setText(notesShow.title)
-                    binding.noteContent.setText(notesShow.textContent)
-                }
-                mContentEditText.processChecklists()
+            db = AppDatabase.getDatabase(this@ShowNoteActivity)
+            notesShow = db.noteDAO().getNoteByCode(codeSearchUpdate)
+            notesShow.let {
+                binding.etTitle.setText(notesShow.title)
+                binding.noteContent.setText(notesShow.textContent)
+            }
+            mContentEditText.processChecklists()
         }
 
         binding.btReturnToNotes.setOnClickListener {
@@ -76,10 +78,22 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         }
 
         binding.btOverwriteNote.setOnClickListener {
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val current = LocalDateTime.now().format(formatter)
+            // Cambia el color, desactiva el botón y permite que la interfaz se refresque
+            binding.btOverwriteNote.setBackgroundColor(this.getColor(R.color.disabled))
+            binding.btOverwriteNote.isEnabled = false
+            binding.btOverwriteNote.isClickable = false
+
+            // Ejecuta la vibración
             vibratePhone(this)
+
+            // Inicia la coroutine para realizar operaciones en segundo plano
             lifecycleScope.launch {
+                // Agrega un pequeño retraso para permitir que la UI se actualice
+                delay(1)
+
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val current = LocalDateTime.now().format(formatter)
+
                 val noteUpdate = Note(
                     codeSearchUpdate,
                     notesShow.id,
@@ -90,17 +104,19 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                     null,
                     null
                 )
+
                 Log.i("notaUpdate", noteUpdate.toString())
                 db.noteDAO().updateNote(noteUpdate)
                 CrudApi().patchNote(noteUpdate)
+
                 Toast.makeText(
                     this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT
                 ).show()
 
+                finish()
             }
-            finish()
-
         }
+
 
         binding.btAddCheckbox.setOnClickListener {
             insertChecklist()
