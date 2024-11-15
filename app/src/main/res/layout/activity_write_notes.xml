@@ -107,20 +107,44 @@
                     android:id="@+id/noteContent"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:inputType="textMultiLine|textCapSentences"
                     android:layout_weight="1"
-                    android:gravity="top"
-                    android:scrollHorizontally="false"
                     android:background="@color/editContentBackground"
-                    android:padding="16dp"
+                    android:cursorVisible="true"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
-                    android:textIsSelectable="true"
-                    android:longClickable="true"
-                    android:cursorVisible="true"
+                    android:gravity="top"
                     android:imeOptions="flagNoExtractUi"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:longClickable="true"
+                    android:padding="16dp"
+                    android:scrollHorizontally="false"
                     android:textColor="@android:color/white"
-                    tools:context=".WriteNotesActivity"/>
+                    android:textIsSelectable="true"
+                    tools:context=".WriteNotesActivity" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <ImageButton
+                    android:id="@+id/btUpperLower"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/font_size_roundcorner"
+                    android:src="@drawable/font_size" />
+
+                <ImageButton
+                    android:id="@+id/btColorText"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/font_size_roundcorner"
+                    android:src="@drawable/font_size" />
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 

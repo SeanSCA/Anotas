@@ -13,6 +13,7 @@ import android.util.Log
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat.getString
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.GravityCompat
 import androidx.datastore.core.DataStore
@@ -30,6 +31,7 @@ import com.example.jinotas.DrawerExpandableListAdapter
 import com.example.jinotas.R
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.db.Note
+import com.example.jinotas.widgets.CustomEditText
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.GoogleCredentials
@@ -150,8 +152,7 @@ object Utils {
 
     // Función para leer el valor almacenado en DataStore
     fun getValues(context: Context): Flow<String> {
-        return context.dataStore.data
-            .map { preferences ->
+        return context.dataStore.data.map { preferences ->
                 preferences[FILE] ?: "Valor no encontrado"
             }
     }
@@ -188,6 +189,34 @@ object Utils {
             vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
             vibrator.vibrate(100)
+        }
+    }
+
+    fun setUpperLowerCase(customEditText: CustomEditText, context: Context) {
+        val content = customEditText.getPlainTextContent()
+
+        val start = customEditText.selectionStart
+        val end = customEditText.selectionEnd
+
+        if (start in 0..<end) {
+            val selectedText = content.substring(start, end)
+
+            val transformedText = if (selectedText.any { it.isUpperCase() }) {
+                selectedText.lowercase()
+            } else {
+                selectedText.uppercase()
+            }
+
+            val newContent = StringBuilder(content).apply {
+                replace(start, end, transformedText)
+            }.toString()
+
+            customEditText.setText(newContent)
+
+            customEditText.setSelection(start, start + transformedText.length)
+        } else {
+            Toast.makeText(context, getString(context, R.string.selected_text), Toast.LENGTH_SHORT)
+                .show()
         }
     }
 }

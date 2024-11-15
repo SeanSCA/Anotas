@@ -22,6 +22,7 @@ import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
+import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
@@ -120,6 +121,10 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
 
         binding.btAddCheckbox.setOnClickListener {
             insertChecklist()
+        }
+
+        binding.btUpperLower.setOnClickListener {
+            Utils.setUpperLowerCase(binding.noteContent, this)
         }
 
         setContentView(binding.root)

@@ -24,6 +24,7 @@ import com.example.jinotas.databinding.ActivityWriteNotesBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
+import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
@@ -115,6 +116,11 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             }
             finish()
         }
+
+        binding.btUpperLower.setOnClickListener {
+            Utils.setUpperLowerCase(binding.noteContent, this)
+        }
+
     }
 
     private fun insertChecklist() {

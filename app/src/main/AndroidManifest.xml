@@ -29,10 +29,12 @@
 
         <activity
             android:name=".ShowNoteActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize|stateVisible"/>
         <activity
             android:name=".WriteNotesActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize|stateVisible"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
