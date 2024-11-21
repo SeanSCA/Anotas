@@ -1,25 +1,51 @@
 package com.example.jinotas.widgets
 
 import android.content.Context
+import android.graphics.Path
+import android.graphics.Point
 import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Handler
 import android.provider.Settings
 import android.text.Editable
+import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
+import android.text.style.BackgroundColorSpan
+import android.text.style.CharacterStyle
 import android.text.style.ImageSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.util.AttributeSet
+import android.util.Log
+import android.view.ActionMode
+import android.view.Gravity
 import android.view.KeyEvent
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.AdapterView
+import android.widget.PopupMenu
+import android.widget.PopupWindow
+import android.widget.ScrollView
+import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.AppCompatEditText
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import com.example.jinotas.R
+import com.example.jinotas.databinding.PopupStylesBinding
 import com.example.jinotas.utils.AppLog
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.DisplayUtils
@@ -27,14 +53,30 @@ import com.example.jinotas.utils.DrawableUtils
 import com.example.jinotas.utils.ThemeUtils
 import com.example.jinotas.widgets.CustomLinkify.CUSTOM_LINK_ID
 import com.example.jinotas.widgets.CustomLinkify.CUSTOM_LINK_PREFIX
+import kotlinx.coroutines.delay
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class CustomEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : AppCompatEditText(context, attrs), AdapterView.OnItemClickListener {
+
+    private val popupWindow: PopupWindow = PopupWindow(context)
+    private lateinit var binding: PopupStylesBinding
+    private var isPopupVisible: Boolean = false
+    private lateinit var popupMenu: PopupMenu
+    private val currentLocation = Point()
+    private val startLocation = Point()
+    private val currentBounds = Rect()
+    private var targetTextViewTextSize: Float = 12f
+    private var startIndex: Int? = null
+    private var endIndex: Int? = null
+    private var selectionStart: Int = -1
+    private var selectionEnd: Int = -1
+    private var span: Spannable? = null
 
     companion object {
         private val INTERNOTE_LINK_PATTERN_EDIT =
@@ -42,21 +84,36 @@ class CustomEditText @JvmOverloads constructor(
         private val INTERNOTE_LINK_PATTERN_FULL =
             Pattern.compile("(?s)(.)*(\\[)$INTERNOTE_LINK_PATTERN_EDIT")
         private const val CHECKBOX_LENGTH = 2 // one ClickableSpan character + one space character
+        const val DEFAULT_WIDTH = -1
+        const val DEFAULT_HEIGHT = -1
+
+        enum class ButtonType {
+            HighLight, Bold, Italic, UnderLine
+        }
     }
+
+    @ColorRes
+    private var highLightColor: Int = R.color.background
 
     init {
         movementMethod = LinkMovementMethod.getInstance()
+        setUpPopupWindow()
+        setTextIsSelectable(true)
+        customSelectionActionModeCallback = OnSelectedCallback()
+        setOnScrollChangeListener { _, _, _, _, _ ->
+            if (hasSelection() && popupWindow.isShowing) {
+                val (point, cX, cY) = getLocationAndCoordinate() ?: return@setOnScrollChangeListener
+                val x = (cX + (point.x + cX))
+                val y = (cY + (point.y - cY - scrollY))
+                popupWindow.update(x, y, DEFAULT_WIDTH, DEFAULT_HEIGHT)
+            }
+        }
     }
 
-    init {
-//        // Agrega un TextWatcher para procesar los checklists
-//        this.addTextChangedListener(object : TextWatcher {
-//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-//            override fun afterTextChanged(editable: Editable?) {
-//                processChecklists()
-//            }
-//        })
+    private fun dismissPopupWindow() {
+        if (popupWindow != null) {
+            popupWindow.dismiss()
+        }
     }
 
     private lateinit var listeners: MutableList<OnSelectionChangedListener>/*= mutableListOf<OnSelectionChangedListener>()*/
@@ -89,8 +146,19 @@ class CustomEditText @JvmOverloads constructor(
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
+
         if (::listeners.isInitialized) {
             listeners.forEach { it.onSelectionChanged(selStart, selEnd) }
+        }
+
+        startIndex = selStart
+        endIndex = selEnd
+
+        // Validar que los índices sean correctos antes de mostrar el popup
+        if (selStart >= 0 && selEnd > selStart) {
+            showPopupWindow() // Solo mostrar el popup si la selección es válida
+        } else {
+            dismissPopupWindow() // Ocultar el popup si no hay selección
         }
     }
 
@@ -322,5 +390,144 @@ class CustomEditText @JvmOverloads constructor(
             0,
             text!!.length
         )
+    }
+
+//    override fun onTouchEvent(event: MotionEvent): Boolean {
+//        if (event.action == MotionEvent.ACTION_UP) {
+//            if (popupWindow != null && !popupWindow.isShowing) {
+//                showPopupWindow()
+//                Log.e("aaaaaa", "Llegaaaa")
+//            }
+//        }
+//        return super.onTouchEvent(event)
+//    }
+
+    private fun setUpPopupWindow() {
+        popupWindow.apply {
+            binding = PopupStylesBinding.inflate(LayoutInflater.from(context))
+            width = context.resources.getDimensionPixelSize(R.dimen.popup_window_width)
+            height = WRAP_CONTENT
+            contentView = binding.root
+            animationStyle = R.style.PopupWindowAnimationBottomSlide
+            setBackgroundDrawable(
+                ContextCompat.getDrawable(
+                    context, R.drawable.bg_action_mode_popup_window
+                )
+            )
+            isFocusable = false
+            isOutsideTouchable = false
+
+            binding.apply {
+                imageButtonActionModePopupWindowClear.setOnClickListener {
+                    onClear()
+                }
+                imageButtonActionModePopupWindowHighlight.setOnClickListener {
+                    onClickImageButton(ButtonType.HighLight)
+                }
+                imageButtonActionModePopupWindowBold.setOnClickListener {
+                    onClickImageButton(ButtonType.Bold)
+                }
+                imageButtonActionModePopupWindowItalic.setOnClickListener {
+                    onClickImageButton(ButtonType.Italic)
+                }
+                imageButtonActionModePopupWindowUnderline.setOnClickListener {
+                    onClickImageButton(ButtonType.UnderLine)
+                }
+            }
+        }
+    }
+
+    private fun onClickImageButton(type: ButtonType) {
+        post {
+            val styleSpan = when (type) {
+                ButtonType.HighLight -> BackgroundColorSpan(
+                    ContextCompat.getColor(
+                        context, highLightColor
+                    )
+                )
+
+                ButtonType.Bold -> StyleSpan(Typeface.BOLD)
+                ButtonType.Italic -> StyleSpan(Typeface.ITALIC)
+                ButtonType.UnderLine -> UnderlineSpan()
+            }
+            span?.setSpan(
+                styleSpan,
+                startIndex ?: return@post,
+                endIndex ?: return@post,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+    }
+
+    private fun onClear() {
+        val spansToRemove = span?.getSpans(
+            startIndex ?: return, endIndex ?: return, CharacterStyle::class.java
+        ) ?: return
+        for (s in spansToRemove) {
+            span?.removeSpan(s)
+        }
+    }
+
+    private fun showPopupWindow() {
+        if (popupWindow.isShowing) {
+            val (point, cX, cY) = getLocationAndCoordinate() ?: return
+            if (cX >= 0 && cY >= 0) { // Validar las coordenadas
+                popupWindow.update(cX + point.x, cY + point.y, DEFAULT_WIDTH, DEFAULT_HEIGHT)
+            }
+        } else {
+            val (point, cX, cY) = getLocationAndCoordinate() ?: return
+            if (cX >= 0 && cY >= 0) { // Validar las coordenadas
+                popupWindow.showAtLocation(this, Gravity.TOP, cX + point.x, cY + point.y)
+                popupWindow.isFocusable = false
+                popupWindow.isOutsideTouchable = false
+            }
+        }
+    }
+
+    private fun getLocationAndCoordinate(): Triple<Point, Int, Int>? {
+        val popLocation = calculatePopupLocation() ?: return null
+        val currentX = currentLocation.x
+        val currentY = currentLocation.y
+        currentLocation.set(popLocation.x, popLocation.y)
+        return Triple(popLocation, currentX, currentY)
+    }
+
+    private fun updatePopupWindow(point: Point, cX: Int, cY: Int) {
+        popupWindow.update(cX + point.x, cY + point.y, DEFAULT_WIDTH, DEFAULT_HEIGHT)
+    }
+
+    private fun calculatePopupLocation(): Point? {
+        val scrollView: ScrollView? = parent as? ScrollView
+
+        val selectionStart = selectionStart
+        val selectionEnd = selectionEnd
+        val min = min(selectionStart, selectionEnd)
+        val max = max(selectionStart, selectionEnd)
+
+        val selectionBounds = RectF()
+        val selection = Path()
+        layout?.getSelectionPath(min, max, selection)
+        selection.computeBounds(selectionBounds, true)
+
+        val textPadding = paddingLeft
+        val scrollY = scrollView?.scrollY ?: 0
+
+        val x = (selectionBounds.centerX() + textPadding).roundToInt()
+        val y = (selectionBounds.centerY() - scrollY).roundToInt()
+        currentLocation.set(x, y)
+        return currentLocation
+    }
+
+    fun setHighLightColor(@ColorRes colorRes: Int) {
+        this.highLightColor = colorRes
+    }
+
+    private inner class OnSelectedCallback : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean = false
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = false
+        override fun onDestroyActionMode(mode: ActionMode) {
+            dismissPopupWindow()
+        }
     }
 }

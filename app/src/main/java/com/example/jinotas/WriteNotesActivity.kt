@@ -11,6 +11,7 @@ import android.text.style.MetricAffectingSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.widget.Toast
@@ -76,6 +77,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         val inflater = this.layoutInflater
 //        mRootView = inflater.inflate()
         mContentEditText = binding.noteContent
+
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
             finish()
@@ -121,6 +123,17 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             Utils.setUpperLowerCase(binding.noteContent, this)
         }
 
+//        binding.noteContent.addTextChangedListener(object : TextWatcher {
+//            override fun afterTextChanged(s: Editable?) {
+//                if (binding.noteContent.hasFocus() && binding.noteContent.selectionStart == binding.noteContent.selectionEnd) {
+//                    // Reaplicar la selección si se pierde
+//                    binding.noteContent.setSelection(0, s?.length ?: 0)
+//                }
+//            }
+//
+//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+//        })
     }
 
     private fun insertChecklist() {
