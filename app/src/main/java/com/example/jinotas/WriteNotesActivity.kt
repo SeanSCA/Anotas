@@ -86,6 +86,8 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         binding.btAddCheckbox.setOnClickListener {
             vibratePhone(this)
             insertChecklist()
+//            mContentEditText.dissmisPopup()
+
         }
 
         binding.btSaveNote.setOnClickListener {
