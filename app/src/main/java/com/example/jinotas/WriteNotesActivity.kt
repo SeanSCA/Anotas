@@ -25,12 +25,16 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.coroutines.CoroutineContext
@@ -107,15 +111,40 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                     userTo = null
                 )
                 db = AppDatabase.getDatabase(this@WriteNotesActivity)
-                db.noteDAO().insertNote(note)
+//                db.noteDAO().insertNote(note)
+                saveNoteConcurrently(note)
                 notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                 adapterNotes = AdapterNotes(notesList, coroutineContext)
                 adapterNotes.updateList(notesList)
-                uploadNoteApi(note)
+//                uploadNoteApi(note)
             }
             finish()
         }
     }
+
+    private fun saveNoteConcurrently(note: Note) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
+            val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
+
+            try {
+                // Espera a que ambas operaciones terminen
+                localSave.await()
+                cloudSave.await()
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@WriteNotesActivity, "Has creado la nota ${note.title}", Toast.LENGTH_LONG).show()
+//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    // Manejo de errores
+                    Toast.makeText(this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
 
     private fun insertChecklist() {
         try {
