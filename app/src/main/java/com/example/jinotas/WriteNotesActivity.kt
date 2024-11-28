@@ -133,13 +133,19 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                 cloudSave.await()
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@WriteNotesActivity, "Has creado la nota ${note.title}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@WriteNotesActivity,
+                        "Has creado la nota ${note.title}",
+                        Toast.LENGTH_LONG
+                    ).show()
 //                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     // Manejo de errores
-                    Toast.makeText(this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }

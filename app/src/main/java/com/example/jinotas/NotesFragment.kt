@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -20,6 +21,7 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,48 +77,61 @@ class NotesFragment : Fragment(), CoroutineScope {
                 val note: Note = notesList[position]
                 vibratePhone(requireContext())
 
-                if (direction == ItemTouchHelper.LEFT) {
-                    // Eliminar de la lista y actualizar el RecyclerView
-                    notesList.removeAt(position)
-                    adapterNotes.notifyItemRemoved(position)
+                lifecycleScope.launch {
+                    if (isConnectionStableAndFast(requireContext())) {
+                        if (direction == ItemTouchHelper.LEFT) {
+                            // Eliminar de la lista y actualizar el RecyclerView
+                            notesList.removeAt(position)
+                            adapterNotes.notifyItemRemoved(position)
 
-                    // Mostrar Snackbar con opción de "Deshacer"
-                    val snackbar = Snackbar.make(
-                        binding.rvNotes, "Has eliminado la nota ${note.title}", Snackbar.LENGTH_LONG
-                    )
+                            // Mostrar Snackbar con opción de "Deshacer"
+                            val snackbar = Snackbar.make(
+                                binding.rvNotes,
+                                "Has eliminado la nota ${note.title}",
+                                Snackbar.LENGTH_LONG
+                            )
 
-                    snackbar.setAction("Deshacer") {
-                        // Agregar nuevamente la nota en la posición original
+                            snackbar.setAction("Deshacer") {
+                                // Agregar nuevamente la nota en la posición original
+                                notesList.add(position, note)
+                                adapterNotes.notifyItemInserted(position)
+                            }
+
+                            snackbar.addCallback(object : Snackbar.Callback() {
+                                override fun onDismissed(
+                                    transientBottomBar: Snackbar?, event: Int
+                                ) {
+                                    // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
+                                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                                        adapterNotes.deleteNoteDBApi(
+                                            this@NotesFragment.requireContext(), note
+                                        )
+                                    }
+                                }
+                            })
+                            snackbar.show()
+                        } else if (direction == ItemTouchHelper.RIGHT) {
+
+                            Log.e("enviarNota", "Calidad de internet correcta")
+//                            Toast.makeText(requireContext(), "Calidad de internet correcta", Toast.LENGTH_LONG).show()
+                            Log.e("tamañoListaAntes", notesList.size.toString())
+                            notesList.removeAt(position)
+                            adapterNotes.notifyItemRemoved(position)
+                            notesList.add(position, note)
+                            adapterNotes.notifyItemInserted(position)
+                            adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
+                            Log.e("tamañoListaDespues", notesList.size.toString())
+                        }
+                    } else {
                         notesList.add(position, note)
                         adapterNotes.notifyItemInserted(position)
+                        Toast.makeText(
+                            requireContext(),
+                            "No dispones de suficiente conexión a internet",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
-
-                    snackbar.addCallback(object : Snackbar.Callback() {
-                        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                            // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
-                            if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                                adapterNotes.deleteNoteDBApi(
-                                    this@NotesFragment.requireContext(), note
-                                )
-                            }
-                        }
-                    })
-                    snackbar.show()
-                } else if (direction == ItemTouchHelper.RIGHT) {
-                    Log.e("tamañoListaAntes", notesList.size.toString())
-                    notesList.removeAt(position)
-                    adapterNotes.notifyItemRemoved(position)
-                    notesList.add(position, note)
-                    adapterNotes.notifyItemInserted(position)
-//                    Toast.makeText(
-//                        this@NotesFragment.requireContext(),
-//                        "Has deslizado a la derecha",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-                    adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
-                    Log.e("tamañoListaDespues", notesList.size.toString())
                 }
-
             }
         }).attachToRecyclerView(binding.rvNotes)
 
