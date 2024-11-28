@@ -23,13 +23,19 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
+import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
+import com.example.jinotas.utils.UtilsDBAPI.updateNoteInLocalDatabase
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.coroutines.CoroutineContext
@@ -104,11 +110,8 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                     null,
                     null
                 )
-
+                overwriteNoteConcurrently(noteUpdate)
                 Log.i("notaUpdate", noteUpdate.toString())
-                db.noteDAO().updateNote(noteUpdate)
-                CrudApi().patchNote(noteUpdate)
-
                 Toast.makeText(
                     this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT
                 ).show()
@@ -123,6 +126,32 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         }
 
         setContentView(binding.root)
+    }
+
+    private fun overwriteNoteConcurrently(note: Note) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val localSave = async { updateNoteInLocalDatabase(note, this@ShowNoteActivity) }
+            val cloudSave = async { updateNoteInCloud(note, this@ShowNoteActivity) }
+
+            try {
+                // Espera a que ambas operaciones terminen
+                localSave.await()
+                cloudSave.await()
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@ShowNoteActivity, "Has modificado la nota ${note.title}", Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    // Manejo de errores
+                    Toast.makeText(
+                        this@ShowNoteActivity, "Error al modificar la nota", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
     }
 
     private fun insertChecklist() {
