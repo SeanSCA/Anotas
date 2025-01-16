@@ -35,9 +35,15 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.work.Configuration
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
+import com.example.jinotas.connection.SyncNotesWorker
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -96,7 +102,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+//        WorkManager.initialize(this, Configuration.Builder().build())
+        enqueueSyncNotesWork(applicationContext)
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
         expandableListView = binding.expandableListView
@@ -534,4 +541,16 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         }
         Log.i("OnBackPressed", "Has pulsado retroceder")
     }
+
+    fun enqueueSyncNotesWork(context: Context) {
+        val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>()
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+        WorkManager.getInstance(context).enqueue(workRequest)
+    }
+
 }
