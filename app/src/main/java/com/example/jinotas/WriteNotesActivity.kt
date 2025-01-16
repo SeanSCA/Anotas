@@ -25,8 +25,12 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteConcurrentlyWithInternet
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteConcurrentlyWithoutInternet
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteLocallyForLaterSync
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -151,6 +155,36 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         }
     }
 
+//    private fun saveNoteConcurrently(note: Note) {
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            val isConnected = try {
+//                isConnectionStableAndFast(applicationContext)
+//            } catch (e: Exception) {
+//                Log.e("saveNoteConcurrently", "Error checking connection: ${e.message}")
+//                false
+//            }
+//
+//            if (isConnected) {
+//                try {
+//                    saveNoteConcurrentlyWithInternet(note, applicationContext)
+//                    Log.e("saveNoteConcurrentlyWithInternet", "Stored with internet.")
+//                } catch (e: Exception) {
+//                    Log.e("saveNoteConcurrently", "Error saving with internet: ${e.message}")
+//                    saveNoteLocallyForLaterSync(note, applicationContext)
+//                }
+//            } else {
+//                try {
+//                    saveNoteConcurrentlyWithoutInternet(note, applicationContext)
+//                    Log.e("saveNoteConcurrentlyWithoutInternet", "Stored without internet.")
+//                } catch (e: Exception) {
+//                    Log.e(
+//                        "saveNoteConcurrentlyWithoutInternet",
+//                        "Error saving without internet: ${e.message}"
+//                    )
+//                }
+//            }
+//        }
+//    }
 
     private fun insertChecklist() {
         try {
