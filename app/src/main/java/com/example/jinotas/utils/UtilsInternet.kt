@@ -29,18 +29,19 @@ object UtilsInternet {
             networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
                 val downSpeed = networkCapabilities.linkDownstreamBandwidthKbps
                 Log.d("InternetUtils", "WiFi speed: $downSpeed Kbps")
-                downSpeed > 5000 // Por ejemplo, 5 Mbps
+                downSpeed > 5000 // Mínimo 5 Mbps
             }
 
             networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
                 val downSpeed = networkCapabilities.linkDownstreamBandwidthKbps
                 Log.d("InternetUtils", "Cellular speed: $downSpeed Kbps")
-                downSpeed > 2000 // Por ejemplo, 2 Mbps
+                downSpeed > 2000 // Mínimo 2 Mbps
             }
 
             else -> false
         }
     }
+
 
     fun getMobileSignalStrength(context: Context): Int? {
         val telephonyManager =
@@ -63,13 +64,15 @@ object UtilsInternet {
         }
     }
 
-
     suspend fun isConnectionResponsive(): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 Socket().use { socket ->
                     val socketAddress = InetSocketAddress("8.8.8.8", 53) // DNS de Google, puerto 53
-                    socket.connect(socketAddress, 1000) // Timeout en milisegundos
+                    val timeTaken = measureTimeMillis {
+                        socket.connect(socketAddress, 2000) // Timeout más largo (2 segundos)
+                    }
+                    Log.d("InternetUtils", "Ping successful in $timeTaken ms")
                     true
                 }
             } catch (e: Exception) {
@@ -79,21 +82,31 @@ object UtilsInternet {
         }
     }
 
-
     suspend fun isConnectionStableAndFast(context: Context): Boolean {
-        // Verificar conexión básica
-        val isGoodConnection = isConnectionGoodEnough(context)
+        return try {
+            // Verificar conexión básica
+            val isGoodConnection = isConnectionGoodEnough(context)
 
-        // Verificar latencia (ping)
-        val isResponsive = isConnectionResponsive()
+            // Verificar latencia (ping)
+            val isResponsive = isConnectionResponsive()
 
-        // Opcional: Verificar intensidad de señal si está en red celular
-        val signalStrength = getMobileSignalStrength(context)
-        val isSignalGood = signalStrength == null || signalStrength > -110 // Solo aplica si no es null
+            // Opcional: Verificar intensidad de señal si está en red celular
+            val signalStrength = getMobileSignalStrength(context)
+            val isSignalGood = signalStrength == null || signalStrength > -110 // Solo aplica si no es null
 
-        Log.d("InternetUtils", "Connection Good: $isGoodConnection, Responsive: $isResponsive, Signal: $signalStrength")
-        return isGoodConnection && isResponsive && isSignalGood
+            Log.d(
+                "InternetUtils",
+                "Connection Good: $isGoodConnection, Responsive: $isResponsive, Signal: $signalStrength"
+            )
+
+            // Considerar conexión estable si todas las condiciones son verdaderas
+            isGoodConnection && isResponsive && isSignalGood
+        } catch (e: Exception) {
+            Log.e("InternetUtils", "Error verifying connection: ${e.message}")
+            false // Ante cualquier excepción, considerar la conexión no estable
+        }
     }
+
 
 
 }
