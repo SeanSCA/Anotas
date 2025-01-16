@@ -113,12 +113,13 @@ class AdapterNotes(
     fun deleteNoteDBApi(context: Context, note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
             db = AppDatabase.getDatabase(context)
-
+            var existingNote: Note? = null
             try {
-                val existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
+                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
                 CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota
 
-                db.noteDAO().deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+                db.noteDAO()
+                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
 
                 // Actualización de la lista y notificación en el hilo principal
                 withContext(Dispatchers.Main) {
@@ -128,6 +129,11 @@ class AdapterNotes(
             } catch (e: Exception) {
                 // Manejo de errores
                 Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+            } finally {
+                if (existingNote != null) {
+                    db.noteDAO()
+                        .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+                }
             }
         }
     }
@@ -163,13 +169,12 @@ class AdapterNotes(
                 } else {
                     // Se asegura de que el código de UI se ejecute en el hilo principal
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG)
+                            .show()
                     }
                 }
             }
-        }
-            .setNegativeButton("Cancelar") { _, _ -> showConfirmationDialog(context, note) }
-            .show()
+        }.setNegativeButton("Cancelar") { _, _ -> showConfirmationDialog(context, note) }.show()
     }
 
 
@@ -271,12 +276,17 @@ class AdapterNotes(
 
                 updateNoteUserTo(note, userName, context)
 
-                val body = RequestBody.create("application/json; charset=utf-8".toMediaType(), json.toString())
+                val body = RequestBody.create(
+                    "application/json; charset=utf-8".toMediaType(), json.toString()
+                )
                 val request = Request.Builder().url(url).post(body)
                     .addHeader("Authorization", "Bearer $accessToken").build()
 
                 client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) { e.printStackTrace() }
+                    override fun onFailure(call: Call, e: IOException) {
+                        e.printStackTrace()
+                    }
+
                     override fun onResponse(call: Call, response: Response) {
                         Log.i("sendNotification", "Response: ${response.body?.string()}")
                     }
