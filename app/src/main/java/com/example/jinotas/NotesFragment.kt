@@ -38,6 +38,9 @@ class NotesFragment : Fragment(), CoroutineScope {
     private lateinit var db: AppDatabase
     private var job: Job = Job()
     private lateinit var notesListStyle: String
+    var isRemovingNote = false
+    // Lista para almacenar las notas pendientes de eliminación
+    val notesToDelete = mutableListOf<Pair<Int, Note>>()
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -62,8 +65,7 @@ class NotesFragment : Fragment(), CoroutineScope {
         }
 //        Log.e("notesListStyle", notesListStyle)
 
-        ItemTouchHelper(object :
-            ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
             override fun onMove(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder,
@@ -75,67 +77,63 @@ class NotesFragment : Fragment(), CoroutineScope {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val note: Note = notesList[position]
-                vibratePhone(requireContext())
 
-                lifecycleScope.launch {
-                    if (isConnectionStableAndFast(requireContext())) {
-                        if (direction == ItemTouchHelper.LEFT) {
-                            // Eliminar de la lista y actualizar el RecyclerView
-                            notesList.removeAt(position)
-                            adapterNotes.notifyItemRemoved(position)
+                // Agregar la nota a la lista de eliminaciones
+                notesToDelete.add(Pair(position, note))
 
-                            // Mostrar Snackbar con opción de "Deshacer"
-                            val snackbar = Snackbar.make(
-                                binding.rvNotes,
-                                "Has eliminado la nota ${note.title}",
-                                Snackbar.LENGTH_LONG
-                            )
-
-                            snackbar.setAction("Deshacer") {
-                                // Agregar nuevamente la nota en la posición original
-                                notesList.add(position, note)
-                                adapterNotes.notifyItemInserted(position)
-                            }
-
-                            snackbar.addCallback(object : Snackbar.Callback() {
-                                override fun onDismissed(
-                                    transientBottomBar: Snackbar?, event: Int
-                                ) {
-                                    // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
-                                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                                        adapterNotes.deleteNoteDBApi(
-                                            this@NotesFragment.requireContext(), note
-                                        )
-                                    }
-                                }
-                            })
-                            snackbar.show()
-                        } else if (direction == ItemTouchHelper.RIGHT) {
-
-                            Log.e("enviarNota", "Calidad de internet correcta")
-//                            Toast.makeText(requireContext(), "Calidad de internet correcta", Toast.LENGTH_LONG).show()
-                            Log.e("tamañoListaAntes", notesList.size.toString())
-                            notesList.removeAt(position)
-                            adapterNotes.notifyItemRemoved(position)
-                            notesList.add(position, note)
-                            adapterNotes.notifyItemInserted(position)
-                            adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
-                            Log.e("tamañoListaDespues", notesList.size.toString())
-                        }
-                    } else {
-                        notesList.add(position, note)
-                        adapterNotes.notifyItemInserted(position)
-                        Toast.makeText(
-                            requireContext(),
-                            "No dispones de suficiente conexión a internet",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
+                // Procesar la cola
+                processDeletionQueue()
             }
         }).attachToRecyclerView(binding.rvNotes)
+        binding.rvNotes.itemAnimator = null
 
         return binding.root
+    }
+
+    fun processDeletionQueue() {
+        // Si ya hay una eliminación en curso, no hacemos nada
+        if (isRemovingNote) return
+
+        if (notesToDelete.isNotEmpty()) {
+            isRemovingNote = true
+
+            // Obtenemos la primera nota en la cola
+            val (position, note) = notesToDelete.removeAt(0)
+
+            // Mostrar el Snackbar antes de realizar la eliminación visual
+            val snackbar = Snackbar.make(
+                binding.rvNotes,
+                "Has eliminado la nota ${note.title}",
+                Snackbar.LENGTH_LONG
+            )
+
+            snackbar.setAction("Deshacer") {
+                // Revertir la eliminación si se selecciona "Deshacer"
+                notesList.add(position, note)
+                adapterNotes.notifyItemInserted(position)
+            }
+
+            snackbar.addCallback(object : Snackbar.Callback() {
+                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                        // Si no se deshizo, eliminamos la nota de la base de datos
+                        lifecycleScope.launch {
+                            adapterNotes.deleteNoteDBApi(requireContext(), note)
+                        }
+                    }
+
+                    // Eliminar de la lista y actualizar la vista
+                    notesList.removeAt(position)
+                    adapterNotes.notifyItemRemoved(position)
+
+                    // Continuar procesando la cola
+                    isRemovingNote = false
+                    processDeletionQueue()
+                }
+            })
+
+            snackbar.show()
+        }
     }
 
     /**
