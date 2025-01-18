@@ -25,11 +25,14 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteConcurrentlyWithInternet
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteConcurrentlyWithoutInternet
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteLocallyForLaterSync
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
+import com.example.jinotas.utils.UtilsInternet
+import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +54,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
     private lateinit var notesList: ArrayList<Note>
     private var mNote: Note? = null
     private lateinit var adapterNotes: AdapterNotes
+    private lateinit var fragmentNotes: NotesFragment
     private lateinit var db: AppDatabase
     private var job: Job = Job()
     private lateinit var andDown: AndDown
@@ -114,13 +118,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                     userFrom = userNameFrom ?: "",
                     userTo = null
                 )
-                db = AppDatabase.getDatabase(this@WriteNotesActivity)
-//                db.noteDAO().insertNote(note)
                 saveNoteConcurrently(note)
-                notesList = db.noteDAO().getNotesList() as ArrayList<Note>
-                adapterNotes = AdapterNotes(notesList, coroutineContext)
-                adapterNotes.updateList(notesList)
-//                uploadNoteApi(note)
             }
             finish()
         }
@@ -128,21 +126,41 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
 
     private fun saveNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
-            val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
-            val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
-
             try {
-                // Espera a que ambas operaciones terminen
-                localSave.await()
-                cloudSave.await()
+                val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
 
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@WriteNotesActivity,
-                        "Has creado la nota ${note.title}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                if (isConnectionStableAndFast(applicationContext)) {
+                    // Espera a que ambas operaciones terminen
+//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
+//                    localSave.await()
+                    localSave.await()
+                    val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
+                    cloudSave.await()
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@WriteNotesActivity,
+                            "Has creado la nota ${note.title} en local y nube ",
+                            Toast.LENGTH_LONG
+                        ).show()
 //                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
+                        Log.e("ejecuta", "ejecuta con internet")
+//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
+                    }
+                } else {
+//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
+//                    localSave.await()
+                    localSave.await()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@WriteNotesActivity,
+                            "Has creado la nota ${note.title} en local",
+                            Toast.LENGTH_LONG
+                        ).show()
+//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
+                        Log.e("ejecuta", "ejecuta sin internet")
+//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -150,6 +168,16 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                     Toast.makeText(
                         this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT
                     ).show()
+                }
+            } finally {
+                try {
+                    fragmentNotes =
+                        (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+                    fragmentNotes.loadNotes()
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Log.e("igualmente", "almacenado igualmente")
+                    }
                 }
             }
         }
