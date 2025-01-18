@@ -49,10 +49,17 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
+import com.example.jinotas.utils.Utils.FILE
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsInternet.checkConnectivity
+import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
+import com.muddassir.connection_checker.ConnectionChecker
+import com.muddassir.connection_checker.ConnectionState
+import com.muddassir.connection_checker.ConnectivityListener
+import com.muddassir.connection_checker.checkConnection
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +68,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener {
+class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener/*,
+    ConnectivityListener*/ {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
@@ -103,7 +111,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 //        WorkManager.initialize(this, Configuration.Builder().build())
-        enqueueSyncNotesWork(applicationContext)
+//        enqueueSyncNotesWork(applicationContext)
+        //Checker for internet connectivity
+//        checkConnection(this)
+
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
         expandableListView = binding.expandableListView
@@ -542,14 +553,18 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         Log.i("OnBackPressed", "Has pulsado retroceder")
     }
 
+//    override fun onConnectionState(state: ConnectionState) {
+//        try {
+//            isConnectedToInternet = checkConnectivity(state, applicationContext)
+//        } catch (e: Exception) {
+//            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
+//        }
+//    }
+
     fun enqueueSyncNotesWork(context: Context) {
-        val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>()
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
+        val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>().setConstraints(
+            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+        ).build()
         WorkManager.getInstance(context).enqueue(workRequest)
     }
 
