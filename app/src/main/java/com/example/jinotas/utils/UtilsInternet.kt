@@ -5,35 +5,57 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.telephony.CellSignalStrength
+import android.os.Build
 import android.telephony.TelephonyManager
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import com.muddassir.connection_checker.ConnectionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.net.URL
 import kotlin.system.measureTimeMillis
 
 object UtilsInternet {
-    fun isConnectionGoodEnough(context: Context): Boolean {
+
+    var isConnectedToInternet: Boolean = false
+
+    // Verifica si hay una red activa y funcional
+    private fun checkForInternet(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(
+                NetworkCapabilities.TRANSPORT_CELLULAR
+            ) || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        } else {
+            @Suppress("DEPRECATION") val networkInfo =
+                connectivityManager.activeNetworkInfo ?: return false
+            @Suppress("DEPRECATION") networkInfo.isConnected
+        }
+    }
+
+    // Comprueba si la conexión es buena basándose en el ancho de banda
+    private fun isConnectionGoodEnough(context: Context): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
-        val networkCapabilities =
-            connectivityManager.getNetworkCapabilities(network) ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 
         return when {
-            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                val downSpeed = networkCapabilities.linkDownstreamBandwidthKbps
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
+                val downSpeed = capabilities.linkDownstreamBandwidthKbps
                 Log.d("InternetUtils", "WiFi speed: $downSpeed Kbps")
                 downSpeed > 5000 // Mínimo 5 Mbps
             }
 
-            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
-                val downSpeed = networkCapabilities.linkDownstreamBandwidthKbps
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
+                val downSpeed = capabilities.linkDownstreamBandwidthKbps
                 Log.d("InternetUtils", "Cellular speed: $downSpeed Kbps")
                 downSpeed > 2000 // Mínimo 2 Mbps
             }
@@ -42,35 +64,14 @@ object UtilsInternet {
         }
     }
 
-
-    fun getMobileSignalStrength(context: Context): Int? {
-        val telephonyManager =
-            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.e("InternetUtils", "Permission not granted for signal strength")
-            return null
-        }
-
-        val allCellInfo = telephonyManager.allCellInfo
-        val cellInfo = allCellInfo.firstOrNull()
-        return when (cellInfo) {
-            is CellSignalStrength -> cellInfo.dbm
-            else -> null
-        }
-    }
-
-    suspend fun isConnectionResponsive(): Boolean {
+    // Realiza un ping para verificar la capacidad de respuesta
+    private suspend fun isConnectionResponsive(): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 Socket().use { socket ->
-                    val socketAddress = InetSocketAddress("8.8.8.8", 53) // DNS de Google, puerto 53
+                    val address = InetSocketAddress("8.8.8.8", 53) // DNS de Google
                     val timeTaken = measureTimeMillis {
-                        socket.connect(socketAddress, 2000) // Timeout más largo (2 segundos)
+                        socket.connect(address, 2000) // Timeout de 2 segundos
                     }
                     Log.d("InternetUtils", "Ping successful in $timeTaken ms")
                     true
@@ -82,31 +83,71 @@ object UtilsInternet {
         }
     }
 
-    suspend fun isConnectionStableAndFast(context: Context): Boolean {
-        return try {
-            // Verificar conexión básica
-            val isGoodConnection = isConnectionGoodEnough(context)
+    // Obtiene la intensidad de la señal móvil
+    private fun getMobileSignalStrength(context: Context): Int? {
+        val telephonyManager =
+            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
-            // Verificar latencia (ping)
-            val isResponsive = isConnectionResponsive()
+        if (ActivityCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.e("InternetUtils", "Permission not granted for signal strength")
+            return null
+        }
 
-            // Opcional: Verificar intensidad de señal si está en red celular
-            val signalStrength = getMobileSignalStrength(context)
-            val isSignalGood = signalStrength == null || signalStrength > -110 // Solo aplica si no es null
-
-            Log.d(
-                "InternetUtils",
-                "Connection Good: $isGoodConnection, Responsive: $isResponsive, Signal: $signalStrength"
-            )
-
-            // Considerar conexión estable si todas las condiciones son verdaderas
-            isGoodConnection && isResponsive && isSignalGood
-        } catch (e: Exception) {
-            Log.e("InternetUtils", "Error verifying connection: ${e.message}")
-            false // Ante cualquier excepción, considerar la conexión no estable
+        val allCellInfo = telephonyManager.allCellInfo
+        val cellInfo = allCellInfo?.firstOrNull()
+        return when (cellInfo) {
+            is android.telephony.CellInfoGsm -> cellInfo.cellSignalStrength.dbm
+            is android.telephony.CellInfoLte -> cellInfo.cellSignalStrength.dbm
+            is android.telephony.CellInfoCdma -> cellInfo.cellSignalStrength.dbm
+            is android.telephony.CellInfoWcdma -> cellInfo.cellSignalStrength.dbm
+            else -> null
         }
     }
 
+    // Verifica si la conexión es estable y rápida
+    suspend fun isConnectionStableAndFast(context: Context): Boolean {
+        return try {
+            if (checkForInternet(context)) {
+                val isGoodConnection = isConnectionGoodEnough(context)
+                val isResponsive = isConnectionResponsive()
+                val signalStrength = getMobileSignalStrength(context)
+                val isSignalGood = signalStrength == null || signalStrength > -110
 
+                Log.d(
+                    "InternetUtils",
+                    "Connection Good: $isGoodConnection, Responsive: $isResponsive, Signal: $isSignalGood"
+                )
+                isGoodConnection && isResponsive
+            } else {
+                Log.d("InternetUtils", "No active internet connection")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("InternetUtils", "Error verifying connection: ${e.message}")
+            false
+        }
+    }
 
+    fun checkConnectivity(state: ConnectionState, context: Context): Boolean {
+        return when (state) {
+            ConnectionState.CONNECTED -> {
+                Toast.makeText(context, "Has recuperado la conexión", Toast.LENGTH_LONG).show()
+                true
+            }
+
+            ConnectionState.SLOW -> {
+                Toast.makeText(context, "La conexión es lenta", Toast.LENGTH_LONG).show()
+                false
+            }
+
+            else -> {
+                Toast.makeText(context, "Has perdido la conexión", Toast.LENGTH_LONG).show()
+                false
+            }
+
+        }
+    }
 }
