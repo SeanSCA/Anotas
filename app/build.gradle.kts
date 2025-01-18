@@ -156,6 +156,8 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    //For internet connection checking
+    implementation("com.github.muddassir235:connection_checker:1.7")
 }
 kapt {
     correctErrorTypes = true

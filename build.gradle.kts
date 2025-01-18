@@ -11,7 +11,9 @@ buildscript {
         google()
         mavenCentral()
         maven {
-            url = uri("https://s3.amazonaws.com/repo.commonsware.com")
+//            url = uri("https://s3.amazonaws.com/repo.commonsware.com")
+            url = uri("https://jitpack.io")
+
         }
     }
 }
