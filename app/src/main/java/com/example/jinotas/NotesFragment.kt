@@ -65,7 +65,8 @@ class NotesFragment : Fragment(), CoroutineScope {
         }
 //        Log.e("notesListStyle", notesListStyle)
 
-        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
+        ItemTouchHelper(object :
+            ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
             override fun onMove(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder,
@@ -77,15 +78,65 @@ class NotesFragment : Fragment(), CoroutineScope {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val note: Note = notesList[position]
+                vibratePhone(requireContext())
 
-                // Agregar la nota a la lista de eliminaciones
-                notesToDelete.add(Pair(position, note))
+                lifecycleScope.launch {
+                    if (isConnectionStableAndFast(requireContext())) {
+                        if (direction == ItemTouchHelper.LEFT) {
+                            // Eliminar de la lista y actualizar el RecyclerView
+                            notesList.removeAt(position)
+                            adapterNotes.notifyItemRemoved(position)
 
-                // Procesar la cola
-                processDeletionQueue()
+                            // Mostrar Snackbar con opción de "Deshacer"
+                            val snackbar = Snackbar.make(
+                                binding.rvNotes,
+                                "Has eliminado la nota ${note.title}",
+                                Snackbar.LENGTH_LONG
+                            )
+
+                            snackbar.setAction("Deshacer") {
+                                // Agregar nuevamente la nota en la posición original
+                                notesList.add(position, note)
+                                adapterNotes.notifyItemInserted(position)
+                            }
+
+                            snackbar.addCallback(object : Snackbar.Callback() {
+                                override fun onDismissed(
+                                    transientBottomBar: Snackbar?, event: Int
+                                ) {
+                                    // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
+                                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                                        adapterNotes.deleteNoteDBApi(
+                                            this@NotesFragment.requireContext(), note
+                                        )
+                                    }
+                                }
+                            })
+                            snackbar.show()
+                        } else if (direction == ItemTouchHelper.RIGHT) {
+
+                            Log.e("enviarNota", "Calidad de internet correcta")
+//                            Toast.makeText(requireContext(), "Calidad de internet correcta", Toast.LENGTH_LONG).show()
+                            Log.e("tamañoListaAntes", notesList.size.toString())
+                            notesList.removeAt(position)
+                            adapterNotes.notifyItemRemoved(position)
+                            notesList.add(position, note)
+                            adapterNotes.notifyItemInserted(position)
+                            adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
+                            Log.e("tamañoListaDespues", notesList.size.toString())
+                        }
+                    } else {
+                        notesList.add(position, note)
+                        adapterNotes.notifyItemInserted(position)
+                        Toast.makeText(
+                            requireContext(),
+                            "No dispones de suficiente conexión a internet",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
         }).attachToRecyclerView(binding.rvNotes)
-        binding.rvNotes.itemAnimator = null
 
         return binding.root
     }
