@@ -23,8 +23,9 @@ data class Note(
 
     @SerializedName("CreatedAt") var createdAt: String? = null,
 
-    @SerializedName("UpdatedAt") var updatedAt: String? = null
+    @SerializedName("UpdatedAt") var updatedAt: String? = null,
 
+    var isSynced: Boolean = true
 ) {
     constructor(
         id: Int?,

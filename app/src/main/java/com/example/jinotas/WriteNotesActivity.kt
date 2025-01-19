@@ -127,6 +127,40 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
     private fun saveNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                val localSave = async {
+                    note.isSynced = isConnectionStableAndFast(applicationContext)
+                    saveNoteToLocalDatabase(note, this@WriteNotesActivity)
+                }
+                localSave.await()
+
+                if (note.isSynced) {
+                    val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
+                    cloudSave.await()
+                } else {
+                    Log.e("Sync", "Nota guardada localmente, pendiente de sincronización")
+                }
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@WriteNotesActivity,
+                        if (note.isSynced) "Nota sincronizada con la nube" else "Nota guardada localmente",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+
+    /*private fun saveNoteConcurrently(note: Note) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
                 val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
 
                 if (isConnectionStableAndFast(applicationContext)) {
@@ -181,7 +215,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                 }
             }
         }
-    }
+    }*/
 
 //    private fun saveNoteConcurrently(note: Note) {
 //        lifecycleScope.launch(Dispatchers.IO) {
