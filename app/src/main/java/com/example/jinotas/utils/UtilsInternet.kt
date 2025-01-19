@@ -19,7 +19,7 @@ import kotlin.system.measureTimeMillis
 
 object UtilsInternet {
 
-    var isConnectedToInternet: Boolean = false
+    var isConnectedToInternet: Boolean? = null
 
     // Verifica si hay una red activa y funcional
     private fun checkForInternet(context: Context): Boolean {
@@ -132,6 +132,7 @@ object UtilsInternet {
     }
 
     fun checkConnectivity(state: ConnectionState, context: Context): Boolean {
+        Log.e("ejecuta", "aaaaaaaaaaaaaaaaaaaaaaaa")
         return when (state) {
             ConnectionState.CONNECTED -> {
                 Toast.makeText(context, "Has recuperado la conexión", Toast.LENGTH_LONG).show()

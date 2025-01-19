@@ -71,8 +71,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener/*,
-    ConnectivityListener*/ {
+class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
+    ConnectivityListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
@@ -113,10 +113,16 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //Esto es para comprobar la conexión al iniciar la aplicación y subir las notas guardadas únicamente en local
         val connectivityMonitor = ConnectivityMonitor(applicationContext)
         connectivityMonitor.registerCallback {
             syncPendingNotes()
         }
+
+        //Esto es para comprobar la conexión al cambiar la conexión a internet o recuperarla y subir las notas guardadas únicamente en local
+        val connectionChecker = ConnectionChecker(this)
+        connectionChecker.connectivityListener = this
 
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
@@ -556,13 +562,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         Log.i("OnBackPressed", "Has pulsado retroceder")
     }
 
-//    override fun onConnectionState(state: ConnectionState) {
-//        try {
-//            isConnectedToInternet = checkConnectivity(state, applicationContext)
-//        } catch (e: Exception) {
-//            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
-//        }
-//    }
+    override fun onConnectionState(state: ConnectionState) {
+        try {
+            isConnectedToInternet = checkConnectivity(state, applicationContext)
+            Log.i("isConnectedToInternet", isConnectedToInternet.toString())
+            if (isConnectedToInternet != null) {
+                syncPendingNotes()
+            }
+        } catch (e: Exception) {
+            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
+        }
+    }
 
     fun enqueueSyncNotesWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>().setConstraints(
