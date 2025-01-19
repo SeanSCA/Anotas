@@ -27,6 +27,7 @@ import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInLocalDatabase
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
     private lateinit var notesShow: Note
     private lateinit var db: AppDatabase
     private var job: Job = Job()
+    private lateinit var fragmentNotes: NotesFragment
     private var focusedEditText: EditText? = null
     private var mCurrentCursorPosition = 0
     private lateinit var mContentEditText: CustomEditText
@@ -111,13 +113,8 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                     null
                 )
                 overwriteNoteConcurrently(noteUpdate)
-                Log.i("notaUpdate", noteUpdate.toString())
-                Toast.makeText(
-                    this@ShowNoteActivity, "Has modificado la nota", Toast.LENGTH_SHORT
-                ).show()
-
-                finish()
             }
+            finish()
         }
 
 
@@ -130,29 +127,90 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
 
     private fun overwriteNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
-            val localSave = async { updateNoteInLocalDatabase(note, this@ShowNoteActivity) }
-            val cloudSave = async { updateNoteInCloud(note, this@ShowNoteActivity) }
-
             try {
-                // Espera a que ambas operaciones terminen
-                localSave.await()
-                cloudSave.await()
+                val localSave = async { updateNoteInLocalDatabase(note, applicationContext) }
 
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@ShowNoteActivity, "Has modificado la nota ${note.title}", Toast.LENGTH_LONG
-                    ).show()
+                if (isConnectionStableAndFast(applicationContext)) {
+                    // Espera a que ambas operaciones terminen
+//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
+//                    localSave.await()
+                    localSave.await()
+                    val cloudSave = async { updateNoteInCloud(note, applicationContext) }
+                    cloudSave.await()
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            applicationContext,
+                            "Has modificado la nota ${note.title} en local y nube ",
+                            Toast.LENGTH_LONG
+                        ).show()
+//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
+                        Log.e("ejecuta", "ejecuta con internet")
+//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
+                    }
+                } else {
+//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
+//                    localSave.await()
+                    localSave.await()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            applicationContext,
+                            "Has modificado la nota ${note.title} en local",
+                            Toast.LENGTH_LONG
+                        ).show()
+//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
+                        Log.e("ejecuta", "ejecuta sin internet")
+//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     // Manejo de errores
                     Toast.makeText(
-                        this@ShowNoteActivity, "Error al modificar la nota", Toast.LENGTH_SHORT
+                        applicationContext, "Error al modificar la nota", Toast.LENGTH_SHORT
                     ).show()
+                }
+            } finally {
+                try {
+                    fragmentNotes =
+                        (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
+                    fragmentNotes.loadNotes()
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Log.e("modificado", "modificado igualmente")
+                    }
                 }
             }
         }
     }
+
+//    private fun overwriteNoteConcurrently(note: Note) {
+//        CoroutineScope(Dispatchers.IO).launch {
+//            val localSave = async { updateNoteInLocalDatabase(note, this@ShowNoteActivity) }
+//            val cloudSave = async { updateNoteInCloud(note, this@ShowNoteActivity) }
+//
+//            try {
+//                // Espera a que ambas operaciones terminen
+//                localSave.await()
+//                cloudSave.await()
+//
+//                withContext(Dispatchers.Main) {
+//                    Toast.makeText(
+//                        this@ShowNoteActivity,
+//                        "Has modificado la nota ${note.title}",
+//                        Toast.LENGTH_LONG
+//                    ).show()
+//                }
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    // Manejo de errores
+//                    Toast.makeText(
+//                        this@ShowNoteActivity, "Error al modificar la nota", Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+//            }
+//        }
+//    }
 
     private fun insertChecklist() {
         try {

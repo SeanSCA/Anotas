@@ -43,6 +43,7 @@ import androidx.work.WorkManager
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
+import com.example.jinotas.connection.ConnectivityMonitor
 import com.example.jinotas.connection.SyncNotesWorker
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
@@ -51,6 +52,7 @@ import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.FILE
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.google.firebase.ktx.Firebase
@@ -61,6 +63,7 @@ import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
 import com.muddassir.connection_checker.checkConnection
 import io.github.cdimascio.dotenv.dotenv
+import io.ktor.network.sockets.connect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,8 +71,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener/*,
-    ConnectivityListener*/ {
+class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
+    ConnectivityListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
@@ -110,10 +113,16 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-//        WorkManager.initialize(this, Configuration.Builder().build())
-//        enqueueSyncNotesWork(applicationContext)
-        //Checker for internet connectivity
-//        checkConnection(this)
+
+        //Esto es para comprobar la conexión al iniciar la aplicación y subir las notas guardadas únicamente en local
+        val connectivityMonitor = ConnectivityMonitor(applicationContext)
+        connectivityMonitor.registerCallback {
+            syncPendingNotes()
+        }
+
+        //Esto es para comprobar la conexión al cambiar la conexión a internet o recuperarla y subir las notas guardadas únicamente en local
+        val connectionChecker = ConnectionChecker(this)
+        connectionChecker.connectivityListener = this
 
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
@@ -553,13 +562,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         Log.i("OnBackPressed", "Has pulsado retroceder")
     }
 
-//    override fun onConnectionState(state: ConnectionState) {
-//        try {
-//            isConnectedToInternet = checkConnectivity(state, applicationContext)
-//        } catch (e: Exception) {
-//            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
-//        }
-//    }
+    override fun onConnectionState(state: ConnectionState) {
+        try {
+            isConnectedToInternet = checkConnectivity(state, applicationContext)
+            Log.i("isConnectedToInternet", isConnectedToInternet.toString())
+            if (isConnectedToInternet != null) {
+                syncPendingNotes()
+            }
+        } catch (e: Exception) {
+            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
+        }
+    }
 
     fun enqueueSyncNotesWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>().setConstraints(
@@ -568,4 +581,21 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         WorkManager.getInstance(context).enqueue(workRequest)
     }
 
+    private fun syncPendingNotes() {
+        db = AppDatabase.getDatabase(applicationContext)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
+            for (note in pendingNotes) {
+                try {
+                    saveNoteToCloud(note, applicationContext)
+                    note.isSynced = true
+                    db.noteDAO().updateNote(note)
+                    Log.i("Sync", "Nota sincronizada: ${note.title}")
+                } catch (e: Exception) {
+                    Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
+                }
+            }
+        }
+    }
 }
