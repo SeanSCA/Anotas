@@ -32,7 +32,6 @@ import com.example.jinotas.utils.UtilsDBAPI.saveNoteLocallyForLaterSync
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
 import com.example.jinotas.utils.UtilsInternet
-import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.widgets.CustomEditText
 import kotlinx.coroutines.CoroutineScope
