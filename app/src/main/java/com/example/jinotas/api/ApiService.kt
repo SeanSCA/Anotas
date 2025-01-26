@@ -1,41 +1,38 @@
 package com.example.jinotas.api
 
-import com.example.jinotas.api.notesnocodb.ApiResponse as ApiResponseNotes
-import com.example.jinotas.api.tokenusernocodb.ApiResponse as ApiResponseTokenUser
-import com.example.jinotas.api.notesnocodb.DeleteNoteRequest
-import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.Note
+import com.example.jinotas.db.Notes
+import com.example.jinotas.db.UserToken
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 
 interface ApiService {
-    @GET("?limit=25&shuffle=0&offset=0")
-    suspend fun getNotesList(): Response<ApiResponseNotes>
+    @GET("GetAllNotes")
+    suspend fun getNotesList(): Response<Notes>
 
-    @GET("?{id}")
-    suspend fun getNoteById(@Path("id") id: Int): Response<Note>
-
-    @POST("?")
+    @POST("InsertNote?")
     suspend fun postNote(@Body note: Note): Response<Note>
 
-    @PATCH("?/")
+    @PUT("UpdateNote")
     suspend fun putNote(@Body note: Note): Response<Note>
 
-    @HTTP(method = "DELETE", path = "?", hasBody = true)
-    suspend fun deleteNote(@Body request: DeleteNoteRequest): Response<Unit>
+    @DELETE("DeleteNoteById/{code}")
+    suspend fun deleteNote(@Path("code") code: Int): Response<Unit>
 
-    @GET("?limit=25&shuffle=0&offset=0")
-    suspend fun getTokenByUser(): Response<ApiResponseTokenUser>
+    @GET("GetTokenByUser/{userName}")
+    suspend fun getTokenByUser(@Path("userName") userName: String): Response<UserToken>
 
-    @POST("?")
-    suspend fun postUserToken(@Body tokenUser: ApiTokenUser): Response<ApiTokenUser>
+    @POST("InsertUserToken/")
+    suspend fun postUserToken(@Body tokenUser: UserToken): Response<UserToken>
 
-    @PATCH("?/")
-    suspend fun putUserToken(@Body userToken: ApiTokenUser): Response<ApiTokenUser>
+    @PUT("UpdateUserToken/{token}/{userName}")
+    suspend fun putUserToken(@Path("token") token: String, @Path("userName") userName: String): Response<UserToken>
 }
