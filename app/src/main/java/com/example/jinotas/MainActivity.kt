@@ -267,7 +267,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onResume()
         fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        fragmentNotes.loadNotes()
+        db.noteDAO().getAllNotesLive().observe(this) { notes ->
+            fragmentNotes.loadNotes()
+        }
     }
 
     /**
@@ -381,124 +383,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         return canConnect
     }
 
-    /**
-     * Download all the notes that are not already in the database
-     */
-    private fun downloadNotesApi() {
-        var inserted = false
-        if (tryConnection()) {
-            runBlocking {
-                val corrutina = launch {
-                    db = AppDatabase.getDatabase(this@MainActivity)
-                    val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
-                    val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    if (notesListApi.size > 0) {
-                        for (n in notesListApi) {
-                            if (notesListDB.none { it.code == n.code }) {
-                                db.noteDAO().insertNote(n)
-                                inserted = true
-                            }
-                        }
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "No hay ninguna nota que descargar",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        return@launch
-                    }
-
-                    if (inserted) {
-                        Toast.makeText(
-                            this@MainActivity, "Has cargado las notas de la nube", Toast.LENGTH_LONG
-                        ).show()
-                        val newNotes = db.noteDAO().getNotesList() as ArrayList<Note>
-
-                        fragmentNotes =
-                            (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-                        fragmentNotes.loadNotes()
-                        adapterNotes = AdapterNotes(newNotes, coroutineContext)
-                        adapterNotes.updateList(notesListDB)
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity, "No hay notas nuevas en la nube", Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-                corrutina.join()
-            }
-        } else {
-            Toast.makeText(
-                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    /**
-     * Upload all the notes that are not already in the api
-     */
-    private fun uploadNotesApi() {
-        var inserted = false
-        if (tryConnection()) {
-            runBlocking {
-                val corrutina = launch {
-                    val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
-                    val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    if (notesListDB.size > 0) {
-                        for (n in notesListDB) {
-                            if (notesListApi.none { it.code == n.code }) {
-                                CrudApi().postNote(n, this@MainActivity)
-                                inserted = true
-                            }
-                        }
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity, "No tienes ninguna nota que subir", Toast.LENGTH_LONG
-                        ).show()
-                        return@launch
-                    }
-
-//                    if (inserted) {
-////                        webSocketClient.sendMessage("newNote")
-//
-//                    } else {
-//                        Toast.makeText(
-//                            this@MainActivity, "No hay notas nuevas que subir", Toast.LENGTH_LONG
-//                        ).show()
-//                    }
-                }
-                corrutina.join()
-            }
-        } else {
-            Toast.makeText(
-                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    /**
-     * Delete all the notes at the api
-     */
-    private fun deleteAllNotesApi() {
-        if (tryConnection()) {
-            var delNotes = CrudApi().getNotesList() as ArrayList<Note>
-            if (delNotes.size > 0) {
-                for (n in delNotes) {
-                    CrudApi().deleteNote(n.code!!)
-                }
-                Toast.makeText(this, "Has eliminado las notas de la nube", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(
-                    this@MainActivity, "No hay ninguna nota en la nube", Toast.LENGTH_LONG
-                ).show()
-            }
-        } else {
-            Toast.makeText(
-                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
@@ -565,13 +449,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         } catch (e: Exception) {
             Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
         }
-    }
-
-    fun enqueueSyncNotesWork(context: Context) {
-        val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>().setConstraints(
-            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-        ).build()
-        WorkManager.getInstance(context).enqueue(workRequest)
     }
 
     private fun syncPendingNotes() {
