@@ -1,7 +1,6 @@
 package com.example.jinotas
 
 import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -11,8 +10,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -35,22 +32,20 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
-import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.connection.ConnectivityMonitor
 import com.example.jinotas.connection.SyncNotesWorker
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
+import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
-import com.example.jinotas.utils.Utils.FILE
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
@@ -61,9 +56,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.muddassir.connection_checker.ConnectionChecker
 import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
-import com.muddassir.connection_checker.checkConnection
 import io.github.cdimascio.dotenv.dotenv
-import io.ktor.network.sockets.connect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -188,7 +181,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 if (task.isSuccessful) {
                     val token = task.result
                     // Guarda este token en tu base de datos
-                    db.tokenDAO().insertNote(Token(token = token))
+                    db.tokenDAO().insertToken(Token(token = token))
 
                     Log.e("Token del dispositivo:", token)
                 }
@@ -251,9 +244,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             editor.apply()
 
             // Aquí puedes usar la variable userName en la lógica que necesites
-            val userToken: ApiTokenUser
+            val userToken: UserToken
             val token = db.tokenDAO().getToken()
-            userToken = ApiTokenUser(userName = userName!!, token = token)
+            userToken = UserToken(token = token, userName = userName!!, password = "")
             CrudApi().postTokenByUser(userToken)
             dialog.dismiss()
         }

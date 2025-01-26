@@ -14,10 +14,10 @@ import com.example.jinotas.MainActivity
 import com.example.jinotas.NotesFragment
 import com.example.jinotas.R
 import com.example.jinotas.api.CrudApi
-import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
+import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -114,7 +114,7 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                 )
             val userNameFrom = sharedPreferences.getString("userFrom", null) ?: ""
             if (userNameFrom.isNotEmpty()) {
-                val actualToken = ApiTokenUser(userName = userNameFrom!!, token = token)
+                val actualToken = UserToken(userName = userNameFrom!!, token = token, password = "")
                 CrudApi().patchUserToken(actualToken)
             }
         }
