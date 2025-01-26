@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -103,14 +104,12 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                 val current = LocalDateTime.now().format(formatter)
 
                 val noteUpdate = Note(
-                    codeSearchUpdate,
-                    notesShow.id,
-                    binding.etTitle.text.toString(),
-                    binding.noteContent.getPlainTextContent(),
-                    current,
-                    userName!!,
-                    null,
-                    null
+                    code = codeSearchUpdate,
+                    title = binding.etTitle.text.toString(),
+                    textContent = binding.noteContent.getPlainTextContent(),
+                    date = current,
+                    userFrom = userName!!,
+                    userTo = null
                 )
                 overwriteNoteConcurrently(noteUpdate)
             }
@@ -128,89 +127,38 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
     private fun overwriteNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val localSave = async { updateNoteInLocalDatabase(note, applicationContext) }
-
-                if (isConnectionStableAndFast(applicationContext)) {
-                    // Espera a que ambas operaciones terminen
-//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
-//                    localSave.await()
-                    localSave.await()
-                    val cloudSave = async { updateNoteInCloud(note, applicationContext) }
-                    cloudSave.await()
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            applicationContext,
-                            "Has modificado la nota ${note.title} en local y nube ",
-                            Toast.LENGTH_LONG
-                        ).show()
-//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
-                        Log.e("ejecuta", "ejecuta con internet")
-//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
+                coroutineScope {
+                    val localUpdate = async {
+                        note.isSynced = isConnectionStableAndFast(applicationContext)
+                        updateNoteInLocalDatabase(note, applicationContext)
                     }
-                } else {
-//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
-//                    localSave.await()
-                    localSave.await()
+                    localUpdate.await()
+
+                    if (note.isSynced) {
+                        val cloudUpdate = async { updateNoteInCloud(note, applicationContext) }
+                        cloudUpdate.await()
+                    } else {
+                        Log.e("Sync", "Nota actualizada localmente, pendiente de sincronización")
+                    }
+
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             applicationContext,
-                            "Has modificado la nota ${note.title} en local",
-                            Toast.LENGTH_LONG
+                            if (note.isSynced) "Nota sincronizada con la nube" else "Nota actualizada localmente",
+                            Toast.LENGTH_SHORT
                         ).show()
-//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
-                        Log.e("ejecuta", "ejecuta sin internet")
-//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    // Manejo de errores
+                    Log.e("ErrorActualizar", e.message.toString())
                     Toast.makeText(
-                        applicationContext, "Error al modificar la nota", Toast.LENGTH_SHORT
+                        applicationContext, "Error al actualizar la nota", Toast.LENGTH_SHORT
                     ).show()
-                }
-            } finally {
-                try {
-                    fragmentNotes =
-                        (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-                    fragmentNotes.loadNotes()
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        Log.e("modificado", "modificado igualmente")
-                    }
                 }
             }
         }
     }
-
-//    private fun overwriteNoteConcurrently(note: Note) {
-//        CoroutineScope(Dispatchers.IO).launch {
-//            val localSave = async { updateNoteInLocalDatabase(note, this@ShowNoteActivity) }
-//            val cloudSave = async { updateNoteInCloud(note, this@ShowNoteActivity) }
-//
-//            try {
-//                // Espera a que ambas operaciones terminen
-//                localSave.await()
-//                cloudSave.await()
-//
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(
-//                        this@ShowNoteActivity,
-//                        "Has modificado la nota ${note.title}",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-//                }
-//            } catch (e: Exception) {
-//                withContext(Dispatchers.Main) {
-//                    // Manejo de errores
-//                    Toast.makeText(
-//                        this@ShowNoteActivity, "Error al modificar la nota", Toast.LENGTH_SHORT
-//                    ).show()
-//                }
-//            }
-//        }
-//    }
 
     private fun insertChecklist() {
         try {
