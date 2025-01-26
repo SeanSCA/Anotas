@@ -93,7 +93,6 @@ class CrudApi() : CoroutineScope {
         var response: Response<Note>? = null
         runBlocking {
             val corrutina = launch {
-                Log.e("id", noteUpdate.id.toString())
                 Log.e("code", noteUpdate.code.toString())
                 Log.e("title", noteUpdate.title)
                 Log.e("textContent", noteUpdate.textContent)
@@ -128,7 +127,7 @@ class CrudApi() : CoroutineScope {
         runBlocking {
             val corrutina = launch {
                 getRetrofit().create(ApiService::class.java).deleteNote(id)
-                Log.e("idNote", id.toString())
+                Log.e("codeNote", id.toString())
             }
             corrutina.join()
         }
@@ -166,16 +165,13 @@ class CrudApi() : CoroutineScope {
 
     fun patchUserToken(userTokenUpdate: UserToken): UserToken? {
         var response: Response<UserToken>? = null
-        val sharedPreferences: SharedPreferences =
-            MainActivity().getSharedPreferences("MyPrefsFile", Context.MODE_PRIVATE)
-        val userName = sharedPreferences.getString("userFrom", "")
 
         runBlocking {
             val corrutina = launch {
                 Log.e("id", userTokenUpdate.token)
-                Log.e("code", userName!!)
+                Log.e("code", userTokenUpdate.userName)
                 response = getRetrofit().create(ApiService::class.java)
-                    .putUserToken(userTokenUpdate.token, userName!!)
+                    .putUserToken(userTokenUpdate.token, userTokenUpdate.userName)
             }
             corrutina.join()
         }

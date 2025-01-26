@@ -116,7 +116,8 @@ class AdapterNotes(
             var existingNote: Note? = null
             try {
                 existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
-                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota
+                Log.e("notaeliminar", existingNote.code.toString())
+                CrudApi().deleteNote(existingNote.code)  // Llamada a la API para borrar la nota
 
                 db.noteDAO()
                     .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
@@ -262,14 +263,11 @@ class AdapterNotes(
                         put("token", tokenReceptor)
                         put("data", JSONObject().apply {
                             put("code", note.code.toString())
-                            put("id", note.id?.toString() ?: "")
                             put("title", note.title)
                             put("textContent", note.textContent)
                             put("date", note.date)
                             put("userFrom", note.userFrom)
                             put("userTo", userName)
-                            put("createdAt", note.createdAt ?: "")
-                            put("updatedAt", note.updatedAt ?: "")
                         })
                     })
                 }

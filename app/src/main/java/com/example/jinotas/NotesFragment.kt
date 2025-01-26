@@ -197,7 +197,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                 db = AppDatabase.getDatabase(requireContext())
                 notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                 adapterNotes = AdapterNotes(notesList, coroutineContext)
-
+                Log.i("cargarNotas", "ha cargado las notas")
                 showNotes()
             }
         }

@@ -32,7 +32,6 @@ import kotlin.coroutines.CoroutineContext
 class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
-    private lateinit var fragment: NotesFragment
     private lateinit var newNotes: ArrayList<Note>
     private val activity = MainActivity.instance
 
@@ -51,14 +50,11 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                 // Crear manualmente el objeto Note a partir de los datos recibidos
                 val note = Note(
                     code = remoteMessage.data["code"]?.toInt() ?: 0,
-                    id = remoteMessage.data["id"]?.toIntOrNull(),
                     title = remoteMessage.data["title"] ?: "Sin título",
                     textContent = remoteMessage.data["textContent"] ?: "",
                     date = remoteMessage.data["date"] ?: "",
                     userFrom = remoteMessage.data["userFrom"] ?: "Desconocido",
-                    userTo = remoteMessage.data["userTo"],
-                    createdAt = remoteMessage.data["createdAt"],
-                    updatedAt = remoteMessage.data["updatedAt"]
+                    userTo = remoteMessage.data["userTo"]
                 )
 
                 sendNotification(note.title, "${note.userFrom} te ha enviado una nueva nota")
@@ -146,32 +142,4 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
 
         notificationManager.notify(0, notificationBuilder.build())
     }
-
-//    private fun sendNotificationNewNote(title: String, body: String) {
-//        Log.e("title", title)
-//        Log.e("body", body)
-//        val intent = Intent(this, MainActivity::class.java)
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//        val pendingIntent = PendingIntent.getActivity(
-//            this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-//        )
-//
-//        val channelId = "Default"
-//        val notificationBuilder =
-//            NotificationCompat.Builder(this, channelId).setContentTitle(title).setContentText(body)
-//                .setSmallIcon(R.drawable.ic_notification).setAutoCancel(true)
-//                .setContentIntent(pendingIntent)
-//
-//        val notificationManager =
-//            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//
-//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                channelId, "Channel human readable title", NotificationManager.IMPORTANCE_DEFAULT
-//            )
-//            notificationManager.createNotificationChannel(channel)
-//        }
-//
-//        notificationManager.notify(0, notificationBuilder.build())
-//    }
 }
