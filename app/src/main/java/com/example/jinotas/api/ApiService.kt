@@ -18,10 +18,10 @@ interface ApiService {
     @GET("GetAllNotes")
     suspend fun getNotesList(): Response<Notes>
 
-    @POST("InsertNote?")
+    @POST("InsertNote/")
     suspend fun postNote(@Body note: Note): Response<Note>
 
-    @PUT("UpdateNote")
+    @PUT("UpdateNote/")
     suspend fun putNote(@Body note: Note): Response<Note>
 
     @DELETE("DeleteNoteById/{code}")
