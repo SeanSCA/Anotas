@@ -48,8 +48,10 @@ import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
+import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -443,7 +445,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         try {
             isConnectedToInternet = checkConnectivity(state, applicationContext)
             Log.i("isConnectedToInternet", isConnectedToInternet.toString())
-            if (isConnectedToInternet != null) {
+            if (isConnectedToInternet != null && isConnectedToInternet as Boolean) {
                 syncPendingNotes()
             }
         } catch (e: Exception) {
@@ -455,17 +457,26 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         db = AppDatabase.getDatabase(applicationContext)
 
         CoroutineScope(Dispatchers.IO).launch {
-            val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
-            for (note in pendingNotes) {
-                try {
-                    saveNoteToCloud(note, applicationContext)
-                    note.isSynced = true
-                    db.noteDAO().updateNote(note)
-                    Log.i("Sync", "Nota sincronizada: ${note.title}")
-                } catch (e: Exception) {
-                    Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
+            if (isConnectionStableAndFast(applicationContext)) {
+//            val allNotes = db.noteDAO().getNotesList()
+                val cloudNotes = CrudApi().getNotesList() as ArrayList<Note>
+                val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
+
+                for (note in pendingNotes) {
+                    try {
+                        if (!cloudNotes.any { it.code == note.code }) {
+                            saveNoteToCloud(note, applicationContext)
+                        } else {
+                            updateNoteInCloud(note, applicationContext)
+                        }
+                        note.isSynced = true
+                        Log.i("Sync", "Nota sincronizada: ${note.title}")
+                    } catch (e: Exception) {
+                        Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
+                    }
                 }
             }
         }
+
     }
 }
