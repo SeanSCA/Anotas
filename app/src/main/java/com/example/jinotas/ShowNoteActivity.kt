@@ -17,18 +17,15 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.example.jinotas.api.CrudApi
 import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInLocalDatabase
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.example.jinotas.widgets.CustomEditText
+import com.example.jinotas.custom_textview.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,7 +33,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
