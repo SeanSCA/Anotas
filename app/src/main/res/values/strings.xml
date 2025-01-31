@@ -26,4 +26,6 @@
     <string name="tipo_de_lista">Tipo de lista</string>
     <string name="notes_list_styles_vertical" translatable="false">Vertical</string>
     <string name="notes_list_styles_widget" translatable="false">Widget</string>
+    <string name="note_title_widget">Título de la nota</string>
+    <string name="note_textcontent_widget">Contenido de la nota...</string>
 </resources>
