@@ -269,8 +269,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onResume()
         fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        db.noteDAO().getAllNotesLive().observe(this) { notes ->
-            fragmentNotes.loadNotes()
+        if (::db.isInitialized) {
+            db.noteDAO().getAllNotesLive().observe(this) { notes ->
+                fragmentNotes.loadNotes()
+            }
         }
     }
 
