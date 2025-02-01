@@ -139,6 +139,28 @@ class AdapterNotes(
         }
     }
 
+    fun deleteNoteDB(context: Context, note: Note) {
+        CoroutineScope(Dispatchers.IO).launch {
+            db = AppDatabase.getDatabase(context)
+            var existingNote: Note? = null
+            try {
+                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
+                Log.e("notaeliminar", existingNote.code.toString())
+                db.noteDAO()
+                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+
+                // Actualización de la lista y notificación en el hilo principal
+                withContext(Dispatchers.Main) {
+                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+                }
+
+            } catch (e: Exception) {
+                // Manejo de errores
+                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+            }
+        }
+    }
+
     fun sendNote(context: Context, note: Note) {
         showNestedAlertDialog(context, note = note)
     }
