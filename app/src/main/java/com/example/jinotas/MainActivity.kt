@@ -47,6 +47,7 @@ import com.example.jinotas.db.Token
 import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
@@ -460,16 +461,25 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         CoroutineScope(Dispatchers.IO).launch {
             if (isConnectionStableAndFast(applicationContext)) {
-//            val allNotes = db.noteDAO().getNotesList()
-                val cloudNotes = CrudApi().getNotesList() as ArrayList<Note>
+                val cloudNotes = (CrudApi().getNotesList() as? ArrayList<Note>) ?: arrayListOf()
                 val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
+                val localNotes = db.noteDAO().getNotesList() // Lista completa de notas locales
+
+                // Filtrar notas en la nube que pertenecen al usuario actual
+                val userCloudNotes = cloudNotes.filter { it.userFrom == userName }
+
+                // Obtener los códigos de notas locales
+                val localCodes = localNotes.map { it.code }.toSet()
+
+                // Identificar qué notas en la nube deben eliminarse (las que no existen localmente)
+                val notesToDelete = userCloudNotes.filter { it.code !in localCodes }
 
                 for (note in pendingNotes) {
                     try {
-                        if (!cloudNotes.any { it.code == note.code }) {
-                            saveNoteToCloud(note, applicationContext)
-                        } else {
+                        if (cloudNotes.any { it.code == note.code }) {
                             updateNoteInCloud(note, applicationContext)
+                        } else {
+                            saveNoteToCloud(note, applicationContext)
                         }
                         note.isSynced = true
                         Log.i("Sync", "Nota sincronizada: ${note.title}")
@@ -477,8 +487,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                         Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
                     }
                 }
+
+                // Eliminar las notas que están en la nube pero no en las notas locales
+                for (note in notesToDelete) {
+                    deleteNoteInCloud(note, applicationContext)
+                    Log.i("Delete", "Nota eliminada en la nube: ${note.title}")
+                }
             }
         }
-
     }
 }
