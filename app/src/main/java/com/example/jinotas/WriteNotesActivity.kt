@@ -28,7 +28,7 @@ import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.example.jinotas.widgets.CustomEditText
+import com.example.jinotas.custom_textview.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

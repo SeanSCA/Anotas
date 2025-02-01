@@ -1,4 +1,4 @@
-package com.example.jinotas.widgets
+package com.example.jinotas.custom_textview
 
 import android.content.Context
 import android.graphics.Rect
@@ -25,8 +25,8 @@ import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.DisplayUtils
 import com.example.jinotas.utils.DrawableUtils
 import com.example.jinotas.utils.ThemeUtils
-import com.example.jinotas.widgets.CustomLinkify.CUSTOM_LINK_ID
-import com.example.jinotas.widgets.CustomLinkify.CUSTOM_LINK_PREFIX
+import com.example.jinotas.custom_textview.CustomLinkify.CUSTOM_LINK_ID
+import com.example.jinotas.custom_textview.CustomLinkify.CUSTOM_LINK_PREFIX
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min

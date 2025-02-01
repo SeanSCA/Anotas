@@ -1,4 +1,4 @@
-package com.example.jinotas.widgets
+package com.example.jinotas.custom_textview
 
 import android.content.Context
 import android.graphics.Canvas

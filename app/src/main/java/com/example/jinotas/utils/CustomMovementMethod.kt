@@ -4,7 +4,7 @@ import android.text.Spannable
 import android.text.method.ArrowKeyMovementMethod
 import android.view.MotionEvent
 import android.widget.TextView
-import com.example.jinotas.widgets.CheckableSpan
+import com.example.jinotas.custom_textview.CheckableSpan
 
 class CustomMovementMethod : ArrowKeyMovementMethod() {
     override fun onTouchEvent(textView: TextView, buffer: Spannable, event: MotionEvent): Boolean {
