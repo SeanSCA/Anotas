@@ -21,6 +21,7 @@ object UtilsDBAPI {
     lateinit var localPendingNotes: MutableList<Note>
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")    // Método para obtener el ID del dispositivo
     val FILE = stringPreferencesKey("notes_list_style")
+
     //Esto es para almacenar en la api
     suspend fun saveNoteToCloud(note: Note, context: Context) {
         CrudApi.postNote(note, context)
@@ -31,6 +32,10 @@ object UtilsDBAPI {
         CrudApi().patchNote(note)
     }
 
+    //Esto es para eliminar en la api
+    suspend fun deleteNoteInCloud(note: Note, context: Context) {
+        CrudApi().deleteNote(note.code)
+    }
     //-------------------
 
     //Esto es para almacenar en la DB
@@ -46,7 +51,14 @@ object UtilsDBAPI {
         db.noteDAO().updateNote(note)
     }
 
-    fun saveNoteApiWhenRecoverInternet(note: Note, localPendingNotes: MutableList<Note>, context: Context) {
+    suspend fun deleteNoteInLocalDatabase(note: Note, context: Context) {
+        db = AppDatabase.getDatabase(context)
+        db.noteDAO().deleteNote(note)
+    }
+
+    fun saveNoteApiWhenRecoverInternet(
+        note: Note, localPendingNotes: MutableList<Note>, context: Context
+    ) {
         // Implement your logic to store the note locally
         //Notas de la api
         val notesApi = CrudApi().getNotesList()
@@ -122,7 +134,7 @@ object UtilsDBAPI {
         removePendingNote(note)
     }
 
-    fun addNoteToPendingNotes(note: Note){
+    fun addNoteToPendingNotes(note: Note) {
         localPendingNotes.add(note)
     }
 
