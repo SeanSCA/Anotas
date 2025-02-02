@@ -31,15 +31,14 @@
             android:background="@color/black" />
 
         <!-- Contenido de la Nota -->
-        <TextView
-            android:id="@+id/widget_textcontent"
+        <ListView
+            android:id="@+id/lvContent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="5dp"
-            android:ellipsize="end"
-            android:text="@string/note_textcontent_widget"
-            android:textColor="@android:color/white"
-            android:textSize="22sp" />
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            android:listSelector="@android:color/transparent" />
+
     </LinearLayout>
 
 </RelativeLayout>
