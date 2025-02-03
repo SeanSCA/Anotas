@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
+import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.work.Constraints
 import androidx.work.NetworkType
@@ -46,6 +47,8 @@ import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
 import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
+import com.example.jinotas.utils.Utils.getJsonFromAssets
+import com.example.jinotas.utils.Utils.masterKeyAlias
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
@@ -199,6 +202,22 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 }
             lifecycleScope.launch {
                 Utils.saveValues("Vertical", this@MainActivity)
+            }
+
+            val secretSharedPreferences = EncryptedSharedPreferences.create(
+                "secure_shared_prefs",            // Nombre del archivo de SharedPreferences
+                masterKeyAlias,                   // La clave maestra generada
+                applicationContext,                // El contexto de la aplicación
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+
+            val jsonString = getJsonFromAssets(applicationContext)
+
+            if (jsonString != null) {
+                secretSharedPreferences.edit().putString("firebase_json", jsonString).apply()
+            } else {
+                println("❌ Error al cargar el archivo JSON")
             }
         } else {
             // Recuperar el nombre del usuario almacenado en SharedPreferences

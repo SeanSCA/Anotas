@@ -26,6 +26,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import com.example.jinotas.DrawerExpandableListAdapter
 import com.example.jinotas.R
 import com.example.jinotas.adapter.AdapterNotes
@@ -39,6 +41,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.nio.charset.Charset
 import java.util.ArrayList
 import java.util.Collections
 import kotlin.coroutines.CoroutineContext
@@ -47,6 +52,9 @@ object Utils {
     var noteListStyle: MutableLiveData<String> = MutableLiveData("Vertical")
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")    // Método para obtener el ID del dispositivo
     val FILE = stringPreferencesKey("notes_list_style")
+    private lateinit var firebaseFile: InputStream
+
+    val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 
     fun getIdDevice(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
@@ -54,17 +62,28 @@ object Utils {
 
     suspend fun getAccessToken(context: Context): String {
         return withContext(Dispatchers.IO) {
-            val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance()
+            val sharedPreferences = EncryptedSharedPreferences.create(
+                "secure_shared_prefs",
+                masterKeyAlias,
+                context,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
 
-            // Load the service account credentials from assets
-            val inputStream = context.assets.open("notemanager-15064-6b4b2ba119a0.json")
-            val credentials = GoogleCredentials.fromStream(inputStream)
+            val storedJsonString = sharedPreferences.getString("firebase_json", null)
+
+            if (storedJsonString != null) {
+                firebaseFile =
+                    ByteArrayInputStream(storedJsonString.toByteArray(Charset.forName("UTF-8")))
+            } else {
+                Log.e("firebaseFile", "No existe el fichero .json")
+            }
+
+            val credentials = GoogleCredentials.fromStream(firebaseFile)
                 .createScoped(Collections.singleton("https://www.googleapis.com/auth/firebase.messaging"))
 
-            // Refresh the token if it's expired
             credentials.refreshIfExpired()
 
-            // Return the access token
             credentials.accessToken.tokenValue
         }
     }
@@ -150,10 +169,9 @@ object Utils {
 
     // Función para leer el valor almacenado en DataStore
     fun getValues(context: Context): Flow<String> {
-        return context.dataStore.data
-            .map { preferences ->
-                preferences[FILE] ?: "Valor no encontrado"
-            }
+        return context.dataStore.data.map { preferences ->
+            preferences[FILE] ?: "Valor no encontrado"
+        }
     }
 
     suspend fun saveValues(name: String, context: Context) {
@@ -189,5 +207,11 @@ object Utils {
         } else {
             vibrator.vibrate(100)
         }
+    }
+
+    fun getJsonFromAssets(context: Context): String? {
+        val assetManager = context.assets
+        val inputStream: InputStream = assetManager.open("notemanager-15064-6b4b2ba119a0.json")
+        return inputStream.bufferedReader(Charset.forName("UTF-8")).use { it.readText() }
     }
 }

@@ -158,6 +158,9 @@ dependencies {
 
     //For internet connection checking
     implementation("com.github.muddassir235:connection_checker:1.7")
+
+    implementation ("androidx.security:security-crypto:1.1.0-alpha06")
+
 }
 kapt {
     correctErrorTypes = true
