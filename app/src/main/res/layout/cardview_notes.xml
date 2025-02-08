@@ -13,6 +13,7 @@
         <TextView
             android:id="@+id/tv_show_note_title"
             android:layout_width="match_parent"
+            android:fontFamily="@font/aldrich"
             android:layout_height="match_parent"
             android:layout_margin="10dp"
             android:background="@drawable/show_note_content_resume"
@@ -36,6 +37,7 @@
         <TextView
             android:id="@+id/tv_show_note_content_resume"
             android:layout_width="match_parent"
+            android:fontFamily="@font/aldrich"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
             android:background="@drawable/show_note_content_resume"
