@@ -56,6 +56,7 @@ import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -125,15 +126,33 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
+        val navigationView = binding.navigationView
+        navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
         expandableListView = binding.expandableListView
         val toolbar: Toolbar = binding.toolbar
+
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close
         )
+
+        toggle.isDrawerIndicatorEnabled = false  // Deshabilita el icono predeterminado
+        toggle.setHomeAsUpIndicator(R.drawable.return_to_notes) //Coloca un icono personalizado
+
         drawerLayout.addDrawerListener(toggle)
+
         toggle.syncState()
+
+        //Listener para abrir y cerrar drawer
+        toolbar.setNavigationOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
 
         Utils.setupExpandableListView(
             expandableListView, this, drawerLayout
