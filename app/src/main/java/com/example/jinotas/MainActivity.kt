@@ -467,7 +467,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         try {
             isConnectedToInternet = checkConnectivity(state, applicationContext)
             Log.i("isConnectedToInternet", isConnectedToInternet.toString())
-            if (isConnectedToInternet != null && isConnectedToInternet as Boolean) {
+            if (isConnectedToInternet != null) {
                 syncPendingNotes()
             }
         } catch (e: Exception) {
