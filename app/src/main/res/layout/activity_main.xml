@@ -15,7 +15,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="56dp"
             android:background="@color/black"
             app:layout_constraintBottom_toTopOf="@+id/title"
             app:layout_constraintEnd_toEndOf="parent"
@@ -29,6 +29,7 @@
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/aldrich"
             android:text="@string/title"
             android:textColor="@color/white"
             android:textSize="15sp"
@@ -43,6 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:text="Conteo total de notas"
+            android:fontFamily="@font/aldrich"
             android:textColor="@color/white"
             android:textSize="15sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -110,7 +112,7 @@
                 android:id="@+id/fragment_container_view"
                 android:name="com.example.jinotas.NotesFragment"
                 android:layout_width="match_parent"
-                android:layout_height="600dp"
+                android:layout_height="0dp"
                 android:layout_margin="10dp"
                 tools:layout="@layout/fragment_notes" />
 
@@ -123,9 +125,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        app:itemTextAppearance="@style/AldrichTextViewStyle"
         android:background="@color/drawer">
 
-        <ExpandableListView
+    <ExpandableListView
             android:id="@+id/expandable_list_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

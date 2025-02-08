@@ -1,8 +1,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/widget_layout_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
+
     android:padding="8dp">
 
     <LinearLayout
@@ -15,6 +17,7 @@
         <TextView
             android:id="@+id/widget_title"
             android:layout_width="match_parent"
+            android:fontFamily="@font/aldrich"
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:ellipsize="end"
