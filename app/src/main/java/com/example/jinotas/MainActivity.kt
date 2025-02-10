@@ -362,7 +362,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         )
 
         // set the background color of the PopupWindow
-        popup.setBackgroundDrawable(ContextCompat.getDrawable(context, R.color.white))
+//        popup.setBackgroundDrawable(ContextCompat.getDrawable(context, R.color.white))
 
         // set a touch listener on the popup window so it will be dismissed when touched outside
         popup.isOutsideTouchable = true
