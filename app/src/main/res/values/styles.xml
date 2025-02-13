@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="AppTheme">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -12,4 +12,12 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
+
+    <style name="AldrichTextViewStyle">
+        <item name="android:fontFamily">@font/aldrich</item>
+        <item name="android:textSize">16sp</item> <!-- Cambia el tamaño si es necesario -->
+        <item name="android:textColor">@android:color/white</item> <!-- Ajusta el color si es necesario -->
+    </style>
+
+
 </resources>

@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="5dp"
+        android:fontFamily="@font/aldrich"
         android:ellipsize="end"
         android:text="@string/note_textcontent_widget"
         android:textColor="@android:color/white"

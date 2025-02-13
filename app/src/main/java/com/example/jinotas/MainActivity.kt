@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ExpandableListView
 import android.widget.LinearLayout
@@ -56,6 +57,7 @@ import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -125,15 +127,33 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
+        val navigationView = binding.navigationView
+        navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
         expandableListView = binding.expandableListView
         val toolbar: Toolbar = binding.toolbar
+
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close
         )
+
+        toggle.isDrawerIndicatorEnabled = false  // Deshabilita el icono predeterminado
+        toggle.setHomeAsUpIndicator(R.drawable.return_to_notes) //Coloca un icono personalizado
+
         drawerLayout.addDrawerListener(toggle)
+
         toggle.syncState()
+
+        //Listener para abrir y cerrar drawer
+        toolbar.setNavigationOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
 
         Utils.setupExpandableListView(
             expandableListView, this, drawerLayout
@@ -334,18 +354,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         val inflater = LayoutInflater.from(context)
         val layout = inflater.inflate(R.layout.menu_search, null)
 
-        // initialize the EditText field
         val searchNote = layout.findViewById<EditText>(R.id.etSearchNote)
 
-        // create a PopupWindow
         val popup = PopupWindow(
             layout, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true
         )
 
-        // set the background color of the PopupWindow
-        popup.setBackgroundDrawable(ContextCompat.getDrawable(context, R.color.white))
-
-        // set a touch listener on the popup window so it will be dismissed when touched outside
         popup.isOutsideTouchable = true
         popup.isTouchable = true
 
@@ -357,7 +371,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 loadFilteredNotes(searchNote.text.toString())
             }
         }
-        // display the popup window at the specified location
+
         popup.showAsDropDown(view)
     }
 
@@ -368,31 +382,33 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     fun showPopupMenuOrderBy(view: View) {
         fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        val popupMenu = PopupMenu(this@MainActivity, view)
-        popupMenu.menuInflater.inflate(R.menu.popup_menu_order_by, popupMenu.menu)
-        popupMenu.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_order_by_date -> runBlocking {
-                    val corrutina = launch {
-                        db = AppDatabase.getDatabase(this@MainActivity)
-                        fragmentNotes.orderByNotes("date")
-                    }
-                    corrutina.join()
-                }
 
-                R.id.action_order_by_title -> runBlocking {
-                    val corrutina = launch {
-                        db = AppDatabase.getDatabase(this@MainActivity)
-                        fragmentNotes.orderByNotes("title")
-                    }
-                    corrutina.join()
-                }
-            }
-            true
+        val inflater = LayoutInflater.from(applicationContext)
+        val layout = inflater.inflate(R.layout.menu_order_by, null)
+
+
+        val popup = PopupWindow(
+            layout, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true
+        )
+
+        popup.isOutsideTouchable = true
+        popup.isTouchable = true
+
+        popup.showAsDropDown(view)
+        val orderByDate = layout.findViewById<Button>(R.id.action_order_by_date)
+        val orderByTitle = layout.findViewById<Button>(R.id.action_order_by_title)
+
+        orderByDate.setOnClickListener {
+            fragmentNotes.orderByNotes("date")
+            popup.dismiss()
         }
-        popupMenu.show()
-        true
+
+        orderByTitle.setOnClickListener {
+            fragmentNotes.orderByNotes("title")
+            popup.dismiss()
+        }
     }
+
 
     /**
      * Here checks if there's connection to the api

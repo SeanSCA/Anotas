@@ -10,4 +10,5 @@
     <color name="colorAccent">#03DAC5</color>
     <color name="green">#1AFF00</color>
     <color name="disabled">#D3D3D3</color>
+    <color name="floatingButtonCreateNote">#E2E0E7</color>
 </resources>

@@ -1,6 +1,7 @@
 package com.example.jinotas
 
 import android.content.Context
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,7 +42,10 @@ class DrawerExpandableListAdapter(
         val title = getGroup(groupPosition) as String
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val view = inflater.inflate(android.R.layout.simple_expandable_list_item_1, parent, false)
-        (view.findViewById<TextView>(android.R.id.text1)).text = title
+
+        val groupTextView = view.findViewById<TextView>(android.R.id.text1)
+        groupTextView.text = title
+        groupTextView.setTextAppearance(R.style.AldrichTextViewStyle) // Aplica el estilo aquí
         return view
     }
 
@@ -55,7 +59,10 @@ class DrawerExpandableListAdapter(
         val item = getChild(groupPosition, childPosition) as String
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val view = inflater.inflate(android.R.layout.simple_expandable_list_item_2, parent, false)
-        (view.findViewById<TextView>(android.R.id.text1)).text = item
+
+        val childTextView = view.findViewById<TextView>(android.R.id.text1)
+        childTextView.text = item
+        childTextView.setTextAppearance(R.style.AldrichTextViewStyle) // Aplica el estilo aquí
         return view
     }
 }
