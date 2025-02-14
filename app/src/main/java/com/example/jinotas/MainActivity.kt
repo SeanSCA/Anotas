@@ -19,29 +19,21 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ExpandableListView
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.PopupWindow
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.connection.ConnectivityMonitor
-import com.example.jinotas.connection.SyncNotesWorker
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -57,7 +49,6 @@ import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -69,7 +60,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
@@ -285,11 +275,16 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             editor.putString("userFrom", userName)  // Guardar el nombre de usuario
             editor.apply()
 
+            lifecycleScope.launch {
+                val userToken: UserToken
+                val token = db.tokenDAO().getToken()
+                userToken = UserToken(token = token, userName = userName!!, password = "")
+
+                CrudApi().postTokenByUser(userToken)
+            }
             // Aquí puedes usar la variable userName en la lógica que necesites
-            val userToken: UserToken
-            val token = db.tokenDAO().getToken()
-            userToken = UserToken(token = token, userName = userName!!, password = "")
-            CrudApi().postTokenByUser(userToken)
+
+
             dialog.dismiss()
         }
 
@@ -320,15 +315,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
      * Here updates the notes counter
      */
     private fun notesCounter() {
-        runBlocking {
-            val corrutina = launch {
-                db = AppDatabase.getDatabase(this@MainActivity)
-                notesCounter = db.noteDAO().getNotesCount()
-                    .toString() + " " + this@MainActivity.getString(R.string.notes_counter)
-            }
-            corrutina.join()
+        lifecycleScope.launch {
+            db = AppDatabase.getDatabase(this@MainActivity)
+            notesCounter = db.noteDAO().getNotesCount()
+                .toString() + " " + applicationContext.getString(R.string.notes_counter)
+
+            binding.notesCounter.text = notesCounter
         }
-        binding.notesCounter.text = notesCounter
     }
 
     /**
@@ -407,20 +400,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             fragmentNotes.orderByNotes("title")
             popup.dismiss()
         }
-    }
-
-
-    /**
-     * Here checks if there's connection to the api
-     * @return Boolean if there's connection or not
-     */
-    private fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
     }
 
     override fun onRequestPermissionsResult(
