@@ -368,17 +368,4 @@ class AdapterNotes(
             e.printStackTrace()
         }
     }
-
-    /**
-     * Here checks if there's connection to the api
-     * @return Boolean if there's connection or not
-     */
-    private fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
-    }
 }

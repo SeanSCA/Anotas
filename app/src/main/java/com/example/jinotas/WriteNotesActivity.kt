@@ -310,22 +310,4 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         TODO("Not yet implemented")
     }
 
-    private fun uploadNoteApi(notePost: Note) {
-        if (tryConnection()) {
-            lifecycleScope.launch {
-                CrudApi().postNote(notePost, this@WriteNotesActivity)
-                Toast.makeText(this@WriteNotesActivity, "Has subido la nota", Toast.LENGTH_LONG)
-                    .show()
-            }
-        }
-    }
-
-    private fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
-    }
 }
