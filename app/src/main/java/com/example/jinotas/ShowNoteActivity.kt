@@ -100,6 +100,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                 val current = LocalDateTime.now().format(formatter)
 
                 val noteUpdate = Note(
+                    id = notesShow.id,
                     code = codeSearchUpdate,
                     title = binding.etTitle.text.toString(),
                     textContent = binding.noteContent.getPlainTextContent(),

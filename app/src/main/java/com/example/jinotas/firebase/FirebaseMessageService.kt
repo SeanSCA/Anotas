@@ -49,6 +49,7 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
             if (receivedDeviceId != currentDeviceId) {
                 // Crear manualmente el objeto Note a partir de los datos recibidos
                 val note = Note(
+                    id = remoteMessage.data["id"]?.toInt() ?: 0,
                     code = remoteMessage.data["code"]?.toInt() ?: 0,
                     title = remoteMessage.data["title"] ?: "Sin título",
                     textContent = remoteMessage.data["textContent"] ?: "",

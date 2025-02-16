@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -21,10 +22,18 @@ object UtilsDBAPI {
     lateinit var localPendingNotes: MutableList<Note>
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")    // Método para obtener el ID del dispositivo
     val FILE = stringPreferencesKey("notes_list_style")
+    private val dotenv = dotenv {
+        directory = "/assets"
+        filename = "env"
+    }
+    //Urls para CrudApi (retrofit)
+    val URL_API_NOTES = dotenv["URL_API_NOTES"]
+    val URL_API_TOKEN_USER = dotenv["URL_API_USER"]
+    val API_TOKEN = dotenv["API_TOKEN"]
 
     //Esto es para almacenar en la api
     suspend fun saveNoteToCloud(note: Note, context: Context) {
-        CrudApi.postNote(note)
+        CrudApi.postNote(note, context)
     }
 
     //Esto es para modificar en la api

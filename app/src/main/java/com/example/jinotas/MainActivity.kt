@@ -74,10 +74,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     lateinit var drawerLayout: DrawerLayout
     lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
     private lateinit var expandableListView: ExpandableListView
-    val dotenv = dotenv {
-        directory = "/assets"
-        filename = "env" // instead of '.env', use 'env'
-    }
     private val PREFS_NAME = "MyPrefsFile"
 
     // Variable para guardar el nombre de usuario
@@ -215,9 +211,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             }
 
             val secretSharedPreferences = EncryptedSharedPreferences.create(
-                "secure_shared_prefs",            // Nombre del archivo de SharedPreferences
-                masterKeyAlias,                   // La clave maestra generada
-                applicationContext,                // El contexto de la aplicación
+                "secure_shared_prefs",
+                masterKeyAlias,
+                applicationContext,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
@@ -230,18 +226,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 println("❌ Error al cargar el archivo JSON")
             }
         } else {
-            // Recuperar el nombre del usuario almacenado en SharedPreferences
             userName = sharedPreferences.getString("userFrom", "")
-            // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
             Log.e("userNameGuardado", userName!!)
-
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
             Log.i("recarga", "onRefresh called from SwipeRefreshLayout")
 
-//            fragment =
-//                (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
             fragmentNotes.loadNotes()
             binding.swipeRefreshLayout.isRefreshing = false
         }
@@ -282,8 +273,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
                 CrudApi().postTokenByUser(userToken)
             }
-            // Aquí puedes usar la variable userName en la lógica que necesites
-
 
             dialog.dismiss()
         }

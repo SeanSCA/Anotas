@@ -9,6 +9,8 @@ import java.util.UUID
 data class Note(
     @PrimaryKey @SerializedName("code") val code: Int = UUID.randomUUID().hashCode(),
 
+    @SerializedName("Id") var id: Int?,
+
     @SerializedName("title") var title: String,
 
     @SerializedName("textContent") var textContent: String,
@@ -22,6 +24,7 @@ data class Note(
     var isSynced: Boolean = true
 ) {
     constructor(
+        id: Int?,
         title: String,
         textContent: String,
         date: String,
@@ -29,6 +32,7 @@ data class Note(
         userTo: String?
     ) : this(
         code = UUID.randomUUID().hashCode(),
+        id = id,
         title = title,
         textContent = textContent,
         date = date,

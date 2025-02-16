@@ -106,6 +106,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                 val current = LocalDateTime.now().format(formatter)
 
                 val note = Note(
+                    id = null,
                     title = binding.etTitle.text.toString(),
                     textContent = binding.noteContent.getPlainTextContent(),
                     date = current.toString(),

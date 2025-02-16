@@ -1,5 +1,9 @@
 package com.example.jinotas.api
 
+import com.example.jinotas.api.notesApi.ApiNotesResponse
+import com.example.jinotas.api.notesApi.DeleteNoteRequest
+import com.example.jinotas.api.userApi.ApiUser
+import com.example.jinotas.api.userApi.ApiUserResponse
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.example.jinotas.db.UserToken
@@ -15,24 +19,24 @@ import retrofit2.http.Path
 
 
 interface ApiService {
-    @GET("GetAllNotes")
-    suspend fun getNotesList(): Response<Notes>
+    @GET("?limit=25&shuffle=0&offset=0")
+    suspend fun getNotesList(): Response<ApiNotesResponse>
 
-    @POST("InsertNote/")
+    @POST("?")
     suspend fun postNote(@Body note: Note): Response<Note>
 
-    @PUT("UpdateNote/")
+    @PATCH("?/")
     suspend fun putNote(@Body note: Note): Response<Note>
 
-    @DELETE("DeleteNoteById/{code}")
-    suspend fun deleteNote(@Path("code") code: Int): Response<Unit>
+    @HTTP(method = "DELETE", path = "?", hasBody = true)
+    suspend fun deleteNote(@Body request: DeleteNoteRequest): Response<Unit>
 
-    @GET("GetTokenByUser/{userName}")
-    suspend fun getTokenByUser(@Path("userName") userName: String): Response<UserToken>
+    @GET("?limit=25&shuffle=0&offset=0")
+    suspend fun getTokenByUser(): Response<ApiUserResponse>
 
-    @POST("InsertUserToken/")
-    suspend fun postUserToken(@Body tokenUser: UserToken): Response<UserToken>
+    @POST("?")
+    suspend fun postUserToken(@Body tokenUser: ApiUser): Response<ApiUser>
 
-    @PUT("UpdateUserToken/{token}/{userName}")
-    suspend fun putUserToken(@Path("token") token: String, @Path("userName") userName: String): Response<UserToken>
+    @PATCH("?/")
+    suspend fun putUserToken(@Body userToken: ApiUser): Response<ApiUser>
 }

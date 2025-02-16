@@ -35,6 +35,7 @@ import com.example.jinotas.db.Note
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.GoogleCredentials
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -53,7 +54,12 @@ object Utils {
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")    // Método para obtener el ID del dispositivo
     val FILE = stringPreferencesKey("notes_list_style")
     private lateinit var firebaseFile: InputStream
-
+    private val dotenv = dotenv {
+        directory = "/assets"
+        filename = "env"
+    }
+    //Urls para CrudApi (retrofit)
+    val URL_FILE = dotenv["URL_FILE"]
     val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 
     fun getIdDevice(context: Context): String {
@@ -211,7 +217,7 @@ object Utils {
 
     fun getJsonFromAssets(context: Context): String? {
         val assetManager = context.assets
-        val inputStream: InputStream = assetManager.open("notemanager-15064-6b4b2ba119a0.json")
+        val inputStream: InputStream = assetManager.open(URL_FILE)
         return inputStream.bufferedReader(Charset.forName("UTF-8")).use { it.readText() }
     }
 }

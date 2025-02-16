@@ -122,7 +122,7 @@ class AdapterNotes(
             try {
                 existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
                 Log.e("notaeliminar", existingNote.code.toString())
-                CrudApi().deleteNote(existingNote.code)  // Llamada a la API para borrar la nota
+                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota mediante la Id
 
                 db.noteDAO()
                     .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
@@ -285,12 +285,14 @@ class AdapterNotes(
 
                 Log.e("urlFire", url)
                 val noteJson = Gson().toJson(note)
+                Log.e("idNota", note.id.toString())
 
                 val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
                 val json = JSONObject().apply {
                     put("message", JSONObject().apply {
                         put("token", tokenReceptor)
                         put("data", JSONObject().apply {
+                            put("id", note.id.toString())
                             put("code", note.code.toString())
                             put("title", note.title)
                             put("textContent", note.textContent)
@@ -328,13 +330,11 @@ class AdapterNotes(
     private fun updateNoteUserTo(note: Note, userTo: String, context: Context) {
         note.userTo = userTo
         CoroutineScope(Dispatchers.IO).launch {
-            val corrutina = launch {
-                db = AppDatabase.getDatabase(context)
-                db.noteDAO().updateNote(note)
-                CrudApi().patchNote(note)
-                Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
-            }
-            corrutina.join()
+            db = AppDatabase.getDatabase(context)
+            db.noteDAO().updateNote(note)
+            CrudApi().patchNote(note)
+            Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
+
         }
     }
 
