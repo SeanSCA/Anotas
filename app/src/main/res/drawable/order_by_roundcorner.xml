@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Fondo con color y esquinas redondeadas -->
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@color/background" />
-            <corners android:radius="10dp" />
-        </shape>
-    </item>
-
     <!-- Imagen -->
     <item
         android:drawable="@drawable/order_by"

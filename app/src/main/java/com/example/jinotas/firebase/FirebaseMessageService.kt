@@ -14,10 +14,10 @@ import com.example.jinotas.MainActivity
 import com.example.jinotas.NotesFragment
 import com.example.jinotas.R
 import com.example.jinotas.api.CrudApi
-import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
+import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -32,7 +32,6 @@ import kotlin.coroutines.CoroutineContext
 class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
-    private lateinit var fragment: NotesFragment
     private lateinit var newNotes: ArrayList<Note>
     private val activity = MainActivity.instance
 
@@ -50,15 +49,13 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
             if (receivedDeviceId != currentDeviceId) {
                 // Crear manualmente el objeto Note a partir de los datos recibidos
                 val note = Note(
+                    id = remoteMessage.data["id"]?.toInt() ?: 0,
                     code = remoteMessage.data["code"]?.toInt() ?: 0,
-                    id = remoteMessage.data["id"]?.toIntOrNull(),
                     title = remoteMessage.data["title"] ?: "Sin título",
                     textContent = remoteMessage.data["textContent"] ?: "",
                     date = remoteMessage.data["date"] ?: "",
                     userFrom = remoteMessage.data["userFrom"] ?: "Desconocido",
-                    userTo = remoteMessage.data["userTo"],
-                    createdAt = remoteMessage.data["createdAt"],
-                    updatedAt = remoteMessage.data["updatedAt"]
+                    userTo = remoteMessage.data["userTo"]
                 )
 
                 sendNotification(note.title, "${note.userFrom} te ha enviado una nueva nota")
@@ -114,7 +111,7 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                 )
             val userNameFrom = sharedPreferences.getString("userFrom", null) ?: ""
             if (userNameFrom.isNotEmpty()) {
-                val actualToken = ApiTokenUser(userName = userNameFrom!!, token = token)
+                val actualToken = UserToken(userName = userNameFrom!!, token = token, password = "")
                 CrudApi().patchUserToken(actualToken)
             }
         }
@@ -146,32 +143,4 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
 
         notificationManager.notify(0, notificationBuilder.build())
     }
-
-//    private fun sendNotificationNewNote(title: String, body: String) {
-//        Log.e("title", title)
-//        Log.e("body", body)
-//        val intent = Intent(this, MainActivity::class.java)
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//        val pendingIntent = PendingIntent.getActivity(
-//            this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-//        )
-//
-//        val channelId = "Default"
-//        val notificationBuilder =
-//            NotificationCompat.Builder(this, channelId).setContentTitle(title).setContentText(body)
-//                .setSmallIcon(R.drawable.ic_notification).setAutoCancel(true)
-//                .setContentIntent(pendingIntent)
-//
-//        val notificationManager =
-//            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//
-//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                channelId, "Channel human readable title", NotificationManager.IMPORTANCE_DEFAULT
-//            )
-//            notificationManager.createNotificationChannel(channel)
-//        }
-//
-//        notificationManager.notify(0, notificationBuilder.build())
-//    }
 }

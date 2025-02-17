@@ -1,10 +1,7 @@
-// ApiResponse.kt
-package com.example.jinotas.api.notesnocodb
+package com.example.jinotas.api.notesApi
 
-data class ApiResponse(
-    val list: List<ApiNote>,
-    val pageInfo: PageInfo,
-    val stats: Stats
+data class ApiNotesResponse(
+    val list: List<ApiNote>, val pageInfo: PageInfo, val stats: Stats
 )
 
 data class PageInfo(

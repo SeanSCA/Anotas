@@ -15,7 +15,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="56dp"
             android:background="@color/black"
             app:layout_constraintBottom_toTopOf="@+id/title"
             app:layout_constraintEnd_toEndOf="parent"
@@ -29,6 +29,7 @@
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/aldrich"
             android:text="@string/title"
             android:textColor="@color/white"
             android:textSize="15sp"
@@ -42,6 +43,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
+            android:fontFamily="@font/aldrich"
             android:text="Conteo total de notas"
             android:textColor="@color/white"
             android:textSize="15sp"
@@ -61,15 +63,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <ImageButton
-                    android:id="@+id/btCreateNote"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:background="@drawable/create_note_roundcorner"
-                    android:contentDescription="@string/btn_crear_nota"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                <!--                <ImageButton-->
+                <!--                    android:id="@+id/btCreateNote"-->
+                <!--                    android:layout_width="50dp"-->
+                <!--                    android:layout_height="50dp"-->
+                <!--                    android:background="@drawable/create_note_roundcorner"-->
+                <!--                    android:contentDescription="@string/btn_crear_nota"-->
+                <!--                    app:layout_constraintBottom_toBottomOf="parent"-->
+                <!--                    app:layout_constraintStart_toStartOf="parent"-->
+                <!--                    app:layout_constraintTop_toTopOf="parent" />-->
 
                 <ImageButton
                     android:id="@+id/btSearchNote"
@@ -95,11 +97,24 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btCreateNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/create_note_icon"
+            android:backgroundTint="@color/floatingButtonCreateNote"
+            android:contentDescription="@string/btn_crear_nota"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="30dp"
+            android:layout_marginEnd="20dp"/>
+
         <!-- Agrega el SwipeRefreshLayout envolviendo el FragmentContainerView -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_refresh_layout"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:layout_marginTop="10dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -109,7 +124,7 @@
                 android:id="@+id/fragment_container_view"
                 android:name="com.example.jinotas.NotesFragment"
                 android:layout_width="match_parent"
-                android:layout_height="600dp"
+                android:layout_height="0dp"
                 android:layout_margin="10dp"
                 tools:layout="@layout/fragment_notes" />
 
@@ -122,7 +137,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/drawer">
+        android:background="@color/drawer"
+        app:itemTextAppearance="@style/AldrichTextViewStyle">
 
         <ExpandableListView
             android:id="@+id/expandable_list_view"

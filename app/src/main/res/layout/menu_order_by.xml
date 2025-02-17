@@ -1,33 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/background_menu_search"
     android:orientation="vertical"
     android:padding="4dp">
 
-    <TextView
+    <Button
+        android:id="@+id/action_order_by_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="5dp"
-        android:layout_marginEnd="5dp"
         android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/button_order_by_background"
         android:fontFamily="@font/aldrich"
-        android:text="@string/buscar_por_titulo"
+        android:text="@string/order_by_date"
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold|normal" />
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/etSearchNote"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/action_order_by_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="start"
         android:layout_marginStart="5dp"
         android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:background="@drawable/button_order_by_background"
         android:fontFamily="@font/aldrich"
-        android:hint="@string/buscar"
+        android:text="@string/order_by_title"
         android:textColor="@color/white"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:textStyle="bold|normal" />
 
 </LinearLayout>

@@ -25,19 +25,15 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
-import com.example.jinotas.utils.UtilsDBAPI
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteConcurrentlyWithInternet
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteConcurrentlyWithoutInternet
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteLocallyForLaterSync
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
-import com.example.jinotas.utils.UtilsInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.example.jinotas.widgets.CustomEditText
+import com.example.jinotas.custom_textview.CustomEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -126,28 +122,31 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
     private fun saveNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val localSave = async {
-                    note.isSynced = isConnectionStableAndFast(applicationContext)
-                    saveNoteToLocalDatabase(note, this@WriteNotesActivity)
-                }
-                localSave.await()
+                coroutineScope {
+                    val localSave = async {
+                        note.isSynced = isConnectionStableAndFast(applicationContext)
+                        saveNoteToLocalDatabase(note, this@WriteNotesActivity)
+                    }
+                    localSave.await()
 
-                if (note.isSynced) {
-                    val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
-                    cloudSave.await()
-                } else {
-                    Log.e("Sync", "Nota guardada localmente, pendiente de sincronización")
-                }
+                    if (note.isSynced) {
+                        val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
+                        cloudSave.await()
+                    } else {
+                        Log.e("Sync", "Nota guardada localmente, pendiente de sincronización")
+                    }
 
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@WriteNotesActivity,
-                        if (note.isSynced) "Nota sincronizada con la nube" else "Nota guardada localmente",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@WriteNotesActivity,
+                            if (note.isSynced) "Nota sincronizada con la nube" else "Nota guardada localmente",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    Log.e("ErrorGuardar", e.message.toString())
                     Toast.makeText(
                         this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT
                     ).show()
@@ -155,97 +154,6 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             }
         }
     }
-
-
-    /*private fun saveNoteConcurrently(note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
-
-                if (isConnectionStableAndFast(applicationContext)) {
-                    // Espera a que ambas operaciones terminen
-//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
-//                    localSave.await()
-                    localSave.await()
-                    val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
-                    cloudSave.await()
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@WriteNotesActivity,
-                            "Has creado la nota ${note.title} en local y nube ",
-                            Toast.LENGTH_LONG
-                        ).show()
-//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
-                        Log.e("ejecuta", "ejecuta con internet")
-//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
-                    }
-                } else {
-//                    val localSave = async { saveNoteToLocalDatabase(note, this@WriteNotesActivity) }
-//                    localSave.await()
-                    localSave.await()
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@WriteNotesActivity,
-                            "Has creado la nota ${note.title} en local",
-                            Toast.LENGTH_LONG
-                        ).show()
-//                    Toast.makeText(this@WriteNotesActivity, "Nota guardada", Toast.LENGTH_SHORT).show()
-                        Log.e("ejecuta", "ejecuta sin internet")
-//                        Log.e("isConnectedToInternet", isConnectedToInternet.toString())
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    // Manejo de errores
-                    Toast.makeText(
-                        this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } finally {
-                try {
-                    fragmentNotes =
-                        (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-                    fragmentNotes.loadNotes()
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        Log.e("igualmente", "almacenado igualmente")
-                    }
-                }
-            }
-        }
-    }*/
-
-//    private fun saveNoteConcurrently(note: Note) {
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            val isConnected = try {
-//                isConnectionStableAndFast(applicationContext)
-//            } catch (e: Exception) {
-//                Log.e("saveNoteConcurrently", "Error checking connection: ${e.message}")
-//                false
-//            }
-//
-//            if (isConnected) {
-//                try {
-//                    saveNoteConcurrentlyWithInternet(note, applicationContext)
-//                    Log.e("saveNoteConcurrentlyWithInternet", "Stored with internet.")
-//                } catch (e: Exception) {
-//                    Log.e("saveNoteConcurrently", "Error saving with internet: ${e.message}")
-//                    saveNoteLocallyForLaterSync(note, applicationContext)
-//                }
-//            } else {
-//                try {
-//                    saveNoteConcurrentlyWithoutInternet(note, applicationContext)
-//                    Log.e("saveNoteConcurrentlyWithoutInternet", "Stored without internet.")
-//                } catch (e: Exception) {
-//                    Log.e(
-//                        "saveNoteConcurrentlyWithoutInternet",
-//                        "Error saving without internet: ${e.message}"
-//                    )
-//                }
-//            }
-//        }
-//    }
 
     private fun insertChecklist() {
         try {
@@ -395,21 +303,6 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
             }
         }
 
-    companion object {
-        val ARG_IS_FROM_WIDGET: String = "is_from_widget"
-        val ARG_ITEM_ID: String = "item_id"
-        val ARG_NEW_NOTE: String = "new_note"
-        val ARG_MATCH_OFFSETS: String = "match_offsets"
-        val ARG_MARKDOWN_ENABLED: String = "markdown_enabled"
-        val ARG_PREVIEW_ENABLED: String = "preview_enabled"
-
-        private val STATE_NOTE_ID = "state_note_id"
-        private val AUTOSAVE_DELAY_MILLIS = 2000
-        private val MAX_REVISIONS = 30
-        private val PUBLISH_TIMEOUT = 20000
-        private val HISTORY_TIMEOUT = 10000
-    }
-
     override fun onFocusChange(p0: View?, p1: Boolean) {
         TODO("Not yet implemented")
     }
@@ -418,22 +311,4 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         TODO("Not yet implemented")
     }
 
-    private fun uploadNoteApi(notePost: Note) {
-        if (tryConnection()) {
-            lifecycleScope.launch {
-                CrudApi().postNote(notePost, this@WriteNotesActivity)
-                Toast.makeText(this@WriteNotesActivity, "Has subido la nota", Toast.LENGTH_LONG)
-                    .show()
-            }
-        }
-    }
-
-    private fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
-    }
 }

@@ -7,8 +7,8 @@ import android.text.SpannableStringBuilder
 import android.text.TextUtils
 import androidx.core.content.ContextCompat
 import com.example.jinotas.R
-import com.example.jinotas.widgets.CenteredImageSpan
-import com.example.jinotas.widgets.CheckableSpan
+import com.example.jinotas.custom_textview.CenteredImageSpan
+import com.example.jinotas.custom_textview.CheckableSpan
 import java.util.regex.Pattern
 
 object ChecklistUtils {

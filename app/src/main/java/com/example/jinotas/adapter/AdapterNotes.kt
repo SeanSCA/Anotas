@@ -24,6 +24,7 @@ import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.ThemeUtils
 import com.example.jinotas.utils.Utils.getAccessToken
 import com.google.gson.Gson
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,6 +47,10 @@ class AdapterNotes(
 
     private lateinit var db: AppDatabase
     private var canConnect: Boolean = false
+    val dotenv = dotenv {
+        directory = "/assets"
+        filename = "env"
+    }
 
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
         val titleText: TextView = vista.findViewById<TextView>(R.id.tv_show_note_title)
@@ -116,7 +121,8 @@ class AdapterNotes(
             var existingNote: Note? = null
             try {
                 existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
-                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota
+                Log.e("notaeliminar", existingNote.code.toString())
+                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota mediante la Id
 
                 db.noteDAO()
                     .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
@@ -134,6 +140,28 @@ class AdapterNotes(
                     db.noteDAO()
                         .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
                 }
+            }
+        }
+    }
+
+    fun deleteNoteDB(context: Context, note: Note) {
+        CoroutineScope(Dispatchers.IO).launch {
+            db = AppDatabase.getDatabase(context)
+            var existingNote: Note? = null
+            try {
+                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
+                Log.e("notaeliminar", existingNote.code.toString())
+                db.noteDAO()
+                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+
+                // Actualización de la lista y notificación en el hilo principal
+                withContext(Dispatchers.Main) {
+                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+                }
+
+            } catch (e: Exception) {
+                // Manejo de errores
+                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
             }
         }
     }
@@ -253,23 +281,24 @@ class AdapterNotes(
             val tokenReceptor = getTokenByUser(userName)
 
             if (tokenReceptor != null) {
-                val url = "https://fcm.googleapis.com/v1/projects/notemanager-15064/messages:send"
+                val url = dotenv["URL_SEND_MESSAGE"]
+
+                Log.e("urlFire", url)
                 val noteJson = Gson().toJson(note)
+                Log.e("idNota", note.id.toString())
 
                 val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
                 val json = JSONObject().apply {
                     put("message", JSONObject().apply {
                         put("token", tokenReceptor)
                         put("data", JSONObject().apply {
+                            put("id", note.id.toString())
                             put("code", note.code.toString())
-                            put("id", note.id?.toString() ?: "")
                             put("title", note.title)
                             put("textContent", note.textContent)
                             put("date", note.date)
                             put("userFrom", note.userFrom)
                             put("userTo", userName)
-                            put("createdAt", note.createdAt ?: "")
-                            put("updatedAt", note.updatedAt ?: "")
                         })
                     })
                 }
@@ -301,13 +330,11 @@ class AdapterNotes(
     private fun updateNoteUserTo(note: Note, userTo: String, context: Context) {
         note.userTo = userTo
         CoroutineScope(Dispatchers.IO).launch {
-            val corrutina = launch {
-                db = AppDatabase.getDatabase(context)
-                db.noteDAO().updateNote(note)
-                CrudApi().patchNote(note)
-                Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
-            }
-            corrutina.join()
+            db = AppDatabase.getDatabase(context)
+            db.noteDAO().updateNote(note)
+            CrudApi().patchNote(note)
+            Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
+
         }
     }
 
@@ -340,18 +367,5 @@ class AdapterNotes(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    /**
-     * Here checks if there's connection to the api
-     * @return Boolean if there's connection or not
-     */
-    private fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
     }
 }

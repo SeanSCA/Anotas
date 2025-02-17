@@ -39,6 +39,7 @@ class NotesFragment : Fragment(), CoroutineScope {
     private var job: Job = Job()
     private lateinit var notesListStyle: String
     var isRemovingNote = false
+
     // Lista para almacenar las notas pendientes de eliminación
     val notesToDelete = mutableListOf<Pair<Int, Note>>()
 
@@ -81,9 +82,29 @@ class NotesFragment : Fragment(), CoroutineScope {
                 vibratePhone(requireContext())
 
                 lifecycleScope.launch {
-                    if (isConnectionStableAndFast(requireContext())) {
+                    if (!isConnectionStableAndFast(requireContext())) {
+                        if (direction == ItemTouchHelper.RIGHT) {
+                            // Restaurar la nota si no hay conexión en el swipe derecho
+                            adapterNotes.notifyItemChanged(position)
+                            Toast.makeText(
+                                requireContext(),
+                                "No dispones de suficiente conexión a internet",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else if (direction == ItemTouchHelper.LEFT) {
+                            // Realizar otra acción si no hay conexión en el swipe izquierdo
+                            handleOfflineSwipeLeft(note)
+                            // Eliminar de la lista y actualizar RecyclerView
+                            notesList.removeAt(position)
+                            adapterNotes.notifyItemRemoved(position)
+                            adapterNotes.deleteNoteDB(
+                                this@NotesFragment.requireContext(), note
+                            )
+                        }
+                        return@launch
+                    } else {
                         if (direction == ItemTouchHelper.LEFT) {
-                            // Eliminar de la lista y actualizar el RecyclerView
+                            // Eliminar de la lista y actualizar RecyclerView
                             notesList.removeAt(position)
                             adapterNotes.notifyItemRemoved(position)
 
@@ -95,7 +116,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                             )
 
                             snackbar.setAction("Deshacer") {
-                                // Agregar nuevamente la nota en la posición original
+                                // Restaurar la nota en la posición original
                                 notesList.add(position, note)
                                 adapterNotes.notifyItemInserted(position)
                             }
@@ -104,7 +125,6 @@ class NotesFragment : Fragment(), CoroutineScope {
                                 override fun onDismissed(
                                     transientBottomBar: Snackbar?, event: Int
                                 ) {
-                                    // Si el Snackbar se cierra sin haber hecho "Deshacer", eliminamos la nota de la base de datos
                                     if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
                                         adapterNotes.deleteNoteDBApi(
                                             this@NotesFragment.requireContext(), note
@@ -114,10 +134,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                             })
                             snackbar.show()
                         } else if (direction == ItemTouchHelper.RIGHT) {
-
                             Log.e("enviarNota", "Calidad de internet correcta")
-//                            Toast.makeText(requireContext(), "Calidad de internet correcta", Toast.LENGTH_LONG).show()
-                            Log.e("tamañoListaAntes", notesList.size.toString())
                             notesList.removeAt(position)
                             adapterNotes.notifyItemRemoved(position)
                             notesList.add(position, note)
@@ -125,20 +142,22 @@ class NotesFragment : Fragment(), CoroutineScope {
                             adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
                             Log.e("tamañoListaDespues", notesList.size.toString())
                         }
-                    } else {
-                        notesList.add(position, note)
-                        adapterNotes.notifyItemInserted(position)
-                        Toast.makeText(
-                            requireContext(),
-                            "No dispones de suficiente conexión a internet",
-                            Toast.LENGTH_LONG
-                        ).show()
                     }
                 }
             }
         }).attachToRecyclerView(binding.rvNotes)
 
+
+
+
         return binding.root
+    }
+
+
+    fun handleOfflineSwipeLeft(note: Note) {
+        Log.i("eliminarDespues", "Nota ${note.title} se eliminará al recuperar internet")
+
+
     }
 
     fun processDeletionQueue() {
@@ -153,9 +172,7 @@ class NotesFragment : Fragment(), CoroutineScope {
 
             // Mostrar el Snackbar antes de realizar la eliminación visual
             val snackbar = Snackbar.make(
-                binding.rvNotes,
-                "Has eliminado la nota ${note.title}",
-                Snackbar.LENGTH_LONG
+                binding.rvNotes, "Has eliminado la nota ${note.title}", Snackbar.LENGTH_LONG
             )
 
             snackbar.setAction("Deshacer") {
@@ -197,7 +214,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                 db = AppDatabase.getDatabase(requireContext())
                 notesList = db.noteDAO().getNotesList() as ArrayList<Note>
                 adapterNotes = AdapterNotes(notesList, coroutineContext)
-
+                Log.i("cargarNotas", "ha cargado las notas")
                 showNotes()
             }
         }

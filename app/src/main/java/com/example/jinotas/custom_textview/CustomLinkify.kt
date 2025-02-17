@@ -1,10 +1,4 @@
-package com.example.jinotas.widgets
-
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.util.Linkify
-import android.widget.TextView
-import java.util.regex.Pattern
+package com.example.jinotas.custom_textview
 
 object CustomLinkify {
     const val CUSTOM_SCHEME: String = "jinotas://"

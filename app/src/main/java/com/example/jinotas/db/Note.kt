@@ -21,10 +21,6 @@ data class Note(
 
     @SerializedName("userTo") var userTo: String?,
 
-    @SerializedName("CreatedAt") var createdAt: String? = null,
-
-    @SerializedName("UpdatedAt") var updatedAt: String? = null,
-
     var isSynced: Boolean = true
 ) {
     constructor(
@@ -45,6 +41,6 @@ data class Note(
     )
 
     override fun toString(): String {
-        return "Note(code=$code, id=$id, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, createdAt=$createdAt, updatedAt=$updatedAt)"
+        return "Note(code=$code, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, isSynced='$isSynced'"
     }
 }

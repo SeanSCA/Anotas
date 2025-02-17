@@ -1,9 +1,7 @@
-package com.example.jinotas.api.tokenusernocodb
+package com.example.jinotas.api.userApi
 
-data class ApiResponse(
-    val list: List<ApiTokenUser>,
-    val pageInfo: PageInfo,
-    val stats: Stats
+data class ApiUserResponse(
+    val list: List<ApiUser>, val pageInfo: PageInfo, val stats: Stats
 )
 
 data class PageInfo(

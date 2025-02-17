@@ -56,6 +56,7 @@
                     android:layout_height="match_parent"
                     android:layout_marginStart="20dp"
                     android:background="@null"
+                    android:fontFamily="@font/aldrich"
                     android:hint="@string/title_hint"
                     android:textColor="@color/white"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -103,24 +104,25 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <com.example.jinotas.widgets.CustomEditText
+                <com.example.jinotas.custom_textview.CustomEditText
                     android:id="@+id/noteContent"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:inputType="textMultiLine|textCapSentences"
                     android:layout_weight="1"
-                    android:gravity="top"
-                    android:scrollHorizontally="false"
                     android:background="@color/editContentBackground"
-                    android:padding="16dp"
+                    android:cursorVisible="true"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
-                    android:textIsSelectable="true"
-                    android:longClickable="true"
-                    android:cursorVisible="true"
+                    android:fontFamily="@font/aldrich"
+                    android:gravity="top"
                     android:imeOptions="flagNoExtractUi"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:longClickable="true"
+                    android:padding="16dp"
+                    android:scrollHorizontally="false"
                     android:textColor="@android:color/white"
-                    tools:context=".WriteNotesActivity"/>
+                    android:textIsSelectable="true"
+                    tools:context=".WriteNotesActivity" />
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 

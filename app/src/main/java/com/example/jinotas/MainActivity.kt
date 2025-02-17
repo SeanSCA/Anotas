@@ -1,7 +1,6 @@
 package com.example.jinotas
 
 import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -11,64 +10,56 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ExpandableListView
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.PopupWindow
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
+import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.Configuration
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
-import com.example.jinotas.api.tokenusernocodb.ApiTokenUser
 import com.example.jinotas.connection.ConnectivityMonitor
-import com.example.jinotas.connection.SyncNotesWorker
 import com.example.jinotas.databinding.ActivityMainBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
+import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
-import com.example.jinotas.utils.Utils.FILE
+import com.example.jinotas.utils.Utils.getJsonFromAssets
+import com.example.jinotas.utils.Utils.masterKeyAlias
 import com.example.jinotas.utils.Utils.vibratePhone
+import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
+import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
 import com.muddassir.connection_checker.ConnectionChecker
 import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
-import com.muddassir.connection_checker.checkConnection
 import io.github.cdimascio.dotenv.dotenv
-import io.ktor.network.sockets.connect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
@@ -83,10 +74,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     lateinit var drawerLayout: DrawerLayout
     lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
     private lateinit var expandableListView: ExpandableListView
-    val dotenv = dotenv {
-        directory = "/assets"
-        filename = "env" // instead of '.env', use 'env'
-    }
     private val PREFS_NAME = "MyPrefsFile"
 
     // Variable para guardar el nombre de usuario
@@ -126,15 +113,33 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
+        val navigationView = binding.navigationView
+        navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
         expandableListView = binding.expandableListView
         val toolbar: Toolbar = binding.toolbar
+
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar, R.string.nav_open, R.string.nav_close
         )
+
+        toggle.isDrawerIndicatorEnabled = false  // Deshabilita el icono predeterminado
+        toggle.setHomeAsUpIndicator(R.drawable.return_to_notes) //Coloca un icono personalizado
+
         drawerLayout.addDrawerListener(toggle)
+
         toggle.syncState()
+
+        //Listener para abrir y cerrar drawer
+        toolbar.setNavigationOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
 
         Utils.setupExpandableListView(
             expandableListView, this, drawerLayout
@@ -188,7 +193,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 if (task.isSuccessful) {
                     val token = task.result
                     // Guarda este token en tu base de datos
-                    db.tokenDAO().insertNote(Token(token = token))
+                    db.tokenDAO().insertToken(Token(token = token))
 
                     Log.e("Token del dispositivo:", token)
                 }
@@ -204,19 +209,30 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             lifecycleScope.launch {
                 Utils.saveValues("Vertical", this@MainActivity)
             }
-        } else {
-            // Recuperar el nombre del usuario almacenado en SharedPreferences
-            userName = sharedPreferences.getString("userFrom", "")
-            // Aquí puedes hacer algo con el nombre de usuario, por ejemplo, mostrarlo en pantalla o usarlo en tu lógica
-            Log.e("userNameGuardado", userName!!)
 
+            val secretSharedPreferences = EncryptedSharedPreferences.create(
+                "secure_shared_prefs",
+                masterKeyAlias,
+                applicationContext,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+
+            val jsonString = getJsonFromAssets(applicationContext)
+
+            if (jsonString != null) {
+                secretSharedPreferences.edit().putString("firebase_json", jsonString).apply()
+            } else {
+                println("❌ Error al cargar el archivo JSON")
+            }
+        } else {
+            userName = sharedPreferences.getString("userFrom", "")
+            Log.e("userNameGuardado", userName!!)
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
             Log.i("recarga", "onRefresh called from SwipeRefreshLayout")
 
-//            fragment =
-//                (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
             fragmentNotes.loadNotes()
             binding.swipeRefreshLayout.isRefreshing = false
         }
@@ -250,11 +266,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             editor.putString("userFrom", userName)  // Guardar el nombre de usuario
             editor.apply()
 
-            // Aquí puedes usar la variable userName en la lógica que necesites
-            val userToken: ApiTokenUser
-            val token = db.tokenDAO().getToken()
-            userToken = ApiTokenUser(userName = userName!!, token = token)
-            CrudApi().postTokenByUser(userToken)
+            lifecycleScope.launch {
+                val userToken: UserToken
+                val token = db.tokenDAO().getToken()
+                userToken = UserToken(token = token, userName = userName!!, password = "")
+
+                CrudApi().postTokenByUser(userToken)
+            }
+
             dialog.dismiss()
         }
 
@@ -274,22 +293,24 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         super.onResume()
         fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        fragmentNotes.loadNotes()
+        if (::db.isInitialized) {
+            db.noteDAO().getAllNotesLive().observe(this) { notes ->
+                fragmentNotes.loadNotes()
+            }
+        }
     }
 
     /**
      * Here updates the notes counter
      */
     private fun notesCounter() {
-        runBlocking {
-            val corrutina = launch {
-                db = AppDatabase.getDatabase(this@MainActivity)
-                notesCounter = db.noteDAO().getNotesCount()
-                    .toString() + " " + this@MainActivity.getString(R.string.notes_counter)
-            }
-            corrutina.join()
+        lifecycleScope.launch {
+            db = AppDatabase.getDatabase(this@MainActivity)
+            notesCounter = db.noteDAO().getNotesCount()
+                .toString() + " " + applicationContext.getString(R.string.notes_counter)
+
+            binding.notesCounter.text = notesCounter
         }
-        binding.notesCounter.text = notesCounter
     }
 
     /**
@@ -315,18 +336,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         val inflater = LayoutInflater.from(context)
         val layout = inflater.inflate(R.layout.menu_search, null)
 
-        // initialize the EditText field
         val searchNote = layout.findViewById<EditText>(R.id.etSearchNote)
 
-        // create a PopupWindow
         val popup = PopupWindow(
             layout, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true
         )
 
-        // set the background color of the PopupWindow
-        popup.setBackgroundDrawable(ContextCompat.getDrawable(context, R.color.white))
-
-        // set a touch listener on the popup window so it will be dismissed when touched outside
         popup.isOutsideTouchable = true
         popup.isTouchable = true
 
@@ -338,7 +353,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 loadFilteredNotes(searchNote.text.toString())
             }
         }
-        // display the popup window at the specified location
+
         popup.showAsDropDown(view)
     }
 
@@ -349,160 +364,30 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     fun showPopupMenuOrderBy(view: View) {
         fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-        val popupMenu = PopupMenu(this@MainActivity, view)
-        popupMenu.menuInflater.inflate(R.menu.popup_menu_order_by, popupMenu.menu)
-        popupMenu.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_order_by_date -> runBlocking {
-                    val corrutina = launch {
-                        db = AppDatabase.getDatabase(this@MainActivity)
-                        fragmentNotes.orderByNotes("date")
-                    }
-                    corrutina.join()
-                }
 
-                R.id.action_order_by_title -> runBlocking {
-                    val corrutina = launch {
-                        db = AppDatabase.getDatabase(this@MainActivity)
-                        fragmentNotes.orderByNotes("title")
-                    }
-                    corrutina.join()
-                }
-            }
-            true
+        val inflater = LayoutInflater.from(applicationContext)
+        val layout = inflater.inflate(R.layout.menu_order_by, null)
+
+
+        val popup = PopupWindow(
+            layout, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true
+        )
+
+        popup.isOutsideTouchable = true
+        popup.isTouchable = true
+
+        popup.showAsDropDown(view)
+        val orderByDate = layout.findViewById<Button>(R.id.action_order_by_date)
+        val orderByTitle = layout.findViewById<Button>(R.id.action_order_by_title)
+
+        orderByDate.setOnClickListener {
+            fragmentNotes.orderByNotes("date")
+            popup.dismiss()
         }
-        popupMenu.show()
-        true
-    }
 
-    /**
-     * Here checks if there's connection to the api
-     * @return Boolean if there's connection or not
-     */
-    private fun tryConnection(): Boolean {
-        try {
-            canConnect = CrudApi().canConnectToApi()
-        } catch (e: Exception) {
-            Log.e("cantConnectToApi", "No tienes conexión con la API")
-        }
-        return canConnect
-    }
-
-    /**
-     * Download all the notes that are not already in the database
-     */
-    private fun downloadNotesApi() {
-        var inserted = false
-        if (tryConnection()) {
-            runBlocking {
-                val corrutina = launch {
-                    db = AppDatabase.getDatabase(this@MainActivity)
-                    val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
-                    val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    if (notesListApi.size > 0) {
-                        for (n in notesListApi) {
-                            if (notesListDB.none { it.code == n.code }) {
-                                db.noteDAO().insertNote(n)
-                                inserted = true
-                            }
-                        }
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "No hay ninguna nota que descargar",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        return@launch
-                    }
-
-                    if (inserted) {
-                        Toast.makeText(
-                            this@MainActivity, "Has cargado las notas de la nube", Toast.LENGTH_LONG
-                        ).show()
-                        val newNotes = db.noteDAO().getNotesList() as ArrayList<Note>
-
-                        fragmentNotes =
-                            (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
-                        fragmentNotes.loadNotes()
-                        adapterNotes = AdapterNotes(newNotes, coroutineContext)
-                        adapterNotes.updateList(notesListDB)
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity, "No hay notas nuevas en la nube", Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-                corrutina.join()
-            }
-        } else {
-            Toast.makeText(
-                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    /**
-     * Upload all the notes that are not already in the api
-     */
-    private fun uploadNotesApi() {
-        var inserted = false
-        if (tryConnection()) {
-            runBlocking {
-                val corrutina = launch {
-                    val notesListDB = db.noteDAO().getNotesList() as ArrayList<Note>
-                    val notesListApi = CrudApi().getNotesList() as ArrayList<Note>
-                    if (notesListDB.size > 0) {
-                        for (n in notesListDB) {
-                            if (notesListApi.none { it.code == n.code }) {
-                                CrudApi().postNote(n, this@MainActivity)
-                                inserted = true
-                            }
-                        }
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity, "No tienes ninguna nota que subir", Toast.LENGTH_LONG
-                        ).show()
-                        return@launch
-                    }
-
-//                    if (inserted) {
-////                        webSocketClient.sendMessage("newNote")
-//
-//                    } else {
-//                        Toast.makeText(
-//                            this@MainActivity, "No hay notas nuevas que subir", Toast.LENGTH_LONG
-//                        ).show()
-//                    }
-                }
-                corrutina.join()
-            }
-        } else {
-            Toast.makeText(
-                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    /**
-     * Delete all the notes at the api
-     */
-    private fun deleteAllNotesApi() {
-        if (tryConnection()) {
-            var delNotes = CrudApi().getNotesList() as ArrayList<Note>
-            if (delNotes.size > 0) {
-                for (n in delNotes) {
-                    CrudApi().deleteNote(n.code!!)
-                }
-                Toast.makeText(this, "Has eliminado las notas de la nube", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(
-                    this@MainActivity, "No hay ninguna nota en la nube", Toast.LENGTH_LONG
-                ).show()
-            }
-        } else {
-            Toast.makeText(
-                this@MainActivity, "No tienes conexión con la nube", Toast.LENGTH_LONG
-            ).show()
+        orderByTitle.setOnClickListener {
+            fragmentNotes.orderByNotes("title")
+            popup.dismiss()
         }
     }
 
@@ -574,26 +459,45 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         }
     }
 
-    fun enqueueSyncNotesWork(context: Context) {
-        val workRequest = OneTimeWorkRequestBuilder<SyncNotesWorker>().setConstraints(
-            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-        ).build()
-        WorkManager.getInstance(context).enqueue(workRequest)
-    }
-
     private fun syncPendingNotes() {
         db = AppDatabase.getDatabase(applicationContext)
 
         CoroutineScope(Dispatchers.IO).launch {
-            val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
-            for (note in pendingNotes) {
-                try {
-                    saveNoteToCloud(note, applicationContext)
-                    note.isSynced = true
-                    db.noteDAO().updateNote(note)
-                    Log.i("Sync", "Nota sincronizada: ${note.title}")
-                } catch (e: Exception) {
-                    Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
+            if (isConnectionStableAndFast(applicationContext)) {
+                val cloudNotes = (CrudApi().getNotesList() as? ArrayList<Note>) ?: arrayListOf()
+                val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
+                val localNotes = db.noteDAO().getNotesList() // Lista completa de notas locales
+
+                // Filtrar notas en la nube que pertenecen al usuario actual
+                val userCloudNotes = cloudNotes.filter { it.userFrom == userName }
+
+                // Obtener los códigos de notas locales
+                val localCodes = localNotes.map { it.code }.toSet()
+
+                // Identificar qué notas en la nube deben eliminarse (las que no existen localmente)
+                val notesToDelete = userCloudNotes.filter { it.code !in localCodes }
+
+                for (note in pendingNotes) {
+                    try {
+                        if (cloudNotes.any { it.code == note.code }) {
+                            updateNoteInCloud(note, applicationContext)
+                        } else {
+                            saveNoteToCloud(note, applicationContext)
+                        }
+                        //Actualiza la nota localmente para saber que está sincronizado
+                        note.isSynced = true
+                        db.noteDAO().updateNote(note = note)
+                        Log.i("Sync", "Nota sincronizada: ${note.title}")
+                    } catch (e: Exception) {
+                        Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
+                    }
+                }
+
+                // Eliminar las notas que están en la nube pero no en las notas locales
+                for (note in notesToDelete) {
+                    deleteNoteInCloud(note, applicationContext)
+                    Log.e("nota eliminar", note.toString())
+                    Log.i("Delete", "Nota eliminada en la nube: ${note.title}")
                 }
             }
         }

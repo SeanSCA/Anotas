@@ -1,5 +1,6 @@
 package com.example.jinotas.db
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -12,6 +13,9 @@ import androidx.room.Update
 interface NoteDAO {
     @Query("SELECT * FROM notes")
     fun getNotesList(): List<Note>
+
+    @Query("SELECT * FROM notes")
+    fun getAllNotesLive(): LiveData<List<Note>>
 
     @Query("SELECT * FROM notes WHERE code = :code")
     fun getNoteByCode(code: Int): Note
