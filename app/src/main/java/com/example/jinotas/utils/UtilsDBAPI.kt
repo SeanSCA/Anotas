@@ -43,7 +43,7 @@ object UtilsDBAPI {
 
     //Esto es para eliminar en la api
     suspend fun deleteNoteInCloud(note: Note, context: Context) {
-        CrudApi().deleteNote(note.code)
+        CrudApi().deleteNote(note.id!!)
     }
     //-------------------
 

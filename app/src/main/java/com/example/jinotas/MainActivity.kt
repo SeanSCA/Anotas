@@ -484,7 +484,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                         } else {
                             saveNoteToCloud(note, applicationContext)
                         }
+                        //Actualiza la nota localmente para saber que está sincronizado
                         note.isSynced = true
+                        db.noteDAO().updateNote(note = note)
                         Log.i("Sync", "Nota sincronizada: ${note.title}")
                     } catch (e: Exception) {
                         Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
@@ -494,6 +496,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 // Eliminar las notas que están en la nube pero no en las notas locales
                 for (note in notesToDelete) {
                     deleteNoteInCloud(note, applicationContext)
+                    Log.e("nota eliminar", note.toString())
                     Log.i("Delete", "Nota eliminada en la nube: ${note.title}")
                 }
             }
