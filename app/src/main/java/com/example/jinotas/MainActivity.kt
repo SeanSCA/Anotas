@@ -227,6 +227,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             }
         } else {
             userName = sharedPreferences.getString("userFrom", "")
+            binding.navUsername.text = userName
             Log.e("userNameGuardado", userName!!)
         }
 

@@ -28,4 +28,5 @@
     <string name="notes_list_styles_widget" translatable="false">Widget</string>
     <string name="note_title_widget">Título de la nota</string>
     <string name="note_textcontent_widget">Contenido de la nota...</string>
+    <string name="loggedUser">Usuario Logeado</string>
 </resources>
