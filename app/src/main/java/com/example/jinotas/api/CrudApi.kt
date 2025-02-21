@@ -118,15 +118,14 @@ class CrudApi {
         return@withContext if (response.isSuccessful) userToken else null
     }
 
-    suspend fun postTokenByUser(tokenUser: UserToken): UserToken? = withContext(Dispatchers.IO) {
+    suspend fun postTokenByUser(tokenUser: UserToken): ApiUser? = withContext(Dispatchers.IO) {
         val apiUser = ApiUser(
             userName = tokenUser.userName, password = tokenUser.password, token = tokenUser.token
         )
         val response = getRetrofitUser().create(ApiService::class.java).postUserToken(apiUser)
-        val result = response!!.body()!!
-        val user =
-            UserToken(userName = result.userName, password = result.password, token = result.token)
-        return@withContext if (response.isSuccessful) user else null
+        val result = response.body()
+
+        return@withContext if (response.isSuccessful) result else null
     }
 
     suspend fun patchUserToken(userTokenUpdate: UserToken): UserToken? =

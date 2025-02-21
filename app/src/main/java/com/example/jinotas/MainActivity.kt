@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.InputType
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -20,6 +21,8 @@ import android.widget.EditText
 import android.widget.ExpandableListView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
+import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -35,6 +38,7 @@ import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.connection.ConnectivityMonitor
 import com.example.jinotas.databinding.ActivityMainBinding
+import com.example.jinotas.databinding.NavDrawerHeaderBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
@@ -49,6 +53,7 @@ import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.messaging.FirebaseMessaging
@@ -67,6 +72,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     private lateinit var binding: ActivityMainBinding
     private lateinit var db: AppDatabase
     private lateinit var adapterNotes: AdapterNotes
+    private lateinit var navigationView: NavigationView
     private var notesCounter: String? = null
     private var job: Job = Job()
     private lateinit var fragmentNotes: NotesFragment
@@ -113,7 +119,22 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         //Esto es para el menu desplegable
         drawerLayout = binding.myDrawerLayout
-        val navigationView = binding.navigationView
+        navigationView = binding.navigationView
+        navigationView.post {
+            // Obtener el encabezado del NavigationView
+            val headerView = navigationView.getHeaderView(0)
+
+            // Medir la altura del encabezado (una vez que el layout esté listo)
+            val headerHeight = headerView.height
+
+            // Ajustar la posición del ExpandableListView
+            expandableListView.setPadding(0, headerHeight, 0, 0)
+
+            // También puedes ajustar la altura del ExpandableListView si lo prefieres
+            // expandableListView.layoutParams.height =
+            //     resources.displayMetrics.heightPixels - headerHeight
+        }
+
         navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
         expandableListView = binding.expandableListView
         val toolbar: Toolbar = binding.toolbar
@@ -227,6 +248,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             }
         } else {
             userName = sharedPreferences.getString("userFrom", "")
+            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
+
+            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
+            navViewUserName.text = userName
+
+            Log.e("username null", "no es null")
             Log.e("userNameGuardado", userName!!)
         }
 
@@ -248,8 +275,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         layout.orientation = LinearLayout.VERTICAL
 
         // Crear el campo del formulario
-        val nameInput = EditText(this)
-        nameInput.hint = "Nombre de usuario"
+        val nameInput = EditText(this).apply {
+            hint = "Nombre de usuario"
+            inputType = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
         layout.addView(nameInput)
 
         // Configurar el layout dentro del diálogo
@@ -272,6 +301,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 userToken = UserToken(token = token, userName = userName!!, password = "")
 
                 CrudApi().postTokenByUser(userToken)
+                userName = sharedPreferences.getString("userFrom", "")
+                val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
+
+                val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
+                navViewUserName.text = userName
             }
 
             dialog.dismiss()

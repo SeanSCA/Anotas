@@ -15,7 +15,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
             android:background="@color/black"
             app:layout_constraintBottom_toTopOf="@+id/title"
             app:layout_constraintEnd_toEndOf="parent"
@@ -23,7 +23,38 @@
             app:layout_constraintTop_toTopOf="parent"
             app:popupTheme="@style/AppTheme.PopupOverlay"
             app:title=" "
-            app:titleTextColor="@android:color/white" />
+            app:titleTextColor="@android:color/white">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!--Si se descomenta mostrará el botón de ordenar nota en el toolbar-->
+                <!--                <ImageButton-->
+                <!--                    android:id="@+id/btOrderBy"-->
+                <!--                    android:layout_width="48dp"-->
+                <!--                    android:layout_height="48dp"-->
+                <!--                    android:layout_marginEnd="35dp"-->
+                <!--                    android:background="@drawable/order_by_roundcorner"-->
+                <!--                    android:contentDescription="@string/btn_ordenar_nota"-->
+                <!--                    app:layout_constraintBottom_toBottomOf="parent"-->
+                <!--                    app:layout_constraintEnd_toStartOf="@id/btSearchNote"-->
+                <!--                    app:layout_constraintTop_toTopOf="parent" />-->
+
+                <ImageButton
+                    android:id="@+id/btSearchNote"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@color/black"
+                    android:contentDescription="@string/btn_buscar_nota"
+                    android:src="@drawable/search_note"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.appcompat.widget.Toolbar>
 
         <TextView
             android:id="@+id/title"
@@ -44,7 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:fontFamily="@font/aldrich"
-            android:text="Conteo total de notas"
+            android:text="@string/notes_counter"
             android:textColor="@color/white"
             android:textSize="15sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -63,27 +94,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <!--                <ImageButton-->
-                <!--                    android:id="@+id/btCreateNote"-->
-                <!--                    android:layout_width="50dp"-->
-                <!--                    android:layout_height="50dp"-->
-                <!--                    android:background="@drawable/create_note_roundcorner"-->
-                <!--                    android:contentDescription="@string/btn_crear_nota"-->
-                <!--                    app:layout_constraintBottom_toBottomOf="parent"-->
-                <!--                    app:layout_constraintStart_toStartOf="parent"-->
-                <!--                    app:layout_constraintTop_toTopOf="parent" />-->
-
-                <ImageButton
-                    android:id="@+id/btSearchNote"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@color/black"
-                    android:contentDescription="@string/btn_buscar_nota"
-                    android:src="@drawable/search_note"
-                    app:layout_constraintBottom_toTopOf="@+id/btOrderBy"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
                 <ImageButton
                     android:id="@+id/btOrderBy"
                     android:layout_width="48dp"
@@ -92,7 +102,7 @@
                     android:contentDescription="@string/btn_ordenar_nota"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/btSearchNote" />
+                    app:layout_constraintTop_toTopOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>
@@ -101,15 +111,14 @@
             android:id="@+id/btCreateNote"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/create_note_icon"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="30dp"
             android:backgroundTint="@color/floatingButtonCreateNote"
             android:contentDescription="@string/btn_crear_nota"
+            android:src="@drawable/create_note_icon"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginBottom="30dp"
-            android:layout_marginEnd="20dp"/>
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Agrega el SwipeRefreshLayout envolviendo el FragmentContainerView -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_refresh_layout"
             android:layout_width="0dp"
@@ -138,12 +147,22 @@
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="@color/drawer"
+        app:headerLayout="@layout/nav_drawer_header"
         app:itemTextAppearance="@style/AldrichTextViewStyle">
 
-        <ExpandableListView
-            android:id="@+id/expandable_list_view"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
+
+            <!-- ExpandableListView que ocupará el espacio restante debajo del encabezado -->
+            <ExpandableListView
+                android:id="@+id/expandable_list_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </FrameLayout>
+
     </com.google.android.material.navigation.NavigationView>
+
 
 </androidx.drawerlayout.widget.DrawerLayout>

@@ -58,6 +58,7 @@
                     android:background="@null"
                     android:fontFamily="@font/aldrich"
                     android:hint="@string/title_hint"
+                    android:inputType="textCapSentences|text"
                     android:textColor="@color/white"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@+id/btAddCheckbox"
