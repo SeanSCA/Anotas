@@ -10,7 +10,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
 import android.util.Log
+import android.view.SubMenu
+import android.view.View
 import android.widget.ExpandableListView
+import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -32,6 +36,7 @@ import com.example.jinotas.DrawerExpandableListAdapter
 import com.example.jinotas.R
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.db.Note
+import com.google.android.material.navigation.NavigationView
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.GoogleCredentials
@@ -58,6 +63,7 @@ object Utils {
         directory = "/assets"
         filename = "env"
     }
+
     //Urls para CrudApi (retrofit)
     val URL_FILE = dotenv["URL_FILE"]
     val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
@@ -191,7 +197,11 @@ object Utils {
     fun Activity.vibratePhone(context: Context) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    100, VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
         } else {
             vibrator.vibrate(100)
         }
@@ -200,7 +210,11 @@ object Utils {
     fun Fragment.vibratePhone(context: Context) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    100, VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
         } else {
             vibrator.vibrate(100)
         }
@@ -209,7 +223,11 @@ object Utils {
     fun Utils.vibratePhone(context: Context) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    100, VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
         } else {
             vibrator.vibrate(100)
         }
