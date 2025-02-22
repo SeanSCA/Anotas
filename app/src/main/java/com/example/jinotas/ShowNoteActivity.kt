@@ -1,5 +1,7 @@
 package com.example.jinotas
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
@@ -17,6 +19,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.example.jinotas.custom_textview.CustomEditText
 import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
@@ -25,7 +28,7 @@ import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInLocalDatabase
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.example.jinotas.custom_textview.CustomEditText
+import com.example.jinotas.widget.WidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -50,6 +53,7 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
     private var mCurrentCursorPosition = 0
     private lateinit var mContentEditText: CustomEditText
     private var mNote: Note? = null
+    private var appWidgetId = 0
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -80,7 +84,9 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
-                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+                overrideActivityTransition(
+                    OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out
+                )
             } else {
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
             }
@@ -117,7 +123,9 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
-                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+                overrideActivityTransition(
+                    OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out
+                )
             } else {
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
             }
@@ -139,6 +147,34 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                     val localUpdate = async {
                         note.isSynced = isConnectionStableAndFast(applicationContext)
                         updateNoteInLocalDatabase(note, applicationContext)
+                        //Esto es para actualizar el contenido del widget
+                        withContext(Dispatchers.Main) {
+                            val sharedPreferences =
+                                getSharedPreferences("WidgetPrefs", MODE_PRIVATE)
+                            val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+
+                            val widgetIds = appWidgetManager.getAppWidgetIds(
+                                ComponentName(applicationContext, WidgetProvider::class.java)
+                            )
+
+                            for (appWidgetId in widgetIds) {
+                                val savedNoteCode = sharedPreferences.getString(
+                                    "widget_note_${appWidgetId}_code", ""
+                                )
+
+                                // Verifica si la nota actualizada es la que está asociada al widget
+                                if (savedNoteCode == note.code.toString()) {
+                                    WidgetProvider.updateWidget(
+                                        applicationContext,
+                                        appWidgetManager,
+                                        appWidgetId,
+                                        note.title,
+                                        note.textContent
+                                    )
+                                }
+                            }
+                        }
+                        //Hasta aquí
                     }
                     localUpdate.await()
 

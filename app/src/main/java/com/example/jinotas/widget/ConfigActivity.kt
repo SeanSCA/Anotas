@@ -3,19 +3,13 @@ package com.example.jinotas.widget
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.jinotas.R
 import com.example.jinotas.adapter.AdapterNotesWidget
 import com.example.jinotas.databinding.ActivityConfigBinding
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class ConfigActivity : AppCompatActivity() {
@@ -68,7 +62,8 @@ class ConfigActivity : AppCompatActivity() {
     // Guardar la nota seleccionada y cerrar
     private fun saveSelectedNoteAndClose(note: Note) {
         val sharedPreferences = getSharedPreferences("WidgetPrefs", MODE_PRIVATE)
-        sharedPreferences.edit().putString("widget_note_${appWidgetId}_title", note.title)
+        sharedPreferences.edit().putString("widget_note_${appWidgetId}_code", note.code.toString())
+            .putString("widget_note_${appWidgetId}_title", note.title)
             .putString("widget_note_${appWidgetId}_content", note.textContent).apply()
 
         // Actualizar el widget con la nueva nota
