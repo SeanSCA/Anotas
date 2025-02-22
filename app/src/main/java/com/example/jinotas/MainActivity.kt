@@ -1,11 +1,13 @@
 package com.example.jinotas
 
 import android.Manifest
+import android.app.ActivityOptions
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -101,7 +103,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         instance = null
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -189,7 +190,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             vibratePhone(this)
             val intent = Intent(this, WriteNotesActivity::class.java)
             intent.putExtra("userFrom", userName)
-            startActivity(intent)
+
+            val options = ActivityOptions.makeCustomAnimation(
+                applicationContext, R.anim.fade_in, R.anim.fade_out
+            )
+            startActivity(intent, options.toBundle())
         }
 
         binding.btSearchNote.setOnClickListener {
@@ -302,7 +307,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
                 CrudApi().postTokenByUser(userToken)
                 userName = sharedPreferences.getString("userFrom", "")
-                val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
+                val headerView =
+                    navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
 
                 val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
                 navViewUserName.text = userName

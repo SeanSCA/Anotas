@@ -79,6 +79,11 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
 
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
+                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+            } else {
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+            }
             finish()
         }
 
@@ -109,6 +114,12 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
                     userTo = null
                 )
                 overwriteNoteConcurrently(noteUpdate)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
+                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+            } else {
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
             }
             finish()
         }

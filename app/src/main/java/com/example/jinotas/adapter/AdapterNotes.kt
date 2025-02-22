@@ -1,5 +1,7 @@
 package com.example.jinotas.adapter
 
+import android.app.Activity
+import android.app.ActivityOptions
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -82,12 +84,16 @@ class AdapterNotes(
 
         holder.itemView.setOnClickListener {
             val intent = Intent(context, ShowNoteActivity::class.java)
+            val options = ActivityOptions.makeCustomAnimation(
+                context, R.anim.fade_in, R.anim.fade_out
+            )
             val sharedPreferences: SharedPreferences =
                 context.getSharedPreferences("MyPrefsFile", Context.MODE_PRIVATE)
             val userNameFrom = sharedPreferences.getString("userFrom", "")
             intent.putExtra("code", list[position].code)
             intent.putExtra("userFrom", userNameFrom)
-            startActivity(context, intent, null)
+            startActivity(context, intent, options.toBundle())
+
         }
 
 //        holder.itemView.setOnLongClickListener {

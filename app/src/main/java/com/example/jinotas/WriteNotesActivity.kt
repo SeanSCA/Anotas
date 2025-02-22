@@ -1,5 +1,6 @@
 package com.example.jinotas
 
+import android.app.Activity
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +14,7 @@ import android.text.style.StyleSpan
 import android.util.Log
 import android.view.View
 import android.view.View.OnFocusChangeListener
+import android.view.Window
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -84,6 +86,11 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         mContentEditText = binding.noteContent
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
+                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+            } else {
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+            }
             finish()
         }
 
@@ -114,6 +121,11 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
                     userTo = null
                 )
                 saveNoteConcurrently(note)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
+                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+            } else {
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
             }
             finish()
         }
