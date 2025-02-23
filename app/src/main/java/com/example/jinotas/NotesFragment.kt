@@ -1,5 +1,7 @@
 package com.example.jinotas
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -9,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -22,12 +25,14 @@ import com.example.jinotas.db.Note
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.example.jinotas.widget.WidgetProvider
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
 
@@ -129,6 +134,7 @@ class NotesFragment : Fragment(), CoroutineScope {
                                         adapterNotes.deleteNoteDBApi(
                                             this@NotesFragment.requireContext(), note
                                         )
+                                        cleanWidgetOnDeleteNote(note)
                                     }
                                 }
                             })
@@ -297,5 +303,30 @@ class NotesFragment : Fragment(), CoroutineScope {
                 afterTextChanged.invoke(editable.toString())
             }
         })
+    }
+
+    private fun cleanWidgetOnDeleteNote(note: Note) {
+        val context = requireContext()
+        val sharedPreferences = context.getSharedPreferences("WidgetPrefs", MODE_PRIVATE)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+
+        val widgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(context, WidgetProvider::class.java)
+        )
+
+        for (appWidgetId in widgetIds) {
+            val savedNoteCode = sharedPreferences.getString(
+                "widget_note_${appWidgetId}_code", ""
+            )
+
+            // Verifica si la nota actualizada es la que está asociada al widget
+            if (savedNoteCode == note.code.toString()) {
+                WidgetProvider.updateWidget(
+                    context, appWidgetManager, appWidgetId, getString(R.string.note_title_widget), getString(R.string.note_textcontent_widget)
+                )
+                Toast.makeText(context, getString(R.string.deletedNoteWidget), Toast.LENGTH_LONG).show()
+            }
+        }
+
     }
 }
