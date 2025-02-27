@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
         expandableListView = binding.expandableListView
         val toolbar: Toolbar = binding.toolbar
-
+//        toolbar.title = ""
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(

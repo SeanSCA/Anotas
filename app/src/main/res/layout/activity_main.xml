@@ -8,138 +8,97 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/black"
-            app:layout_constraintBottom_toTopOf="@+id/title"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintEnd_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:title=" "
-            app:titleTextColor="@android:color/white">
+            android:layout_height="wrap_content">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <!--Si se descomenta mostrará el botón de ordenar nota en el toolbar-->
-                <!--                <ImageButton-->
-                <!--                    android:id="@+id/btOrderBy"-->
-                <!--                    android:layout_width="48dp"-->
-                <!--                    android:layout_height="48dp"-->
-                <!--                    android:layout_marginEnd="35dp"-->
-                <!--                    android:background="@drawable/order_by_roundcorner"-->
-                <!--                    android:contentDescription="@string/btn_ordenar_nota"-->
-                <!--                    app:layout_constraintBottom_toBottomOf="parent"-->
-                <!--                    app:layout_constraintEnd_toStartOf="@id/btSearchNote"-->
-                <!--                    app:layout_constraintTop_toTopOf="parent" />-->
+                android:layout_height="wrap_content"
+                android:background="?attr/colorPrimary"
+                app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light"
+                app:title="@string/title"
+                app:titleTextColor="@android:color/white">
 
                 <ImageButton
                     android:id="@+id/btSearchNote"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:background="@color/black"
+                    android:layout_gravity="end"
+                    android:background="@android:color/transparent"
                     android:contentDescription="@string/btn_buscar_nota"
-                    android:src="@drawable/search_note"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:src="@drawable/search_note" />
+            </com.google.android.material.appbar.MaterialToolbar>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.appbar.AppBarLayout>
 
-        </androidx.appcompat.widget.Toolbar>
-
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/aldrich"
-            android:text="@string/title"
-            android:textColor="@color/white"
-            android:textSize="15sp"
-            app:layout_constraintBottom_toTopOf="@+id/notesCounter"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/toolbar" />
-
-        <TextView
-            android:id="@+id/notesCounter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:fontFamily="@font/aldrich"
-            android:text="@string/notes_counter"
-            android:textColor="@color/white"
-            android:textSize="15sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/title" />
-
-        <LinearLayout
-            android:id="@+id/optionsContainer"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/allContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintBottom_toTopOf="@+id/swipe_refresh_layout"
-            app:layout_constraintTop_toBottomOf="@+id/notesCounter">
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/notesCounter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/aldrich"
+                android:text="@string/notes_counter"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-                <ImageButton
-                    android:id="@+id/btOrderBy"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@drawable/order_by_roundcorner"
-                    android:contentDescription="@string/btn_ordenar_nota"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+            <ImageButton
+                android:id="@+id/btOrderBy"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginBottom="16dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/btn_ordenar_nota"
+                android:src="@drawable/order_by_roundcorner"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/notesCounter" />
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </LinearLayout>
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btCreateNote"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="20dp"
-            android:layout_marginBottom="30dp"
-            android:backgroundTint="@color/floatingButtonCreateNote"
-            android:contentDescription="@string/btn_crear_nota"
-            android:src="@drawable/create_note_icon"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_refresh_layout"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_marginTop="10dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/optionsContainer">
-
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/fragment_container_view"
-                android:name="com.example.jinotas.NotesFragment"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh_layout"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_margin="10dp"
-                tools:layout="@layout/fragment_notes" />
+                app:layout_constraintBottom_toTopOf="@id/btCreateNote"
+                app:layout_constraintTop_toBottomOf="@id/btOrderBy">
 
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                <androidx.fragment.app.FragmentContainerView
+                    android:id="@+id/fragment_container_view"
+                    android:name="com.example.jinotas.NotesFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:layout="@layout/fragment_notes" />
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btCreateNote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:contentDescription="@string/btn_crear_nota"
+                android:src="@drawable/create_note_icon"
+                app:backgroundTint="@color/floatingButtonCreateNote"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigation_view"
@@ -150,19 +109,10 @@
         app:headerLayout="@layout/nav_drawer_header"
         app:itemTextAppearance="@style/AldrichTextViewStyle">
 
-        <FrameLayout
+        <ExpandableListView
+            android:id="@+id/expandable_list_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <!-- ExpandableListView que ocupará el espacio restante debajo del encabezado -->
-            <ExpandableListView
-                android:id="@+id/expandable_list_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-        </FrameLayout>
+            android:layout_height="match_parent" />
 
     </com.google.android.material.navigation.NavigationView>
-
-
 </androidx.drawerlayout.widget.DrawerLayout>
