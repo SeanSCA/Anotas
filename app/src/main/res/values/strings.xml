@@ -22,7 +22,7 @@
     <string name="send_nota">Enviar nota</string>
     <string name="order_by_date">Ordenar por fecha</string>
     <string name="order_by_title">Ordenar por título</string>
-    <string name="notes_counter">notas</string>
+    <string name="notes_counter">nota(s)</string>
     <string name="tipo_de_lista">Tipo de lista</string>
     <string name="notes_list_styles_vertical" translatable="false">Vertical</string>
     <string name="notes_list_styles_widget" translatable="false">Widget</string>

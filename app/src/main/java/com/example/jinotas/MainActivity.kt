@@ -256,6 +256,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
 
             val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
+
             navViewUserName.text = userName
 
             Log.e("username null", "no es null")
@@ -345,11 +346,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
      */
     private fun notesCounter() {
         lifecycleScope.launch {
+            val headerView = navigationView.getHeaderView(0)
+            val navViewTotalNotes = headerView.findViewById<TextView>(R.id.notesCounter)
+
             db = AppDatabase.getDatabase(this@MainActivity)
             notesCounter = db.noteDAO().getNotesCount()
                 .toString() + " " + applicationContext.getString(R.string.notes_counter)
 
-            binding.notesCounter.text = notesCounter
+            navViewTotalNotes.text = notesCounter
         }
     }
 

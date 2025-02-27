@@ -18,7 +18,7 @@
     <string name="send_nota">Send Note</string>
     <string name="order_by_date">Order By Date</string>
     <string name="order_by_title">Order By Title</string>
-    <string name="notes_counter">notes</string>
+    <string name="notes_counter">note(s)</string>
     <string name="tipo_de_lista">List Type</string>
     <string name="note_title_widget">Note Title</string>
     <string name="note_textcontent_widget">Note Content...</string>
