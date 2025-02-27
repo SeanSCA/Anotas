@@ -184,16 +184,17 @@ class AdapterNotes(
 
     private fun showNestedAlertDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("¿A quien se lo quieres enviar? ")
+        builder.setTitle(context.getString(R.string.sendNoteWho))
 
         // Crear el campo de entrada
         val layout = LinearLayout(context)
         layout.orientation = LinearLayout.VERTICAL
-        val nameInput = EditText(context).apply { hint = "Nombre de usuario" }
+        val nameInput =
+            EditText(context).apply { hint = context.getString(R.string.sendNoteUserName) }
         layout.addView(nameInput)
         builder.setView(layout)
 
-        builder.setPositiveButton("Aceptar") { _, _ ->
+        builder.setPositiveButton(context.getString(R.string.sendNoteAccept)) { _, _ ->
             // Llamar a la función suspensiva dentro de una corrutina
             val userToSend = nameInput.text.toString().lowercase()
             CoroutineScope(Dispatchers.IO).launch {
@@ -203,26 +204,26 @@ class AdapterNotes(
                 } else {
                     // Se asegura de que el código de UI se ejecute en el hilo principal
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "El nombre de usuario no existe", Toast.LENGTH_LONG)
+                        Toast.makeText(context, context.getString(R.string.sendNoteUserNotExists), Toast.LENGTH_LONG)
                             .show()
                     }
                 }
             }
-        }.setNegativeButton("Cancelar") { _, _ -> showConfirmationDialog(context, note) }.show()
+        }.setNegativeButton(context.getString(R.string.sendNoteDecline)) { _, _ ->
+            showConfirmationDialog(
+                context, note
+            )
+        }.show()
     }
 
 
     private fun showConfirmationDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle("Confirmación").setMessage("¿Estás seguro de que quieres cancelar?")
-            .setPositiveButton("Sí") { _, _ ->
-                // Cerrar ambos diálogos
-                // ... (Código para cerrar ambos diálogos, si es necesario)
-                Toast.makeText(context, "Has cancelado", Toast.LENGTH_SHORT).show()
+        builder.setTitle(context.getString(R.string.sendNoteConfirmation)).setMessage(context.getString(R.string.sendNoteConfirmationCancel))
+            .setPositiveButton("Ok") { _, _ ->
+                Toast.makeText(context, context.getString(R.string.sendNoteConfirmationCanceled), Toast.LENGTH_SHORT).show()
             }.setNegativeButton("No") { _, _ ->
-                // Cerrar el segundo diálogo y volver al primero
                 showNestedAlertDialog(context, note)
-//                Toast.makeText(context, "Has cambiado de opinión", Toast.LENGTH_SHORT).show()
             }.show()
     }
 

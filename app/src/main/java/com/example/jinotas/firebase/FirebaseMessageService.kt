@@ -41,13 +41,11 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         db = AppDatabase.getDatabase(this@FirebaseMessageService)
-        // Verificar si el mensaje contiene datos personalizados
         if (remoteMessage.data.isNotEmpty()) {
             val receivedDeviceId = remoteMessage.data["deviceId"]
             val currentDeviceId = Utils.getIdDevice(context = this@FirebaseMessageService)
 
             if (receivedDeviceId != currentDeviceId) {
-                // Crear manualmente el objeto Note a partir de los datos recibidos
                 val note = Note(
                     id = remoteMessage.data["id"]?.toInt() ?: 0,
                     code = remoteMessage.data["code"]?.toInt() ?: 0,
@@ -58,41 +56,37 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                     userTo = remoteMessage.data["userTo"]
                 )
 
-                sendNotification(note.title, "${note.userFrom} te ha enviado una nueva nota")
+                sendNotification(
+                    note.title,
+                    note.userFrom + " " + this@FirebaseMessageService.getString(R.string.firebaseReceivedNoteNotification)
+                )
                 handleReceivedNote(note)
             }
         }
     }
 
     private fun handleReceivedNote(note: Note) {
-        // Aquí puedes manejar lo que quieres hacer con la nota
-        // Por ejemplo, actualizar la UI si la app está en primer plano, guardar la nota, etc.
         Log.i("FirebaseMessageService", "Nota recibida: $note")
 
-        // Inserta la nota en la base de datos en un hilo de IO
         CoroutineScope(Dispatchers.IO).launch {
             db.noteDAO().insertNote(note)
             newNotes = db.noteDAO().getNotesList() as ArrayList<Note>
 
-            // Actualizar la UI en el hilo principal
             withContext(Dispatchers.Main) {
                 if (activity != null) {
                     val fragment =
                         activity.supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment
                     fragment?.let {
-                        // Llamar a loadNotes si existe
                         it.loadNotes()
 
-                        // Actualizar el Adapter en el hilo principal
                         adapterNotes = AdapterNotes(newNotes, coroutineContext)
                         adapterNotes.updateList(newNotes)
                     }
                 }
 
-                // Mostrar el Toast en el hilo principal
                 Toast.makeText(
                     this@FirebaseMessageService,
-                    "Has recibido una nota de ${note.userFrom}",
+                    this@FirebaseMessageService.getString(R.string.firebaseReceivedNote) + " " + note.userFrom,
                     Toast.LENGTH_LONG
                 ).show()
             }

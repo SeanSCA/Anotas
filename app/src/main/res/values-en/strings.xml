@@ -24,4 +24,14 @@
     <string name="note_textcontent_widget">Note Content...</string>
     <string name="loggedUser">Logged User</string>
     <string name="deletedNoteWidget">Deleted note from Widget</string>
+    <string name="sendNoteWho">Who do you want to send it to?</string>
+    <string name="sendNoteUserName">User name</string>
+    <string name="sendNoteAccept">Accept</string>
+    <string name="sendNoteDecline">Decline</string>
+    <string name="sendNoteUserNotExists">The user name does not exist</string>
+    <string name="sendNoteConfirmation">Confirmation</string>
+    <string name="sendNoteConfirmationCancel">Are you sure you want to cancel?</string>
+    <string name="sendNoteConfirmationCanceled">You have cancelled</string>
+    <string name="firebaseReceivedNote">"You have received a note from "</string>
+    <string name="firebaseReceivedNoteNotification">" have send you a note"</string>
 </resources>
