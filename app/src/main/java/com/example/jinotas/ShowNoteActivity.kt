@@ -18,6 +18,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.jinotas.custom_textview.CustomEditText
 import com.example.jinotas.databinding.ActivityShowNoteBinding
@@ -28,6 +29,7 @@ import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.updateNoteInLocalDatabase
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.example.jinotas.viewmodels.MainViewModel
 import com.example.jinotas.widget.WidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +47,7 @@ import kotlin.math.max
 class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
     CustomEditText.OnSelectionChangedListener, CustomEditText.OnCheckboxToggledListener {
     private lateinit var binding: ActivityShowNoteBinding
+    private lateinit var mainViewModel: MainViewModel
     private lateinit var notesShow: Note
     private lateinit var db: AppDatabase
     private var job: Job = Job()
@@ -67,6 +70,9 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityShowNoteBinding.inflate(layoutInflater)
+
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
+
         val codeSearchUpdate = intent.getIntExtra("code", 0)
         val userName = intent.getStringExtra("userFrom")
         mContentEditText = binding.noteContent
@@ -94,42 +100,14 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         }
 
         binding.btOverwriteNote.setOnClickListener {
-            // Cambia el color, desactiva el botón y permite que la interfaz se refresque
-            binding.btOverwriteNote.setBackgroundColor(this.getColor(R.color.disabled))
-            binding.btOverwriteNote.isEnabled = false
-            binding.btOverwriteNote.isClickable = false
+            disableSaveButton()
 
-            // Ejecuta la vibración
             vibratePhone(this)
 
-            // Inicia la coroutine para realizar operaciones en segundo plano
-            lifecycleScope.launch {
-                // Agrega un pequeño retraso para permitir que la UI se actualice
-                delay(1)
+            val note = updateNote(userName, codeSearchUpdate)
+            mainViewModel.overwriteNoteConcurrently(note)
 
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                val current = LocalDateTime.now().format(formatter)
-
-                val noteUpdate = Note(
-                    id = notesShow.id,
-                    code = codeSearchUpdate,
-                    title = binding.etTitle.text.toString(),
-                    textContent = binding.noteContent.getPlainTextContent(),
-                    date = current,
-                    userFrom = userName!!,
-                    userTo = null
-                )
-                overwriteNoteConcurrently(noteUpdate)
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
-                overrideActivityTransition(
-                    OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out
-                )
-            } else {
-                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-            }
-            finish()
+            finishWithAnimation()
         }
 
 
@@ -140,68 +118,37 @@ class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFoc
         setContentView(binding.root)
     }
 
-    private fun overwriteNoteConcurrently(note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                coroutineScope {
-                    val localUpdate = async {
-                        note.isSynced = isConnectionStableAndFast(applicationContext)
-                        updateNoteInLocalDatabase(note, applicationContext)
-                        //Esto es para actualizar el contenido del widget
-                        withContext(Dispatchers.Main) {
-                            val sharedPreferences =
-                                getSharedPreferences("WidgetPrefs", MODE_PRIVATE)
-                            val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updateNote(userNameFrom: String?, codeSearchUpdate: Int): Note {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val current = LocalDateTime.now().format(formatter)
 
-                            val widgetIds = appWidgetManager.getAppWidgetIds(
-                                ComponentName(applicationContext, WidgetProvider::class.java)
-                            )
+        return Note(
+            id = notesShow.id,
+            code = codeSearchUpdate,
+            title = binding.etTitle.text.toString(),
+            textContent = binding.noteContent.getPlainTextContent(),
+            date = current,
+            userFrom = userNameFrom!!,
+            userTo = null
+        )
+    }
 
-                            for (appWidgetId in widgetIds) {
-                                val savedNoteCode = sharedPreferences.getString(
-                                    "widget_note_${appWidgetId}_code", ""
-                                )
-
-                                // Verifica si la nota actualizada es la que está asociada al widget
-                                if (savedNoteCode == note.code.toString()) {
-                                    WidgetProvider.updateWidget(
-                                        applicationContext,
-                                        appWidgetManager,
-                                        appWidgetId,
-                                        note.title,
-                                        note.textContent
-                                    )
-                                }
-                            }
-                        }
-                        //Hasta aquí
-                    }
-                    localUpdate.await()
-
-                    if (note.isSynced) {
-                        val cloudUpdate = async { updateNoteInCloud(note, applicationContext) }
-                        cloudUpdate.await()
-                    } else {
-                        Log.e("Sync", "Nota actualizada localmente, pendiente de sincronización")
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            applicationContext,
-                            if (note.isSynced) "Nota sincronizada con la nube" else "Nota actualizada localmente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Log.e("ErrorActualizar", e.message.toString())
-                    Toast.makeText(
-                        applicationContext, "Error al actualizar la nota", Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+    private fun disableSaveButton() {
+        binding.btOverwriteNote.apply {
+            setBackgroundColor(this@ShowNoteActivity.getColor(R.color.disabled))
+            isEnabled = false
+            isClickable = false
         }
+    }
+
+    private fun finishWithAnimation() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+        } else {
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+        }
+        finish()
     }
 
     private fun insertChecklist() {
