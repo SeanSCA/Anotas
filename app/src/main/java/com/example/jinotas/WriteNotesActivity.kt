@@ -18,6 +18,7 @@ import android.view.Window
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.commonsware.cwac.anddown.AndDown
 import com.example.jinotas.adapter.AdapterNotes
@@ -31,6 +32,7 @@ import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.custom_textview.CustomEditText
+import com.example.jinotas.viewmodels.MainViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,6 +50,7 @@ import kotlin.math.max
 class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
     CustomEditText.OnSelectionChangedListener, CustomEditText.OnCheckboxToggledListener {
     private lateinit var binding: ActivityWriteNotesBinding
+    private lateinit var mainViewModel: MainViewModel
     private lateinit var notesList: ArrayList<Note>
     private var mNote: Note? = null
     private lateinit var adapterNotes: AdapterNotes
@@ -77,6 +80,7 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         super.onCreate(savedInstanceState)
         binding = ActivityWriteNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
         val userNameFrom = intent.getStringExtra("userFrom")
         andDown = AndDown()
@@ -87,7 +91,9 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
-                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+                overrideActivityTransition(
+                    OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out
+                )
             } else {
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
             }
@@ -100,71 +106,53 @@ class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnF
         }
 
         binding.btSaveNote.setOnClickListener {
-            binding.btSaveNote.setBackgroundColor(this.getColor(R.color.disabled))
-            binding.btSaveNote.isEnabled = false
-            binding.btSaveNote.isClickable = false
-
+            disableSaveButton()
             vibratePhone(this)
 
-            lifecycleScope.launch {
-                delay(1)
+            val note = createNote(userNameFrom)
+            mainViewModel.saveNoteConcurrently(note)
 
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                val current = LocalDateTime.now().format(formatter)
+            finishWithAnimation()
+        }
 
-                val note = Note(
-                    id = null,
-                    title = binding.etTitle.text.toString(),
-                    textContent = binding.noteContent.getPlainTextContent(),
-                    date = current.toString(),
-                    userFrom = userNameFrom ?: "",
-                    userTo = null
-                )
-                saveNoteConcurrently(note)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
-                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
-            } else {
-                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-            }
-            finish()
+
+        mainViewModel.noteSavedMessage.observe(this) { message ->
+            Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+            Log.e("noteSavedMessage", "escucha noteSavedMessage")
+        }
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNote(userNameFrom: String?): Note {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val current = LocalDateTime.now().format(formatter)
+
+        return Note(
+            id = null,
+            title = binding.etTitle.text.toString(),
+            textContent = binding.noteContent.getPlainTextContent(),
+            date = current.toString(),
+            userFrom = userNameFrom ?: "",
+            userTo = null
+        )
+    }
+
+    private fun disableSaveButton() {
+        binding.btSaveNote.apply {
+            setBackgroundColor(this@WriteNotesActivity.getColor(R.color.disabled))
+            isEnabled = false
+            isClickable = false
         }
     }
 
-    private fun saveNoteConcurrently(note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                coroutineScope {
-                    val localSave = async {
-                        note.isSynced = isConnectionStableAndFast(applicationContext)
-                        saveNoteToLocalDatabase(note, this@WriteNotesActivity)
-                    }
-                    localSave.await()
-
-                    if (note.isSynced) {
-                        val cloudSave = async { saveNoteToCloud(note, this@WriteNotesActivity) }
-                        cloudSave.await()
-                    } else {
-                        Log.e("Sync", "Nota guardada localmente, pendiente de sincronización")
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@WriteNotesActivity,
-                            if (note.isSynced) "Nota sincronizada con la nube" else "Nota guardada localmente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Log.e("ErrorGuardar", e.message.toString())
-                    Toast.makeText(
-                        this@WriteNotesActivity, "Error al guardar la nota", Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+    private fun finishWithAnimation() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.fade_out)
+        } else {
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
         }
+        finish()
     }
 
     private fun insertChecklist() {
