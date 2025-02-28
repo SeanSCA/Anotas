@@ -33,6 +33,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -55,6 +56,7 @@ import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.example.jinotas.viewmodels.MainViewModel
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
@@ -68,6 +70,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
+import kotlin.jvm.Throws
 
 class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
     ConnectivityListener {
@@ -83,6 +86,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
     lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
     private lateinit var expandableListView: ExpandableListView
     private val PREFS_NAME = "MyPrefsFile"
+
+    private lateinit var mainViewModel: MainViewModel
 
     // Variable para guardar el nombre de usuario
     private var userName: String? = null
@@ -108,11 +113,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        db = AppDatabase.getDatabase(applicationContext)
+
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
+
         //Esto es para comprobar la conexión al iniciar la aplicación y subir las notas guardadas únicamente en local
         val connectivityMonitor = ConnectivityMonitor(applicationContext)
-        connectivityMonitor.registerCallback {
-            syncPendingNotes()
-        }
 
         //Esto es para comprobar la conexión al cambiar la conexión a internet o recuperarla y subir las notas guardadas únicamente en local
         val connectionChecker = ConnectionChecker(this)
@@ -259,6 +265,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
             navViewUserName.text = userName
 
+            connectivityMonitor.registerCallback {
+                mainViewModel.syncPendingNotes(userName!!)
+            }
+
             Log.e("username null", "no es null")
             Log.e("userNameGuardado", userName!!)
         }
@@ -335,25 +345,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         fragmentNotes =
             (supportFragmentManager.findFragmentById(R.id.fragment_container_view) as? NotesFragment)!!
         if (::db.isInitialized) {
-            db.noteDAO().getAllNotesLive().observe(this) { notes ->
+            db.noteDAO().getAllNotesLive().observe(this) {
                 fragmentNotes.loadNotes()
             }
-        }
-    }
-
-    /**
-     * Here updates the notes counter
-     */
-    private fun notesCounter() {
-        lifecycleScope.launch {
-            val headerView = navigationView.getHeaderView(0)
-            val navViewTotalNotes = headerView.findViewById<TextView>(R.id.notesCounter)
-
-            db = AppDatabase.getDatabase(this@MainActivity)
-            notesCounter = db.noteDAO().getNotesCount()
-                .toString() + " " + applicationContext.getString(R.string.notes_counter)
-
-            navViewTotalNotes.text = notesCounter
+        } else {
+            Log.e("initialized", "noooooo")
         }
     }
 
@@ -365,7 +361,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
         mainHandler.post(object : Runnable {
             override fun run() {
-                notesCounter()
+                mainViewModel.notesCounter(navigationView)
                 mainHandler.postDelayed(this, 500)
             }
         })
@@ -496,54 +492,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             isConnectedToInternet = checkConnectivity(state, applicationContext)
             Log.i("isConnectedToInternet", isConnectedToInternet.toString())
             if (isConnectedToInternet != null) {
-                syncPendingNotes()
+                mainViewModel.syncPendingNotes(userName!!)
             }
         } catch (e: Exception) {
             Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
-        }
-    }
-
-    private fun syncPendingNotes() {
-        db = AppDatabase.getDatabase(applicationContext)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            if (isConnectionStableAndFast(applicationContext)) {
-                val cloudNotes = (CrudApi().getNotesList() as? ArrayList<Note>) ?: arrayListOf()
-                val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
-                val localNotes = db.noteDAO().getNotesList() // Lista completa de notas locales
-
-                // Filtrar notas en la nube que pertenecen al usuario actual
-                val userCloudNotes = cloudNotes.filter { it.userFrom == userName }
-
-                // Obtener los códigos de notas locales
-                val localCodes = localNotes.map { it.code }.toSet()
-
-                // Identificar qué notas en la nube deben eliminarse (las que no existen localmente)
-                val notesToDelete = userCloudNotes.filter { it.code !in localCodes }
-
-                for (note in pendingNotes) {
-                    try {
-                        if (cloudNotes.any { it.code == note.code }) {
-                            updateNoteInCloud(note, applicationContext)
-                        } else {
-                            saveNoteToCloud(note, applicationContext)
-                        }
-                        //Actualiza la nota localmente para saber que está sincronizado
-                        note.isSynced = true
-                        db.noteDAO().updateNote(note = note)
-                        Log.i("Sync", "Nota sincronizada: ${note.title}")
-                    } catch (e: Exception) {
-                        Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
-                    }
-                }
-
-                // Eliminar las notas que están en la nube pero no en las notas locales
-                for (note in notesToDelete) {
-                    deleteNoteInCloud(note, applicationContext)
-                    Log.e("nota eliminar", note.toString())
-                    Log.i("Delete", "Nota eliminada en la nube: ${note.title}")
-                }
-            }
         }
     }
 }
