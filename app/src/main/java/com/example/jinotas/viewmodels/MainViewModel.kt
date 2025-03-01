@@ -18,6 +18,7 @@ import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.RepositoryNotes
+import com.example.jinotas.db.Token
 import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
@@ -36,7 +37,7 @@ import kotlinx.coroutines.withContext
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext: Context = getApplication<Application>().applicationContext
     private val db: AppDatabase = AppDatabase.getDatabase(application)
-    private val repositoryNotes = RepositoryNotes(db.noteDAO())
+    private val repositoryNotes = RepositoryNotes(db.noteDAO(), db.tokenDAO())
 
     private val _notesCounter = MutableLiveData<String>()
     val notesCounter: LiveData<String> get() = _notesCounter
@@ -237,6 +238,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Filter all notes in the list according to the filter
+     * @param filter the text to filter+
+     */
     fun filterNotes(filter: String): ArrayList<Note> {
         return try {
             repositoryNotes.getNoteByTitle(filter)
@@ -245,11 +250,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Gets a LiveData array list of Note that can be observed
+     */
     fun getAllNotesLive(): LiveData<ArrayList<Note>>? {
         return try {
             repositoryNotes.getAllNotesLive()
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /**
+     * Inserts a token
+     * @param token the token to be inserted
+     */
+    fun insertToken(token: Token) {
+        try {
+            repositoryNotes.insertToken(token)
+        } catch (e: Exception) {
+            Log.e("insertToken", e.message.toString())
+        }
+    }
+
+    /**
+     * Gets the token stored at the database
+     */
+    fun getToken(): String {
+        return try {
+            repositoryNotes.getToken()
+        } catch (e: Exception) {
+            ""
         }
     }
 }
