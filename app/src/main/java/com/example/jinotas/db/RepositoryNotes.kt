@@ -2,7 +2,7 @@ package com.example.jinotas.db
 
 import androidx.lifecycle.LiveData
 
-class RepositoryNotes(private val noteDAO: NoteDAO) {
+class RepositoryNotes(private val noteDAO: NoteDAO, private val tokenDAO: TokenDAO) {
 
     fun getNoteOrderByDate(): ArrayList<Note> {
         return noteDAO.getNoteOrderByDate() as ArrayList<Note>
@@ -22,5 +22,13 @@ class RepositoryNotes(private val noteDAO: NoteDAO) {
 
     fun getAllNotesLive(): LiveData<ArrayList<Note>>{
         return noteDAO.getAllNotesLive() as LiveData<ArrayList<Note>>
+    }
+
+    fun insertToken(token: Token){
+        tokenDAO.insertToken(token)
+    }
+
+    fun getToken(): String{
+        return tokenDAO.getToken()
     }
 }
