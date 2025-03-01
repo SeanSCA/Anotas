@@ -9,16 +9,15 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
 import com.example.jinotas.R
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
+import com.example.jinotas.db.RepositoryNotes
 import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
@@ -37,12 +36,16 @@ import kotlinx.coroutines.withContext
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext: Context = getApplication<Application>().applicationContext
     private val db: AppDatabase = AppDatabase.getDatabase(application)
+    private val repositoryNotes = RepositoryNotes(db.noteDAO())
 
     private val _notesCounter = MutableLiveData<String>()
     val notesCounter: LiveData<String> get() = _notesCounter
 
     private val _noteSavedMessage = MutableLiveData<String>()
-    val noteSavedMessage: LiveData<String> = _noteSavedMessage
+    val noteSavedMessage: LiveData<String> get() = _noteSavedMessage
+
+    private val _loadNotes = MutableLiveData<ArrayList<Note>>()
+    val loadNotes: LiveData<ArrayList<Note>> get() = _loadNotes
 
     /**
      * Here updates the notes counter
@@ -203,6 +206,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Load all the notes into the recyclerview
+     */
+    fun loadNotes(): ArrayList<Note>? {
+        return try {
+            val notes = db.noteDAO().getNotesList() as ArrayList<Note>
+            notes
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Sort all notes in the list according to the chosen option
+     * @param option the option to sort the notes
+     */
+    fun orderByNotes(option: String): ArrayList<Note> {
+        return try {
+            when (option) {
+                "date" -> return repositoryNotes.getNoteOrderByDate()
+                "title" -> return repositoryNotes.getNoteOrderByTitle()
+                else -> return repositoryNotes.getNotesList()
+            }
+        } catch (e: Exception) {
+            arrayListOf()
+        }
+    }
+
+    fun filterNotes(filter: String): ArrayList<Note> {
+        return try {
+            repositoryNotes.getNoteByTitle(filter)
+        } catch (e: Exception) {
+            arrayListOf()
+        }
+    }
+
+    fun getAllNotesLive(): LiveData<ArrayList<Note>>? {
+        return try {
+            repositoryNotes.getAllNotesLive()
+        } catch (e: Exception) {
+            null
         }
     }
 }
