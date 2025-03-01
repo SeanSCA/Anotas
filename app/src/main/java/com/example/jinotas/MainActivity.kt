@@ -75,15 +75,10 @@ import kotlin.jvm.Throws
 class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
     ConnectivityListener {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var db: AppDatabase
-    private lateinit var adapterNotes: AdapterNotes
     private lateinit var navigationView: NavigationView
-    private var notesCounter: String? = null
     private var job: Job = Job()
     private lateinit var fragmentNotes: NotesFragment
-    private var canConnect: Boolean = false
     lateinit var drawerLayout: DrawerLayout
-    lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
     private lateinit var expandableListView: ExpandableListView
     private val PREFS_NAME = "MyPrefsFile"
 
@@ -113,8 +108,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        db = AppDatabase.getDatabase(applicationContext)
-
         mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
         //Esto es para comprobar la conexión al iniciar la aplicación y subir las notas guardadas únicamente en local
@@ -128,18 +121,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         drawerLayout = binding.myDrawerLayout
         navigationView = binding.navigationView
         navigationView.post {
-            // Obtener el encabezado del NavigationView
             val headerView = navigationView.getHeaderView(0)
 
-            // Medir la altura del encabezado (una vez que el layout esté listo)
             val headerHeight = headerView.height
 
-            // Ajustar la posición del ExpandableListView
             expandableListView.setPadding(0, headerHeight, 0, 0)
-
-            // También puedes ajustar la altura del ExpandableListView si lo prefieres
-            // expandableListView.layoutParams.height =
-            //     resources.displayMetrics.heightPixels - headerHeight
         }
 
         navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
@@ -225,7 +211,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                 if (task.isSuccessful) {
                     val token = task.result
                     // Guarda este token en tu base de datos
-                    db.tokenDAO().insertToken(Token(token = token))
+                    mainViewModel.insertToken(Token(token = token))
 
                     Log.e("Token del dispositivo:", token)
                 }
@@ -313,7 +299,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
             lifecycleScope.launch {
                 val userToken: UserToken
-                val token = db.tokenDAO().getToken()
+                val token = mainViewModel.getToken()
                 userToken = UserToken(token = token, userName = userName!!, password = "")
 
                 CrudApi().postTokenByUser(userToken)
@@ -328,9 +314,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             dialog.dismiss()
         }
 
-//        builder.setNegativeButton("Cancelar") { dialog, _ ->
-//            dialog.cancel()
-//        }
 
         builder.setCancelable(false)
         // Mostrar el diálogo
