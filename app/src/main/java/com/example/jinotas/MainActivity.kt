@@ -7,8 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -24,8 +22,6 @@ import android.widget.ExpandableListView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
-import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -37,25 +33,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.jinotas.adapter.AdapterNotes
-import com.example.jinotas.api.CrudApi
 import com.example.jinotas.connection.ConnectivityMonitor
 import com.example.jinotas.databinding.ActivityMainBinding
-import com.example.jinotas.databinding.NavDrawerHeaderBinding
-import com.example.jinotas.db.AppDatabase
-import com.example.jinotas.db.Note
 import com.example.jinotas.db.Token
-import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.getJsonFromAssets
 import com.example.jinotas.utils.Utils.masterKeyAlias
 import com.example.jinotas.utils.Utils.vibratePhone
-import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
-import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
-import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.viewmodels.MainViewModel
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
@@ -64,13 +50,11 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.muddassir.connection_checker.ConnectionChecker
 import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
-import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
-import kotlin.jvm.Throws
 
 class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
     ConnectivityListener {
@@ -291,25 +275,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
             // Guardar el nombre de usuario en una variable
             userName = nameInput.text.toString().lowercase()
 
-            // Guardar el nombre de usuario en SharedPreferences
-            val editor = sharedPreferences.edit()
-            editor.putBoolean("isFirstTime", false)  // Marcar que ya no es la primera vez
-            editor.putString("userFrom", userName)  // Guardar el nombre de usuario
-            editor.apply()
+            mainViewModel.saveUserToken(userName!!, sharedPreferences)
 
-            lifecycleScope.launch {
-                val userToken: UserToken
-                val token = mainViewModel.getToken()
-                userToken = UserToken(token = token, userName = userName!!, password = "")
+            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
 
-                CrudApi().postTokenByUser(userToken)
-                userName = sharedPreferences.getString("userFrom", "")
-                val headerView =
-                    navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
-
-                val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
-                navViewUserName.text = userName
-            }
+            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
+            navViewUserName.text = userName
 
             dialog.dismiss()
         }

@@ -4,6 +4,7 @@ import android.app.Application
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
@@ -13,12 +14,14 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import com.example.jinotas.R
 import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.RepositoryNotes
 import com.example.jinotas.db.Token
+import com.example.jinotas.db.UserToken
 import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
@@ -38,6 +41,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext: Context = getApplication<Application>().applicationContext
     private val db: AppDatabase = AppDatabase.getDatabase(application)
     private val repositoryNotes = RepositoryNotes(db.noteDAO(), db.tokenDAO())
+    private val crudApi: CrudApi = CrudApi()
 
     private val _notesCounter = MutableLiveData<String>()
     val notesCounter: LiveData<String> get() = _notesCounter
@@ -281,6 +285,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repositoryNotes.getToken()
         } catch (e: Exception) {
             ""
+        }
+    }
+
+    fun postTokenByUser(userToken: UserToken) {
+        viewModelScope.launch {
+            crudApi.postTokenByUser(userToken)
+        }
+    }
+
+    fun saveUserToken(userName: String, sharedPreferences: SharedPreferences) {
+        viewModelScope.launch {
+            // Guardar el nombre de usuario en SharedPreferences
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("isFirstTime", false)  // Marcar que ya no es la primera vez
+            editor.putString("userFrom", userName)  // Guardar el nombre de usuario
+            editor.apply()
+
+            val userToken: UserToken
+            val token = getToken()
+            userToken = UserToken(token = token, userName = userName!!, password = "")
+
+            postTokenByUser(userToken)
         }
     }
 }
