@@ -31,4 +31,8 @@ class RepositoryNotes(private val noteDAO: NoteDAO, private val tokenDAO: TokenD
     fun getToken(): String{
         return tokenDAO.getToken()
     }
+
+    fun getNoteByCode(codeSearchUpdate: Int): Note{
+        return noteDAO.getNoteByCode(codeSearchUpdate)
+    }
 }
