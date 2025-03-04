@@ -49,8 +49,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _noteSavedMessage = MutableLiveData<String>()
     val noteSavedMessage: LiveData<String> get() = _noteSavedMessage
 
-    private val _loadNotes = MutableLiveData<ArrayList<Note>>()
-    val loadNotes: LiveData<ArrayList<Note>> get() = _loadNotes
+    private val _noteByCode = MutableLiveData<Note>()
+    val noteByCode: LiveData<Note> get() = _noteByCode
 
     /**
      * Here updates the notes counter
@@ -244,7 +244,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Filter all notes in the list according to the filter
-     * @param filter the text to filter+
+     * @param filter the text to filter
      */
     fun filterNotes(filter: String): ArrayList<Note> {
         return try {
@@ -262,6 +262,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repositoryNotes.getAllNotesLive()
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /**
+     * Gets a note by a given code
+     * @param codeSearchUpdate the note code to search
+     */
+    fun getNoteByCode(codeSearchUpdate: Int) {
+        try {
+            viewModelScope.launch {
+                _noteByCode.postValue(repositoryNotes.getNoteByCode(codeSearchUpdate))
+            }
+        } catch (e: Exception) {
+            Log.e("getNoteByCode", e.message.toString())
         }
     }
 
@@ -288,12 +302,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Posts the UserToken
+     * @param userToken the UserToken
+     */
     fun postTokenByUser(userToken: UserToken) {
         viewModelScope.launch {
             crudApi.postTokenByUser(userToken)
         }
     }
 
+    /**
+     * Saves the userName in the shared preferences and posts the UserToken at the api
+     * @param userName The username logged
+     * @param sharedPreferences Shared Preferences
+     */
     fun saveUserToken(userName: String, sharedPreferences: SharedPreferences) {
         viewModelScope.launch {
             // Guardar el nombre de usuario en SharedPreferences
