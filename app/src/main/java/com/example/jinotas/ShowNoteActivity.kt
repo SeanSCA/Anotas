@@ -10,36 +10,23 @@ import android.view.View.OnFocusChangeListener
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import com.example.jinotas.custom_textview.CustomEditText
 import com.example.jinotas.databinding.ActivityShowNoteBinding
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.viewmodels.MainViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.coroutines.CoroutineContext
 
-class ShowNoteActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
+class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener,
     CustomEditText.OnSelectionChangedListener, CustomEditText.OnCheckboxToggledListener {
     private lateinit var binding: ActivityShowNoteBinding
     private lateinit var mainViewModel: MainViewModel
     private lateinit var notesShow: Note
     private var job: Job = Job()
     private lateinit var mContentEditText: CustomEditText
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {

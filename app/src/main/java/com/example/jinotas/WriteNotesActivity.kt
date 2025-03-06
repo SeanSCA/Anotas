@@ -17,30 +17,17 @@ import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.viewmodels.MainViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.coroutines.CoroutineContext
 
 
-class WriteNotesActivity : AppCompatActivity(), CoroutineScope, TextWatcher, OnFocusChangeListener,
+class WriteNotesActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener,
     CustomEditText.OnSelectionChangedListener, CustomEditText.OnCheckboxToggledListener {
     private lateinit var binding: ActivityWriteNotesBinding
     private lateinit var mainViewModel: MainViewModel
-    private var job: Job = Job()
 
     //Markdown
     private lateinit var mContentEditText: CustomEditText
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
