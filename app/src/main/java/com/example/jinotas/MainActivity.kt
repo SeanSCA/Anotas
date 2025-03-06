@@ -30,7 +30,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.jinotas.connection.ConnectivityMonitor
@@ -50,17 +49,11 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.muddassir.connection_checker.ConnectionChecker
 import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnRefreshListener,
+class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     ConnectivityListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var navigationView: NavigationView
-    private var job: Job = Job()
     private lateinit var fragmentNotes: NotesFragment
     lateinit var drawerLayout: DrawerLayout
     private lateinit var expandableListView: ExpandableListView
@@ -73,10 +66,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
 
     //Notifications
     private val notificationPermissionCode = 250
-
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
 
     companion object {
         var instance: MainActivity? = null
@@ -115,7 +104,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
         navigationView.setItemTextAppearance(R.style.AldrichTextViewStyle)
         expandableListView = binding.expandableListView
         val toolbar: Toolbar = binding.toolbar
-//        toolbar.title = ""
         setSupportActionBar(toolbar)
 
         val toggle = ActionBarDrawerToggle(
@@ -208,9 +196,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SwipeRefreshLayout.OnR
                         Log.e("Topic", "Error al suscribirse al topic")
                     }
                 }
-            lifecycleScope.launch {
-                Utils.saveValues("Vertical", this@MainActivity)
-            }
+            mainViewModel.saveNoteListStyle("Vertical", applicationContext)
 
             val secretSharedPreferences = EncryptedSharedPreferences.create(
                 "secure_shared_prefs",

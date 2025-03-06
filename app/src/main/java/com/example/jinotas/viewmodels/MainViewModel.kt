@@ -22,6 +22,7 @@ import com.example.jinotas.db.Note
 import com.example.jinotas.db.RepositoryNotes
 import com.example.jinotas.db.Token
 import com.example.jinotas.db.UserToken
+import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
@@ -330,6 +331,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             userToken = UserToken(token = token, userName = userName!!, password = "")
 
             postTokenByUser(userToken)
+        }
+    }
+
+    /**
+     * Saves the note list type when the user changes it
+     * @param name the type
+     * @param context application context
+     */
+    fun saveNoteListStyle(name: String, context: Context) {
+        viewModelScope.launch {
+            Utils.saveValues("Vertical", context)
         }
     }
 }
