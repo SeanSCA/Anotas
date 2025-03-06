@@ -22,17 +22,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.databinding.FragmentNotesBinding
 import com.example.jinotas.db.Note
-import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.viewmodels.MainViewModel
 import com.example.jinotas.widget.WidgetProvider
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlin.coroutines.CoroutineContext
 
 class NotesFragment : Fragment() {
     private lateinit var binding: FragmentNotesBinding
@@ -50,14 +45,7 @@ class NotesFragment : Fragment() {
 
         loadNotes()
 
-        lifecycleScope.launch {
-            Utils.getValues(requireContext()).collect { value ->
-                notesListStyle = value
-                Log.d("DataStore", "Valor leído: $notesListStyle")
-                loadNotes() // Recargar las notas con el estilo actualizado
-            }
-        }
-
+        getListType()
         ItemTouchHelper(object :
             ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
             override fun onMove(
@@ -141,6 +129,19 @@ class NotesFragment : Fragment() {
         }).attachToRecyclerView(binding.rvNotes)
 
         return binding.root
+    }
+
+    /**
+     * Gets the type of the list
+     */
+    private fun getListType() {
+        mainViewModel.notesListStyle.observe(viewLifecycleOwner) { value ->
+            notesListStyle = value
+            Log.d("DataStore", "Valor leído: $notesListStyle")
+            loadNotes()
+        }
+
+        mainViewModel.loadNotesStyle()
     }
 
     fun handleOfflineSwipeLeft(note: Note) {
