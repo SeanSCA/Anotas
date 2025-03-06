@@ -53,6 +53,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _noteByCode = MutableLiveData<Note>()
     val noteByCode: LiveData<Note> get() = _noteByCode
 
+//    private val _notesListStyle = MutableStateFlow<String>("Valor no encontrado")
+//    val notesListStyle: StateFlow<String> get() = _notesListStyle
+
+    private val _notesListStyle = MutableLiveData<String>()
+    val notesListStyle: LiveData<String> get() = _notesListStyle
+
+
     /**
      * Here updates the notes counter
      * @param navigationView the navigation view
@@ -342,6 +349,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun saveNoteListStyle(name: String, context: Context) {
         viewModelScope.launch {
             Utils.saveValues("Vertical", context)
+        }
+    }
+
+    /**
+     * Loads the type of the list from datastore
+     */
+    fun loadNotesStyle() {
+        viewModelScope.launch {
+            Utils.getValues(appContext).collect { value ->
+                _notesListStyle.postValue(value)
+            }
         }
     }
 }
