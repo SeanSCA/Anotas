@@ -13,6 +13,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -20,57 +21,31 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.adapter.AdapterNotes
 import com.example.jinotas.databinding.FragmentNotesBinding
-import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
-import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
+import com.example.jinotas.viewmodels.MainViewModel
 import com.example.jinotas.widget.WidgetProvider
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.CoroutineContext
 
-
-class NotesFragment : Fragment(), CoroutineScope {
+class NotesFragment : Fragment() {
     private lateinit var binding: FragmentNotesBinding
+    private lateinit var mainViewModel: MainViewModel
     private lateinit var adapterNotes: AdapterNotes
     private lateinit var notesList: ArrayList<Note>
-    private lateinit var db: AppDatabase
-    private var job: Job = Job()
     private lateinit var notesListStyle: String
-    var isRemovingNote = false
-
-    // Lista para almacenar las notas pendientes de eliminación
-    val notesToDelete = mutableListOf<Pair<Int, Note>>()
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         binding = FragmentNotesBinding.inflate(inflater)
+
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
+
         loadNotes()
 
-        lifecycleScope.launch {
-            Utils.getValues(requireContext()).collect { value ->
-                notesListStyle = value
-                Log.d("DataStore", "Valor leído: $notesListStyle")
-                loadNotes() // Recargar las notas con el estilo actualizado
-            }
-        }
-//        Log.e("notesListStyle", notesListStyle)
-
+        getListType()
         ItemTouchHelper(object :
             ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT) {
             override fun onMove(
@@ -153,61 +128,24 @@ class NotesFragment : Fragment(), CoroutineScope {
             }
         }).attachToRecyclerView(binding.rvNotes)
 
-
-
-
         return binding.root
     }
 
+    /**
+     * Gets the type of the list
+     */
+    private fun getListType() {
+        mainViewModel.notesListStyle.observe(viewLifecycleOwner) { value ->
+            notesListStyle = value
+            Log.d("DataStore", "Valor leído: $notesListStyle")
+            loadNotes()
+        }
+
+        mainViewModel.loadNotesStyle()
+    }
 
     fun handleOfflineSwipeLeft(note: Note) {
         Log.i("eliminarDespues", "Nota ${note.title} se eliminará al recuperar internet")
-
-
-    }
-
-    fun processDeletionQueue() {
-        // Si ya hay una eliminación en curso, no hacemos nada
-        if (isRemovingNote) return
-
-        if (notesToDelete.isNotEmpty()) {
-            isRemovingNote = true
-
-            // Obtenemos la primera nota en la cola
-            val (position, note) = notesToDelete.removeAt(0)
-
-            // Mostrar el Snackbar antes de realizar la eliminación visual
-            val snackbar = Snackbar.make(
-                binding.rvNotes, "Has eliminado la nota ${note.title}", Snackbar.LENGTH_LONG
-            )
-
-            snackbar.setAction("Deshacer") {
-                // Revertir la eliminación si se selecciona "Deshacer"
-                notesList.add(position, note)
-                adapterNotes.notifyItemInserted(position)
-            }
-
-            snackbar.addCallback(object : Snackbar.Callback() {
-                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                        // Si no se deshizo, eliminamos la nota de la base de datos
-                        lifecycleScope.launch {
-                            adapterNotes.deleteNoteDBApi(requireContext(), note)
-                        }
-                    }
-
-                    // Eliminar de la lista y actualizar la vista
-                    notesList.removeAt(position)
-                    adapterNotes.notifyItemRemoved(position)
-
-                    // Continuar procesando la cola
-                    isRemovingNote = false
-                    processDeletionQueue()
-                }
-            })
-
-            snackbar.show()
-        }
     }
 
     /**
@@ -216,9 +154,7 @@ class NotesFragment : Fragment(), CoroutineScope {
     fun loadNotes() {
         if (::notesListStyle.isInitialized) {
             lifecycleScope.launch {
-                // Leer las notas de la base de datos de manera asíncrona
-                db = AppDatabase.getDatabase(requireContext())
-                notesList = db.noteDAO().getNotesList() as ArrayList<Note>
+                notesList = mainViewModel.loadNotes()!!
                 adapterNotes = AdapterNotes(notesList, coroutineContext)
                 Log.i("cargarNotas", "ha cargado las notas")
                 showNotes()
@@ -232,12 +168,10 @@ class NotesFragment : Fragment(), CoroutineScope {
      */
     fun loadFilteredNotes(filter: String) {
         lifecycleScope.launch {
-            db = AppDatabase.getDatabase(requireContext())
-            notesList = db.noteDAO().getNoteByTitle(filter) as ArrayList<Note>
+            notesList = mainViewModel.filterNotes(filter) as ArrayList<Note>
             adapterNotes = AdapterNotes(notesList, coroutineContext)
         }
         showNotes()
-
     }
 
     /**
@@ -246,18 +180,17 @@ class NotesFragment : Fragment(), CoroutineScope {
      */
     fun orderByNotes(type: String) {
         lifecycleScope.launch {
-            db = AppDatabase.getDatabase(requireContext())
             notesList = when (type) {
                 "date" -> {
-                    db.noteDAO().getNoteOrderByDate() as ArrayList<Note>
+                    mainViewModel.orderByNotes("date")
                 }
 
                 "title" -> {
-                    db.noteDAO().getNoteOrderByTitle() as ArrayList<Note>
+                    mainViewModel.orderByNotes("title")
                 }
 
                 else -> {
-                    db.noteDAO().getNotesList() as ArrayList<Note>
+                    mainViewModel.orderByNotes("")
                 }
             }
             adapterNotes = AdapterNotes(notesList, coroutineContext)
@@ -322,11 +255,15 @@ class NotesFragment : Fragment(), CoroutineScope {
             // Verifica si la nota actualizada es la que está asociada al widget
             if (savedNoteCode == note.code.toString()) {
                 WidgetProvider.updateWidget(
-                    context, appWidgetManager, appWidgetId, getString(R.string.note_title_widget), getString(R.string.note_textcontent_widget)
+                    context,
+                    appWidgetManager,
+                    appWidgetId,
+                    getString(R.string.note_title_widget),
+                    getString(R.string.note_textcontent_widget)
                 )
-                Toast.makeText(context, getString(R.string.deletedNoteWidget), Toast.LENGTH_LONG).show()
+                Toast.makeText(context, getString(R.string.deletedNoteWidget), Toast.LENGTH_LONG)
+                    .show()
             }
         }
-
     }
 }
