@@ -43,18 +43,21 @@
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-<!--            <TextView-->
-<!--                android:id="@+id/notesCounter"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_marginTop="15dp"-->
-<!--                android:fontFamily="@font/aldrich"-->
-<!--                android:text="@string/notes_counter"-->
-<!--                android:textColor="@color/white"-->
-<!--                android:textSize="16sp"-->
-<!--                app:layout_constraintEnd_toEndOf="parent"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toTopOf="parent" />-->
+            <!--            <com.google.android.material.textfield.TextInputEditText-->
+            <!--                android:id="@+id/tvSearchNotes"-->
+            <!--                android:layout_width="0dp"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:layout_marginStart="5dp"-->
+            <!--                android:layout_marginTop="16dp"-->
+            <!--                android:layout_marginEnd="16dp"-->
+            <!--                android:layout_marginBottom="16dp"-->
+            <!--                android:fontFamily="@font/aldrich"-->
+            <!--                android:hint="@string/buscar"-->
+            <!--                android:textColor="@color/white"-->
+            <!--                app:layout_constraintBottom_toBottomOf="@+id/btOrderBy"-->
+            <!--                app:layout_constraintEnd_toStartOf="@+id/btOrderBy"-->
+            <!--                app:layout_constraintStart_toStartOf="parent"-->
+            <!--                app:layout_constraintTop_toTopOf="@+id/btOrderBy" />-->
 
             <ImageButton
                 android:id="@+id/btOrderBy"
