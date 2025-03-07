@@ -53,10 +53,8 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
                 binding.etTitle.setText(notesShow.title)
                 binding.noteContent.setText(notesShow.textContent)
             }
+            mContentEditText.processChecklists()
         }
-
-        mContentEditText.processChecklists()
-
 
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
