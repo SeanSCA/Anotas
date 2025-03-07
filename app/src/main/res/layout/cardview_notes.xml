@@ -30,14 +30,14 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/browser_actions_bg_grey"
-            app:layout_constraintBottom_toTopOf="@+id/tv_show_note_content_resume"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_show_note_title" />
+<!--        <View-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="1dp"-->
+<!--            android:background="@color/browser_actions_bg_grey"-->
+<!--            app:layout_constraintBottom_toTopOf="@+id/tv_show_note_content_resume"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/tv_show_note_title" />-->
 
         <TextView
             android:id="@+id/tv_show_note_content_resume"
