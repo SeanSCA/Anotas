@@ -65,7 +65,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @param navigationView the navigation view
      */
     fun notesCounter(navigationView: NavigationView) {
-        LifecycleService().lifecycleScope.launch {
+        viewModelScope.launch {
             val headerView = navigationView.getHeaderView(0)
             val navViewTotalNotes = headerView.findViewById<TextView>(R.id.notesCounter)
 
@@ -81,7 +81,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @param userName the username of the logged user
      */
     fun syncPendingNotes(userName: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+        viewModelScope.launch {
             if (isConnectionStableAndFast(appContext)) {
                 val cloudNotes = (CrudApi().getNotesList() as? ArrayList<Note>) ?: arrayListOf()
                 val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
@@ -120,6 +120,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+        println("Llega hasta aquí")
     }
 
     fun saveNoteConcurrently(note: Note) {
