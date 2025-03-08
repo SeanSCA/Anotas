@@ -20,19 +20,27 @@ class RepositoryNotes(private val noteDAO: NoteDAO, private val tokenDAO: TokenD
         return noteDAO.getNoteByTitle(filter) as ArrayList<Note>
     }
 
-    fun getAllNotesLive(): LiveData<ArrayList<Note>>{
+    fun getAllNotesLive(): LiveData<ArrayList<Note>> {
         return noteDAO.getAllNotesLive() as LiveData<ArrayList<Note>>
     }
 
-    fun insertToken(token: Token){
+    fun insertToken(token: Token) {
         tokenDAO.insertToken(token)
     }
 
-    fun getToken(): String{
+    fun getToken(): String {
         return tokenDAO.getToken()
     }
 
-    fun getNoteByCode(codeSearchUpdate: Int): Note{
+    fun getNoteByCode(codeSearchUpdate: Int): Note {
         return noteDAO.getNoteByCode(codeSearchUpdate)
+    }
+
+    fun getNoteSynced(): List<Note> {
+        return noteDAO.getNotesList().filter { !it.isSynced }
+    }
+
+    fun updateNote(note: Note){
+        noteDAO.updateNote(note = note)
     }
 }

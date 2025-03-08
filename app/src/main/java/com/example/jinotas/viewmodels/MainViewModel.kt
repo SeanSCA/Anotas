@@ -83,9 +83,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun syncPendingNotes(userName: String) {
         viewModelScope.launch {
             if (isConnectionStableAndFast(appContext)) {
-                val cloudNotes = (CrudApi().getNotesList() as? ArrayList<Note>) ?: arrayListOf()
-                val pendingNotes = db.noteDAO().getNotesList().filter { !it.isSynced }
-                val localNotes = db.noteDAO().getNotesList() // Lista completa de notas locales
+
+                val cloudNotes = (crudApi.getNotesList() as? ArrayList<Note>) ?: arrayListOf()
+                val pendingNotes = repositoryNotes.getNoteSynced()
+                val localNotes = repositoryNotes.getNotesList()
 
                 // Filtrar notas en la nube que pertenecen al usuario actual
                 val userCloudNotes = cloudNotes.filter { it.userFrom == userName }
@@ -105,7 +106,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         //Actualiza la nota localmente para saber que está sincronizado
                         note.isSynced = true
-                        db.noteDAO().updateNote(note = note)
+                        repositoryNotes.updateNote(note = note)
                         Log.i("Sync", "Nota sincronizada: ${note.title}")
                     } catch (e: Exception) {
                         Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
