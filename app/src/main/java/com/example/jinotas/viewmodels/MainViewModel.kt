@@ -22,6 +22,7 @@ import com.example.jinotas.db.Note
 import com.example.jinotas.db.RepositoryNotes
 import com.example.jinotas.db.Token
 import com.example.jinotas.db.UserToken
+import com.example.jinotas.utils.SyncStatus
 import com.example.jinotas.utils.Utils
 import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
 import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
@@ -43,6 +44,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db: AppDatabase = AppDatabase.getDatabase(application)
     private val repositoryNotes = RepositoryNotes(db.noteDAO(), db.tokenDAO())
     private val crudApi: CrudApi = CrudApi()
+    private val sharedPreferences: SharedPreferences =
+        appContext.getSharedPreferences("MyPrefsFile", Context.MODE_PRIVATE)
 
     private val _notesCounter = MutableLiveData<String>()
     val notesCounter: LiveData<String> get() = _notesCounter
@@ -98,138 +101,139 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val notesToDelete = userCloudNotes.filter { it.code !in localCodes }
 
                 for (note in pendingNotes) {
-                    try {
-                        if (cloudNotes.any { it.code == note.code }) {
+                    val cloudNote = cloudNotes.find { it.code == note.code }
+
+                    if (cloudNote != null) {
+                        if (note.updatedTime!! > cloudNote.updatedTime!!) {
+                            // 🔹 Solo actualizar en la nube si la versión local es más reciente
                             updateNoteInCloud(note, appContext)
                         } else {
-                            saveNoteToCloud(note, appContext)
+                            // 🔹 Si la nube tiene una versión más nueva, traerla a local
+                            repositoryNotes.updateNote(cloudNote)
                         }
-                        //Actualiza la nota localmente para saber que está sincronizado
-                        note.isSynced = true
-                        repositoryNotes.updateNote(note = note)
-                        Log.i("Sync", "Nota sincronizada: ${note.title}")
-                    } catch (e: Exception) {
-                        Log.e("SyncError", "Error al sincronizar la nota: ${note.title}")
+                    } else {
+                        // 🔹 Si la nota no está en la nube, subirla
+                        saveNoteToCloud(note, appContext)
+                    }
+
+                    // ✅ Marcar como sincronizada
+                    note.isSynced = true
+                    note.syncStatus = SyncStatus.SYNCED
+                    repositoryNotes.updateNote(note)
+                    updateLastSyncTime()
+                }
+
+                for (note in cloudNotes) {
+                    if (!localNotes.any { it.code == note.code }) {
+                        if (note.updatedTime!! > getLastSyncTime()) {
+                            // 🔹 Si la nota es más reciente que la última sincronización, recuperarla en local
+                            repositoryNotes.insertNote(note)
+                            Log.i("Sync", "Nota restaurada desde la nube: ${note.title}")
+                        } else {
+                            // 🔹 Si la nota en local está marcada como eliminada, eliminarla de la nube
+                            if (notesToDelete.any { it.code == note.code }) {
+                                deleteNoteInCloud(note, appContext)
+                                Log.i("Sync", "Nota eliminada en la nube: ${note.title}")
+                            }
+                        }
                     }
                 }
 
-                // Eliminar las notas que están en la nube pero no en las notas locales
-                for (note in notesToDelete) {
+
+                // 🔹 Solo eliminar si en local tiene estado DELETED
+                for (note in localNotes.filter { it.syncStatus == SyncStatus.DELETED }) {
                     deleteNoteInCloud(note, appContext)
-                    Log.e("nota eliminar", note.toString())
-                    Log.i("Delete", "Nota eliminada en la nube: ${note.title}")
+                    repositoryNotes.deleteNote(note) // 🔹 Eliminar también de local después de confirmar eliminación en la nube
+                    Log.i("Sync", "Nota eliminada en la nube: ${note.title}")
                 }
+
+                // 🔹 Si la nota está en la nube pero no en local, podríamos recuperarla
+                for (note in cloudNotes) {
+                    if (!localNotes.any { it.code == note.code }) {
+                        repositoryNotes.insertNote(note)  // 🔹 Recuperamos la nota en local
+                        Log.i("Sync", "Nota recuperada desde la nube: ${note.title}")
+                    }
+                }
+
             }
         }
         println("Llega hasta aquí")
     }
 
+    fun getLastSyncTime(): Long {
+        return sharedPreferences.getLong("last_sync_time", 0L)
+    }
+
+    fun updateLastSyncTime() {
+        sharedPreferences.edit().putLong("last_sync_time", System.currentTimeMillis()).apply()
+    }
+
+
     fun saveNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                coroutineScope {
-                    val localSave = async {
-                        note.isSynced = isConnectionStableAndFast(appContext)
-                        saveNoteToLocalDatabase(note, appContext)
-                    }
-                    localSave.await()
+                note.updatedTime = System.currentTimeMillis() // ✅ Actualizar timestamp
+                note.syncStatus = SyncStatus.CREATED // ✅ Marcar como nueva
+                note.isSynced = isConnectionStableAndFast(appContext)
 
-                    if (note.isSynced) {
-                        val cloudSave = async { saveNoteToCloud(note, appContext) }
-                        cloudSave.await()
-                    } else {
-                        Log.e("Sync", "Nota guardada localmente, pendiente de sincronización")
-                    }
+                repositoryNotes.insertNote(note) // Guardar localmente
 
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            appContext,
-                            if (note.isSynced) "Nota sincronizada con la nube" else "Nota guardada localmente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                if (note.isSynced) {
+                    saveNoteToCloud(note, appContext) // Guardar en la nube
+                    note.syncStatus = SyncStatus.SYNCED // ✅ Marcar como sincronizada
+                    repositoryNotes.updateNote(note) // Actualizar estado local
                 }
-            } catch (e: Exception) {
+
                 withContext(Dispatchers.Main) {
-                    Log.e("ErrorGuardar", e.message.toString())
                     Toast.makeText(
-                        appContext, "Error al guardar la nota", Toast.LENGTH_SHORT
+                        appContext,
+                        if (note.isSynced) "Nota sincronizada" else "Guardada localmente",
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
+            } catch (e: Exception) {
+                Log.e("saveNoteConcurrently", "Error al guardar: ${e.message}")
             }
         }
     }
+
 
     fun overwriteNoteConcurrently(note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                coroutineScope {
-                    val localUpdate = async {
-                        note.isSynced = isConnectionStableAndFast(appContext)
-                        updateNoteInLocalDatabase(note, appContext)
-                        //Esto es para actualizar el contenido del widget
-                        withContext(Dispatchers.Main) {
-                            val sharedPreferences =
-                                appContext.getSharedPreferences("WidgetPrefs", MODE_PRIVATE)
-                            val appWidgetManager = AppWidgetManager.getInstance(appContext)
+                note.updatedTime = System.currentTimeMillis() // ✅ Actualizar timestamp
+                note.syncStatus = SyncStatus.UPDATED // ✅ Marcar como modificada
+                note.isSynced = isConnectionStableAndFast(appContext)
 
-                            val widgetIds = appWidgetManager.getAppWidgetIds(
-                                ComponentName(appContext, WidgetProvider::class.java)
-                            )
+                repositoryNotes.updateNote(note) // Guardar cambios en local
 
-                            for (appWidgetId in widgetIds) {
-                                val savedNoteCode = sharedPreferences.getString(
-                                    "widget_note_${appWidgetId}_code", ""
-                                )
-
-                                // Verifica si la nota actualizada es la que está asociada al widget
-                                if (savedNoteCode == note.code.toString()) {
-                                    WidgetProvider.updateWidget(
-                                        appContext,
-                                        appWidgetManager,
-                                        appWidgetId,
-                                        note.title,
-                                        note.textContent
-                                    )
-                                }
-                            }
-                        }
-                        //Hasta aquí
-                    }
-                    localUpdate.await()
-
-                    if (note.isSynced) {
-                        val cloudUpdate = async { updateNoteInCloud(note, appContext) }
-                        cloudUpdate.await()
-                    } else {
-                        Log.e("Sync", "Nota actualizada localmente, pendiente de sincronización")
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            appContext,
-                            if (note.isSynced) "Nota sincronizada con la nube" else "Nota actualizada localmente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                if (note.isSynced) {
+                    updateNoteInCloud(note, appContext) // Actualizar en la nube
+                    note.syncStatus = SyncStatus.SYNCED // ✅ Marcar como sincronizada
+                    repositoryNotes.updateNote(note) // Guardar estado actualizado
                 }
-            } catch (e: Exception) {
+
                 withContext(Dispatchers.Main) {
-                    Log.e("ErrorActualizar", e.message.toString())
                     Toast.makeText(
-                        appContext, "Error al actualizar la nota", Toast.LENGTH_SHORT
+                        appContext,
+                        if (note.isSynced) "Nota sincronizada" else "Actualizada localmente",
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
+            } catch (e: Exception) {
+                Log.e("overwriteNoteConcurrently", "Error al actualizar: ${e.message}")
             }
         }
     }
+
 
     /**
      * Load all the notes into the recyclerview
      */
     fun loadNotes(): ArrayList<Note>? {
         return try {
-            val notes = db.noteDAO().getNotesList() as ArrayList<Note>
+            val notes = db.noteDAO().getNotesList()
+                .filter { it.syncStatus != SyncStatus.DELETED } as ArrayList<Note>
             notes
         } catch (e: Exception) {
             null

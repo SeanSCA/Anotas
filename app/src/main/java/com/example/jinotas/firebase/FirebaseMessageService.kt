@@ -53,7 +53,8 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                     textContent = remoteMessage.data["textContent"] ?: "",
                     date = remoteMessage.data["date"] ?: "",
                     userFrom = remoteMessage.data["userFrom"] ?: "Desconocido",
-                    userTo = remoteMessage.data["userTo"]
+                    userTo = remoteMessage.data["userTo"],
+                    updatedTime = remoteMessage.data["updatedTime"]?.toLong() ?: 0
                 )
 
                 sendNotification(

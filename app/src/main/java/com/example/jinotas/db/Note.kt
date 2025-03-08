@@ -2,6 +2,7 @@ package com.example.jinotas.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.jinotas.utils.SyncStatus
 import com.google.gson.annotations.SerializedName
 import java.util.UUID
 
@@ -21,6 +22,10 @@ data class Note(
 
     @SerializedName("userTo") var userTo: String?,
 
+    @SerializedName("updatedTime") var updatedTime: Long,
+
+    var syncStatus: SyncStatus = SyncStatus.SYNCED,
+
     var isSynced: Boolean = true
 ) {
     constructor(
@@ -29,7 +34,8 @@ data class Note(
         textContent: String,
         date: String,
         userFrom: String,
-        userTo: String?
+        userTo: String?,
+        updatedTime: Long
     ) : this(
         code = UUID.randomUUID().hashCode(),
         id = id,
@@ -37,10 +43,11 @@ data class Note(
         textContent = textContent,
         date = date,
         userFrom = userFrom,
-        userTo = userTo
+        userTo = userTo,
+        updatedTime = updatedTime
     )
 
     override fun toString(): String {
-        return "Note(code=$code, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, isSynced='$isSynced'"
+        return "Note(id= $id, code=$code, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, isSynced='$isSynced'"
     }
 }

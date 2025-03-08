@@ -8,6 +8,7 @@ import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.Notes
 import com.example.jinotas.db.UserToken
+import com.example.jinotas.utils.SyncStatus
 import com.example.jinotas.utils.UtilsDBAPI.API_TOKEN
 import com.example.jinotas.utils.UtilsDBAPI.URL_API_NOTES
 import com.example.jinotas.utils.UtilsDBAPI.URL_API_TOKEN_USER
@@ -50,25 +51,31 @@ class CrudApi {
             .addConverterFactory(GsonConverterFactory.create(gson)).build()
     }
 
-    suspend fun getNotesList(): Notes? = withContext(Dispatchers.IO) {
-        val response = getRetrofitNotes().create(ApiService::class.java).getNotesList()
-        val notes = Notes()
-        response!!.body()!!.list.forEach { apiNote ->
-            notes.add(
-                Note(
-                    code = apiNote.code,
-                    id = apiNote.id,
-                    title = apiNote.title,
-                    textContent = apiNote.textContent,
-                    date = apiNote.date,
-                    userFrom = apiNote.userFrom,
-                    userTo = apiNote.userTo
-                )
-            )
+    suspend fun getNotesList(): List<Note> = withContext(Dispatchers.IO) {
+        try {
+            val response = getRetrofitNotes().create(ApiService::class.java).getNotesList()
+            if (response.isSuccessful) {
+                response.body()?.list?.map { apiNote ->
+                    Note(
+                        code = apiNote.code,
+                        id = apiNote.id,
+                        title = apiNote.title,
+                        textContent = apiNote.textContent,
+                        date = apiNote.date,
+                        userFrom = apiNote.userFrom,
+                        userTo = apiNote.userTo,
+                        updatedTime = apiNote.updatedTime
+                    )
+                } ?: listOf()
+            } else {
+                listOf()
+            }
+        } catch (e: Exception) {
+            Log.e("getNotesList", "Error obteniendo notas: ${e.message}")
+            listOf()
         }
-
-        return@withContext if (response.isSuccessful) notes else null
     }
+
 
     suspend fun patchNote(noteUpdate: Note): Note? = withContext(Dispatchers.IO) {
         val response = getRetrofitNotes().create(ApiService::class.java).putNote(noteUpdate)

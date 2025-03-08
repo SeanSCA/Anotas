@@ -23,8 +23,10 @@ import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
+import com.example.jinotas.utils.SyncStatus
 import com.example.jinotas.utils.ThemeUtils
 import com.example.jinotas.utils.Utils.getAccessToken
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.google.gson.Gson
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
@@ -121,53 +123,93 @@ class AdapterNotes(
         notifyDataSetChanged()
     }
 
+//    fun deleteNoteDBApi(context: Context, note: Note) {
+//        CoroutineScope(Dispatchers.IO).launch {
+//            db = AppDatabase.getDatabase(context)
+//            var existingNote: Note? = null
+//            try {
+//                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
+//                Log.e("notaeliminar", existingNote.code.toString())
+//                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota mediante la Id
+//
+//                db.noteDAO()
+//                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+//
+//                // Actualización de la lista y notificación en el hilo principal
+//                withContext(Dispatchers.Main) {
+//                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+//                }
+//
+//            } catch (e: Exception) {
+//                // Manejo de errores
+//                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+//            } finally {
+//                if (existingNote != null) {
+//                    db.noteDAO()
+//                        .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+//                }
+//            }
+//        }
+//    }
+
     fun deleteNoteDBApi(context: Context, note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
-            db = AppDatabase.getDatabase(context)
-            var existingNote: Note? = null
             try {
-                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
-                Log.e("notaeliminar", existingNote.code.toString())
-                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota mediante la Id
+                db = AppDatabase.getDatabase(context)
+                note.syncStatus = SyncStatus.DELETED // ✅ Marcar como eliminada en local
+                note.updatedTime = System.currentTimeMillis()
+                db.noteDAO().updateNote(note)
 
-                db.noteDAO()
-                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+                if (isConnectionStableAndFast(context)) {
+                    CrudApi().deleteNote(note.id!!) // Intentar eliminar en la nube
+                    db.noteDAO().deleteNote(note) // ✅ Borrar definitivamente tras éxito
+                }
 
-                // Actualización de la lista y notificación en el hilo principal
                 withContext(Dispatchers.Main) {
                     updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
                 }
-
             } catch (e: Exception) {
-                // Manejo de errores
                 Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
-            } finally {
-                if (existingNote != null) {
-                    db.noteDAO()
-                        .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
-                }
             }
         }
     }
 
+
+//    fun deleteNoteDB(context: Context, note: Note) {
+//        CoroutineScope(Dispatchers.IO).launch {
+//            db = AppDatabase.getDatabase(context)
+//            var existingNote: Note? = null
+//            try {
+//                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
+//                Log.e("notaeliminar", existingNote.code.toString())
+//                db.noteDAO()
+//                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+//
+//                // Actualización de la lista y notificación en el hilo principal
+//                withContext(Dispatchers.Main) {
+//                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
+//                }
+//
+//            } catch (e: Exception) {
+//                // Manejo de errores
+//                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+//            }
+//        }
+//    }
+
     fun deleteNoteDB(context: Context, note: Note) {
         CoroutineScope(Dispatchers.IO).launch {
-            db = AppDatabase.getDatabase(context)
-            var existingNote: Note? = null
             try {
-                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
-                Log.e("notaeliminar", existingNote.code.toString())
-                db.noteDAO()
-                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+                db = AppDatabase.getDatabase(context)
+                note.syncStatus = SyncStatus.DELETED
+                note.updatedTime = System.currentTimeMillis()
+                db.noteDAO().updateNote(note)
 
-                // Actualización de la lista y notificación en el hilo principal
                 withContext(Dispatchers.Main) {
                     updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
                 }
-
             } catch (e: Exception) {
-                // Manejo de errores
-                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+                Log.e("deleteNoteDB", "Error eliminando localmente: ${e.message}")
             }
         }
     }
@@ -204,8 +246,11 @@ class AdapterNotes(
                 } else {
                     // Se asegura de que el código de UI se ejecute en el hilo principal
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, context.getString(R.string.sendNoteUserNotExists), Toast.LENGTH_LONG)
-                            .show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.sendNoteUserNotExists),
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }
@@ -219,9 +264,14 @@ class AdapterNotes(
 
     private fun showConfirmationDialog(context: Context, note: Note) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle(context.getString(R.string.sendNoteConfirmation)).setMessage(context.getString(R.string.sendNoteConfirmationCancel))
+        builder.setTitle(context.getString(R.string.sendNoteConfirmation))
+            .setMessage(context.getString(R.string.sendNoteConfirmationCancel))
             .setPositiveButton("Ok") { _, _ ->
-                Toast.makeText(context, context.getString(R.string.sendNoteConfirmationCanceled), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.sendNoteConfirmationCanceled),
+                    Toast.LENGTH_SHORT
+                ).show()
             }.setNegativeButton("No") { _, _ ->
                 showNestedAlertDialog(context, note)
             }.show()
@@ -306,6 +356,7 @@ class AdapterNotes(
                             put("date", note.date)
                             put("userFrom", note.userFrom)
                             put("userTo", userName)
+                            put("updatedTime", note.updatedTime.toString())
                         })
                     })
                 }

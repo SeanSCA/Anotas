@@ -1,6 +1,7 @@
 package com.example.jinotas.utils
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -43,7 +44,10 @@ object UtilsDBAPI {
 
     //Esto es para eliminar en la api
     suspend fun deleteNoteInCloud(note: Note, context: Context) {
-        CrudApi().deleteNote(note.id!!)
+        Log.e("deleteNote", note.toString())
+        if(note.id != null){
+            CrudApi().deleteNote(note.id!!)
+        }
     }
     //-------------------
 

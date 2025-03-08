@@ -99,7 +99,8 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
             textContent = binding.noteContent.getPlainTextContent(),
             date = current,
             userFrom = userNameFrom!!,
-            userTo = null
+            userTo = null,
+            updatedTime = System.currentTimeMillis()
         )
     }
 

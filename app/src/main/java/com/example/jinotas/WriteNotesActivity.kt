@@ -84,7 +84,8 @@ class WriteNotesActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListen
             textContent = binding.noteContent.getPlainTextContent(),
             date = current.toString(),
             userFrom = userNameFrom ?: "",
-            userTo = null
+            userTo = null,
+            updatedTime = System.currentTimeMillis()
         )
     }
 

@@ -17,6 +17,8 @@ data class ApiNote(
 
     @SerializedName("userTo") var userTo: String,
 
+    @SerializedName("updatedTime") var updatedTime: Long,
+
     @SerializedName("CreatedAt") val createdAt: String? = null,
 
     @SerializedName("UpdatedAt") val updatedAt: String? = null
