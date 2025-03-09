@@ -171,4 +171,9 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         TODO("Not yet implemented")
     }
+
+    override fun onBackPressed() {
+        super.onBackPressedDispatcher.onBackPressed()
+        finishWithAnimation()
+    }
 }

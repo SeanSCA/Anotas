@@ -157,4 +157,8 @@ class WriteNotesActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListen
         TODO("Not yet implemented")
     }
 
+    override fun onBackPressed() {
+        super.onBackPressedDispatcher.onBackPressed()
+        finishWithAnimation()
+    }
 }
