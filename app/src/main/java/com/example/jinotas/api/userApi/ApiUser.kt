@@ -7,4 +7,11 @@ data class ApiUser(
     @SerializedName("userName") val userName: String,
     @SerializedName("password") val password: String,
     @SerializedName("token") val token: String
-)
+
+
+) {
+    override fun toString(): String {
+        return "ApiUser(id=$id, userName='$userName', password='$password', token='$token')"
+    }
+}
+
