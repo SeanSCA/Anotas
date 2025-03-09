@@ -35,7 +35,7 @@ interface ApiService {
     @GET("?")
     suspend fun getTokenByUser(
         @Query("where") where: String,
-        @Query("limit") limit: Int = 1,
+        @Query("limit") limit: Int = 10, //Limitar a 10 dispositivos
         @Query("shuffle") shuffle: Int = 0,
         @Query("offset") offset: Int = 0
     ): Response<ApiUserResponse>
