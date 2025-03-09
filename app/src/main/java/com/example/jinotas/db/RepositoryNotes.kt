@@ -28,6 +28,14 @@ class RepositoryNotes(private val noteDAO: NoteDAO, private val tokenDAO: TokenD
         tokenDAO.insertToken(token)
     }
 
+    fun updateToken(token: Token){
+        tokenDAO.updateToken(token)
+    }
+
+    fun deleteToken(token: Token){
+        tokenDAO.deleteToken(token)
+    }
+
     fun getToken(): String {
         return tokenDAO.getToken()
     }
