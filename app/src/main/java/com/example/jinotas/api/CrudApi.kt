@@ -106,30 +106,19 @@ class CrudApi {
         Log.e("codeNote", id.toString())
     }
 
-    suspend fun getTokenByUser(user: String): UserToken? = withContext(Dispatchers.IO) {
+    suspend fun getTokenByUser(user: String): List<UserToken> = withContext(Dispatchers.IO) {
         val whereClause = "where=(userName,eq,$user)"
         val response = getRetrofitUser().create(ApiService::class.java).getTokenByUser(whereClause)
-        val allUsers = response!!.body()!!.list
-//        val existingUser = response!!.body()!!
-
-
-        var userName = ""
-        var token = ""
-        var password = ""
-
-        allUsers.forEach { it ->
-            if (it.userName == user) {
-                println("Existing User ${it.userName}, ${it.token}")
-                userName = it.userName
-                token = it.token
-                password = it.password
-            }
+        val allUsers: List<ApiUser> = response.body()!!.list
+        val resultUsersList: List<UserToken> = allUsers.map { apiUser ->
+            UserToken(
+                token = apiUser.token, userName = apiUser.userName, password = apiUser.password
+            )
         }
+        Log.i("UserTokenList", resultUsersList.toString())
+        Log.i("UserTokenListSize", resultUsersList.size.toString())
 
-        val userToken = UserToken(
-            userName = userName, token = token, password = password
-        )
-        return@withContext if (response.isSuccessful) userToken else null
+        return@withContext if (response.isSuccessful) resultUsersList else listOf()
     }
 
     suspend fun postTokenByUser(tokenUser: UserToken): ApiUser? = withContext(Dispatchers.IO) {

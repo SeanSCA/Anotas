@@ -240,9 +240,11 @@ class AdapterNotes(
             // Llamar a la función suspensiva dentro de una corrutina
             val userToSend = nameInput.text.toString().lowercase()
             CoroutineScope(Dispatchers.IO).launch {
-                val token = getTokenByUser(userToSend)
-                if (token != null) {
-                    sendPushNotificationToUserWithNote(userToSend, note, context)
+                val tokens = getTokenByUser(userToSend, context)
+                if (tokens.isNotEmpty()) {
+                    tokens.forEach { it ->
+                        sendPushNotificationToUserWithNote(userToSend, note, context, it)
+                    }
                 } else {
                     // Se asegura de que el código de UI se ejecute en el hilo principal
                     withContext(Dispatchers.Main) {
@@ -327,17 +329,24 @@ class AdapterNotes(
 //        builder.show()
 //    }
 
-    private suspend fun getTokenByUser(userName: String): String? = withContext(Dispatchers.IO) {
-        return@withContext CrudApi().getTokenByUser(userName)?.token
-    }
+    private suspend fun getTokenByUser(userName: String, context: Context): List<String> =
+        withContext(Dispatchers.IO) {
+            val localToken = CrudApi().getTokenByUser(userName).map { it.token }
+
+            Log.i("UserToken", localToken.toString())
+
+            return@withContext localToken
+        }
 
 
-    private fun sendPushNotificationToUserWithNote(userName: String, note: Note, context: Context) {
+    private fun sendPushNotificationToUserWithNote(
+        userName: String, note: Note, context: Context, tokenReceptor: String
+    ) {
         CoroutineScope(Dispatchers.IO).launch {
             val accessToken = getAccessToken(context)
-            val tokenReceptor = getTokenByUser(userName)
+//            val tokenReceptor = getTokenByUser(userName, context)
 
-            if (tokenReceptor != null) {
+            if (tokenReceptor.isNotEmpty()) {
                 val url = dotenv["URL_SEND_MESSAGE"]
 
                 Log.e("urlFire", url)
