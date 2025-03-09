@@ -16,6 +16,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 
 interface ApiService {
@@ -31,8 +32,14 @@ interface ApiService {
     @HTTP(method = "DELETE", path = "?", hasBody = true)
     suspend fun deleteNote(@Body request: DeleteNoteRequest): Response<Unit>
 
-    @GET("?limit=25&shuffle=0&offset=0")
-    suspend fun getTokenByUser(): Response<ApiUserResponse>
+    @GET("?")
+    suspend fun getTokenByUser(
+        @Query("where") where: String,
+        @Query("limit") limit: Int = 1,
+        @Query("shuffle") shuffle: Int = 0,
+        @Query("offset") offset: Int = 0
+    ): Response<ApiUserResponse>
+
 
     @POST("?")
     suspend fun postUserToken(@Body tokenUser: ApiUser): Response<ApiUser>

@@ -6,9 +6,7 @@ import com.example.jinotas.api.notesApi.DeleteNoteRequest
 import com.example.jinotas.api.userApi.ApiUser
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
-import com.example.jinotas.db.Notes
 import com.example.jinotas.db.UserToken
-import com.example.jinotas.utils.SyncStatus
 import com.example.jinotas.utils.UtilsDBAPI.API_TOKEN
 import com.example.jinotas.utils.UtilsDBAPI.URL_API_NOTES
 import com.example.jinotas.utils.UtilsDBAPI.URL_API_TOKEN_USER
@@ -109,19 +107,28 @@ class CrudApi {
     }
 
     suspend fun getTokenByUser(user: String): UserToken? = withContext(Dispatchers.IO) {
-        val response = getRetrofitUser().create(ApiService::class.java).getTokenByUser()
+        val whereClause = "where=(userName,eq,$user)"
+        val response = getRetrofitUser().create(ApiService::class.java).getTokenByUser(whereClause)
         val allUsers = response!!.body()!!.list
+//        val existingUser = response!!.body()!!
+
+
+        var userName = ""
         var token = ""
         var password = ""
 
         allUsers.forEach { it ->
             if (it.userName == user) {
+                println("Existing User ${it.userName}, ${it.token}")
+                userName = it.userName
                 token = it.token
                 password = it.password
             }
         }
 
-        val userToken = UserToken(userName = user, token = token, password = password)
+        val userToken = UserToken(
+            userName = userName, token = token, password = password
+        )
         return@withContext if (response.isSuccessful) userToken else null
     }
 
