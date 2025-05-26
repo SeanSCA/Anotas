@@ -416,7 +416,7 @@ class AdapterNotes(
                 content,
                 ChecklistUtils.CHECKLIST_REGEX_LINES_CHECKED,
                 ThemeUtils().getColorResourceFromAttribute(
-                    context, com.onesignal.R.attr.colorAccent
+                    context, androidx.appcompat.R.attr.colorAccent
                 ),
                 false
             )
