@@ -40,4 +40,5 @@
     <string name="sendNoteConfirmationCanceled">Has cancelado</string>
     <string name="firebaseReceivedNote">Has recibido una nota de </string>
     <string name="firebaseReceivedNoteNotification"> te ha enviado una nueva nota</string>
+    <string name="AnotasName">Anotas</string>
 </resources>

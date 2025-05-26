@@ -18,9 +18,9 @@ data class Note(
 
     @SerializedName("date") var date: String,
 
-    @SerializedName("userFrom") var userFrom: String,
+//    @SerializedName("userFrom") var userFrom: String,
 
-    @SerializedName("userTo") var userTo: String?,
+//    @SerializedName("userTo") var userTo: String?,
 
     @SerializedName("updatedTime") var updatedTime: Long,
 
@@ -33,8 +33,8 @@ data class Note(
         title: String,
         textContent: String,
         date: String,
-        userFrom: String,
-        userTo: String?,
+//        userFrom: String,
+//        userTo: String?,
         updatedTime: Long
     ) : this(
         code = UUID.randomUUID().hashCode(),
@@ -42,12 +42,13 @@ data class Note(
         title = title,
         textContent = textContent,
         date = date,
-        userFrom = userFrom,
-        userTo = userTo,
+//        userFrom = userFrom,
+//        userTo = userTo,
         updatedTime = updatedTime
     )
 
     override fun toString(): String {
-        return "Note(id= $id, code=$code, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, isSynced='$isSynced'"
+//        return "Note(id= $id, code=$code, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, isSynced='$isSynced'"
+        return "Note(id= $id, code=$code, title='$title', textContent='$textContent', date='$date', isSynced='$isSynced'"
     }
 }

@@ -23,7 +23,7 @@
         android:layout_marginStart="16dp"
         android:layout_weight="1"
         android:fontFamily="@font/aldrich"
-        android:text="@string/loggedUser"
+        android:text="@string/AnotasName"
         android:textColor="@color/white"
         android:textSize="20sp"
         android:textStyle="bold"

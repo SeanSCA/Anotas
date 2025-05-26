@@ -114,14 +114,18 @@ class NotesFragment : Fragment() {
                                 }
                             })
                             snackbar.show()
-                        } else if (direction == ItemTouchHelper.RIGHT) {
-                            Log.e("enviarNota", "Calidad de internet correcta")
-                            notesList.removeAt(position)
-                            adapterNotes.notifyItemRemoved(position)
+                        }
+                        //De momento al no haber más usuarios no se va a poder enviar notas por token
+                        else if (direction == ItemTouchHelper.RIGHT) {
                             notesList.add(position, note)
                             adapterNotes.notifyItemInserted(position)
-                            adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
-                            Log.e("tamañoListaDespues", notesList.size.toString())
+//                            Log.e("enviarNota", "Calidad de internet correcta")
+//                            notesList.removeAt(position)
+//                            adapterNotes.notifyItemRemoved(position)
+//                            notesList.add(position, note)
+//                            adapterNotes.notifyItemInserted(position)
+//                            adapterNotes.sendNote(this@NotesFragment.requireContext(), note)
+//                            Log.e("tamañoListaDespues", notesList.size.toString())
                         }
                     }
                 }

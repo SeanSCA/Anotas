@@ -42,12 +42,12 @@ class CrudApi {
             .addConverterFactory(GsonConverterFactory.create(gson)).build()
     }
 
-    private fun getRetrofitUser(): Retrofit {
-        val gson = GsonBuilder().setLenient().create()
-
-        return Retrofit.Builder().baseUrl(URL_API_TOKEN_USER).client(getClient())
-            .addConverterFactory(GsonConverterFactory.create(gson)).build()
-    }
+//    private fun getRetrofitUser(): Retrofit {
+//        val gson = GsonBuilder().setLenient().create()
+//
+//        return Retrofit.Builder().baseUrl(URL_API_TOKEN_USER).client(getClient())
+//            .addConverterFactory(GsonConverterFactory.create(gson)).build()
+//    }
 
     suspend fun getNotesList(): List<Note> = withContext(Dispatchers.IO) {
         try {
@@ -60,8 +60,8 @@ class CrudApi {
                         title = apiNote.title,
                         textContent = apiNote.textContent,
                         date = apiNote.date,
-                        userFrom = apiNote.userFrom,
-                        userTo = apiNote.userTo,
+//                        userFrom = apiNote.userFrom,
+//                        userTo = apiNote.userTo,
                         updatedTime = apiNote.updatedTime
                     )
                 } ?: listOf()
@@ -106,44 +106,44 @@ class CrudApi {
         Log.e("codeNote", id.toString())
     }
 
-    suspend fun getTokenByUser(user: String): List<UserToken> = withContext(Dispatchers.IO) {
-        val whereClause = "where=(userName,eq,$user)"
-        val response = getRetrofitUser().create(ApiService::class.java).getTokenByUser(whereClause)
-        val allUsers: List<ApiUser> = response.body()!!.list
-        val resultUsersList: List<UserToken> = allUsers.map { apiUser ->
-            UserToken(
-                token = apiUser.token, userName = apiUser.userName, password = apiUser.password
-            )
-        }
-        Log.i("UserTokenList", resultUsersList.toString())
-        Log.i("UserTokenListSize", resultUsersList.size.toString())
+//    suspend fun getTokenByUser(user: String): List<UserToken> = withContext(Dispatchers.IO) {
+//        val whereClause = "where=(userName,eq,$user)"
+//        val response = getRetrofitUser().create(ApiService::class.java).getTokenByUser(whereClause)
+//        val allUsers: List<ApiUser> = response.body()!!.list
+//        val resultUsersList: List<UserToken> = allUsers.map { apiUser ->
+//            UserToken(
+//                token = apiUser.token, userName = apiUser.userName, password = apiUser.password
+//            )
+//        }
+//        Log.i("UserTokenList", resultUsersList.toString())
+//        Log.i("UserTokenListSize", resultUsersList.size.toString())
+//
+//        return@withContext if (response.isSuccessful) resultUsersList else listOf()
+//    }
 
-        return@withContext if (response.isSuccessful) resultUsersList else listOf()
-    }
-
-    suspend fun postTokenByUser(tokenUser: UserToken): ApiUser? = withContext(Dispatchers.IO) {
-        val apiUser = ApiUser(
-            userName = tokenUser.userName, password = tokenUser.password, token = tokenUser.token
-        )
-        val response = getRetrofitUser().create(ApiService::class.java).postUserToken(apiUser)
-        val result = response.body()
-
-        return@withContext if (response.isSuccessful) result else null
-    }
-
-    suspend fun patchUserToken(userTokenUpdate: UserToken): UserToken? =
-        withContext(Dispatchers.IO) {
-            val response = getRetrofitUser().create(ApiService::class.java).putUserToken(
-                ApiUser(
-                    userName = userTokenUpdate.userName,
-                    password = userTokenUpdate.password,
-                    token = userTokenUpdate.token
-                )
-            )
-            val result = response!!.body()!!
-            val userToken = UserToken(
-                userName = result.userName, password = result.password, token = result.token
-            )
-            return@withContext if (response.isSuccessful) userToken else null
-        }
+//    suspend fun postTokenByUser(tokenUser: UserToken): ApiUser? = withContext(Dispatchers.IO) {
+//        val apiUser = ApiUser(
+//            userName = tokenUser.userName, password = tokenUser.password, token = tokenUser.token
+//        )
+//        val response = getRetrofitUser().create(ApiService::class.java).postUserToken(apiUser)
+//        val result = response.body()
+//
+//        return@withContext if (response.isSuccessful) result else null
+//    }
+//
+//    suspend fun patchUserToken(userTokenUpdate: UserToken): UserToken? =
+//        withContext(Dispatchers.IO) {
+//            val response = getRetrofitUser().create(ApiService::class.java).putUserToken(
+//                ApiUser(
+//                    userName = userTokenUpdate.userName,
+//                    password = userTokenUpdate.password,
+//                    token = userTokenUpdate.token
+//                )
+//            )
+//            val result = response!!.body()!!
+//            val userToken = UserToken(
+//                userName = result.userName, password = result.password, token = result.token
+//            )
+//            return@withContext if (response.isSuccessful) userToken else null
+//        }
 }

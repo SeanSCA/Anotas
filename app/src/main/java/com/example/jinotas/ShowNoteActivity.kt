@@ -16,7 +16,6 @@ import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.viewmodels.MainViewModel
-import kotlinx.coroutines.Job
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -25,7 +24,6 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
     private lateinit var binding: ActivityShowNoteBinding
     private lateinit var mainViewModel: MainViewModel
     private lateinit var notesShow: Note
-    private var job: Job = Job()
     private lateinit var mContentEditText: CustomEditText
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -98,8 +96,8 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
             title = binding.etTitle.text.toString(),
             textContent = binding.noteContent.getPlainTextContent(),
             date = current,
-            userFrom = userNameFrom!!,
-            userTo = null,
+//            userFrom = userNameFrom!!,
+//            userTo = null,
             updatedTime = System.currentTimeMillis()
         )
     }

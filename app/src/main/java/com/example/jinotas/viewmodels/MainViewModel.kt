@@ -83,7 +83,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Sync all notes that have not been inserted, updated or deleted from the API as needed
      * @param userName the username of the logged user
      */
-    fun syncPendingNotes(userName: String) {
+    fun syncPendingNotes(/*userName: String*/) {
         viewModelScope.launch {
             if (isConnectionStableAndFast(appContext)) {
 
@@ -92,7 +92,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val localNotes = repositoryNotes.getNotesList()
 
                 // Filtrar notas en la nube que pertenecen al usuario actual
-                val userCloudNotes = cloudNotes.filter { it.userFrom == userName }
+                val userCloudNotes =
+                    cloudNotes/*.filter { it.userFrom == userName }*/      //Se ha comentado para no tener que usar usuarios
 
                 // Obtener los códigos de notas locales
                 val localCodes = localNotes.map { it.code }.toSet()
@@ -129,6 +130,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             // 🔹 Si la nota es más reciente que la última sincronización, recuperarla en local
                             repositoryNotes.insertNote(note)
                             Log.i("Sync", "Nota restaurada desde la nube: ${note.title}")
+                        } else if (!cloudNotes.contains(note)) {
+                            repositoryNotes.insertNote(note)
                         } else {
                             // 🔹 Si la nota en local está marcada como eliminada, eliminarla de la nube
                             if (notesToDelete.any { it.code == note.code }) {
@@ -138,7 +141,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                 }
-
 
                 // 🔹 Solo eliminar si en local tiene estado DELETED
                 for (note in localNotes.filter { it.syncStatus == SyncStatus.DELETED }) {
@@ -322,7 +324,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun postTokenByUser(userToken: UserToken) {
         viewModelScope.launch {
-            crudApi.postTokenByUser(userToken)
+//            crudApi.postTokenByUser(userToken)
         }
     }
 

@@ -52,15 +52,15 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                     title = remoteMessage.data["title"] ?: "Sin título",
                     textContent = remoteMessage.data["textContent"] ?: "",
                     date = remoteMessage.data["date"] ?: "",
-                    userFrom = remoteMessage.data["userFrom"] ?: "Desconocido",
-                    userTo = remoteMessage.data["userTo"],
+//                    userFrom = remoteMessage.data["userFrom"] ?: "Desconocido",
+//                    userTo = remoteMessage.data["userTo"],
                     updatedTime = remoteMessage.data["updatedTime"]?.toLong() ?: 0
                 )
 
-                sendNotification(
-                    note.title,
-                    note.userFrom + " " + this@FirebaseMessageService.getString(R.string.firebaseReceivedNoteNotification)
-                )
+//                sendNotification(
+//                    note.title,
+//                    note.userFrom + " " + this@FirebaseMessageService.getString(R.string.firebaseReceivedNoteNotification)
+//                )
                 handleReceivedNote(note)
             }
         }
@@ -85,11 +85,11 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
                     }
                 }
 
-                Toast.makeText(
-                    this@FirebaseMessageService,
-                    this@FirebaseMessageService.getString(R.string.firebaseReceivedNote) + " " + note.userFrom,
-                    Toast.LENGTH_LONG
-                ).show()
+//                Toast.makeText(
+//                    this@FirebaseMessageService,
+//                    this@FirebaseMessageService.getString(R.string.firebaseReceivedNote) + " " + note.userFrom,
+//                    Toast.LENGTH_LONG
+//                ).show()
             }
         }
     }
@@ -107,7 +107,7 @@ class FirebaseMessageService : FirebaseMessagingService(), CoroutineScope {
             val userNameFrom = sharedPreferences.getString("userFrom", null) ?: ""
             if (userNameFrom.isNotEmpty()) {
                 val actualToken = UserToken(userName = userNameFrom!!, token = token, password = "")
-                CrudApi().patchUserToken(actualToken)
+//                CrudApi().patchUserToken(actualToken)
             }
         }
         Log.i("OnNewToken", "New Token -> $token")
