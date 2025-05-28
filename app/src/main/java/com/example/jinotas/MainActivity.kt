@@ -41,6 +41,7 @@ import com.example.jinotas.utils.Utils.masterKeyAlias
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
+import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.viewmodels.MainViewModel
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.ktx.Firebase
@@ -62,10 +63,10 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     private lateinit var mainViewModel: MainViewModel
 
     // Variable para guardar el nombre de usuario
-    private var userName: String? = null
+//    private var userName: String? = null
 
     //Notifications
-    private val notificationPermissionCode = 250
+    private val PermissionCode = 250
 
     companion object {
         var instance: MainActivity? = null
@@ -135,17 +136,19 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         //Hasta aqui
 
 
-        Firebase.initialize(this)
+//        Firebase.initialize(this)
 
         instance = this
 
 //        // Solicitar permisos de notificación si no están concedidos
         if (ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionCode
+                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION), PermissionCode
             )
         }
 
@@ -153,7 +156,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         binding.btCreateNote.setOnClickListener {
             vibratePhone(this)
             val intent = Intent(this, WriteNotesActivity::class.java)
-            intent.putExtra("userFrom", userName)
+//            intent.putExtra("userFrom", userName)
 
             val options = ActivityOptions.makeCustomAnimation(
                 applicationContext, R.anim.fade_in, R.anim.fade_out
@@ -178,104 +181,108 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
         if (isFirstTime) {
             // Si es la primera vez, mostrar el formulario
-            showFormDialog(sharedPreferences)
-            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val token = task.result
-                    // Guarda este token en tu base de datos
-                    mainViewModel.insertToken(Token(token = token))
-
-                    Log.e("Token del dispositivo:", token)
-                }
-            }
-            FirebaseMessaging.getInstance().subscribeToTopic("global")
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.e("Topic", "Suscripción exitosa al topic global")
-                    } else {
-                        Log.e("Topic", "Error al suscribirse al topic")
-                    }
-                }
+//            showFormDialog(sharedPreferences)
+            //Se comenta el código de Firebase si no se tiene que enviar notas
+//            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+//                if (task.isSuccessful) {
+//                    val token = task.result
+//                    // Guarda este token en tu base de datos
+//                    mainViewModel.insertToken(Token(token = token))
+//
+//                    Log.e("Token del dispositivo:", token)
+//                }
+//            }
+//            FirebaseMessaging.getInstance().subscribeToTopic("global")
+//                .addOnCompleteListener { task ->
+//                    if (task.isSuccessful) {
+//                        Log.e("Topic", "Suscripción exitosa al topic global")
+//                    } else {
+//                        Log.e("Topic", "Error al suscribirse al topic")
+//                    }
+//                }
             mainViewModel.saveNoteListStyle("Vertical", applicationContext)
 
-            val secretSharedPreferences = EncryptedSharedPreferences.create(
-                "secure_shared_prefs",
-                masterKeyAlias,
-                applicationContext,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
-
-            val jsonString = getJsonFromAssets(applicationContext)
-
-            if (jsonString != null) {
-                secretSharedPreferences.edit().putString("firebase_json", jsonString).apply()
-            } else {
-                println("❌ Error al cargar el archivo JSON")
-            }
+            //Aqui también se comenta el código de Firebase
+//            val secretSharedPreferences = EncryptedSharedPreferences.create(
+//                "secure_shared_prefs",
+//                masterKeyAlias,
+//                applicationContext,
+//                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+//                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+//            )
+//
+//            val jsonString = getJsonFromAssets(applicationContext)
+//
+//            if (jsonString != null) {
+//                secretSharedPreferences.edit().putString("firebase_json", jsonString).apply()
+//            } else {
+//                println("❌ Error al cargar el archivo JSON")
+//            }
         } else {
-            userName = sharedPreferences.getString("userFrom", "")
-            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
-
-            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
-
-            navViewUserName.text = userName
-
-            connectivityMonitor.registerCallback {
-                mainViewModel.syncPendingNotes(userName!!)
-            }
-
-            Log.e("username null", "no es null")
-            Log.e("userNameGuardado", userName!!)
+//            userName = sharedPreferences.getString("userFrom", "")
+//            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
+//
+//            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
+//
+//            navViewUserName.text = userName
+//
+//            connectivityMonitor.registerCallback {
+//                mainViewModel.syncPendingNotes(userName!!)
+//            }
+//
+//            Log.e("username null", "no es null")
+//            Log.e("userNameGuardado", userName!!)
         }
-
+        connectivityMonitor.registerCallback {
+            mainViewModel.syncPendingNotes()
+        }
         binding.swipeRefreshLayout.setOnRefreshListener {
             Log.i("recarga", "onRefresh called from SwipeRefreshLayout")
-
+            mainViewModel.syncPendingNotes()
             fragmentNotes.loadNotes()
             binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
     // Método para mostrar el formulario en un AlertDialog
-    private fun showFormDialog(sharedPreferences: SharedPreferences) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Bienvenido")
-
-        // Crear un Layout para el formulario
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-
-        // Crear el campo del formulario
-        val nameInput = EditText(this).apply {
-            hint = "Nombre de usuario"
-            inputType = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-        }
-        layout.addView(nameInput)
-
-        // Configurar el layout dentro del diálogo
-        builder.setView(layout)
-
-        // Botones del diálogo
-        builder.setPositiveButton("Aceptar") { dialog, _ ->
-            // Guardar el nombre de usuario en una variable
-            userName = nameInput.text.toString().lowercase()
-
-            mainViewModel.saveUserToken(userName!!, sharedPreferences)
-
-            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
-
-            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
-            navViewUserName.text = userName
-
-            dialog.dismiss()
-        }
-
-
-        builder.setCancelable(false)
-        // Mostrar el diálogo
-        builder.show()
-    }
+//    private fun showFormDialog(sharedPreferences: SharedPreferences) {
+//        val builder = AlertDialog.Builder(this)
+//        builder.setTitle("Bienvenido")
+//
+//        // Crear un Layout para el formulario
+//        val layout = LinearLayout(this)
+//        layout.orientation = LinearLayout.VERTICAL
+//
+//        // Crear el campo del formulario
+//        val nameInput = EditText(this).apply {
+//            hint = "Nombre de usuario"
+//            inputType = InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+//        }
+//        layout.addView(nameInput)
+//
+//        // Configurar el layout dentro del diálogo
+//        builder.setView(layout)
+//
+//        // Botones del diálogo
+//        builder.setPositiveButton("Aceptar") { dialog, _ ->
+//            // Guardar el nombre de usuario en una variable
+//            userName = nameInput.text.toString().lowercase()
+//
+//            mainViewModel.saveUserToken(userName!!, sharedPreferences)
+//
+//            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
+//
+//            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
+//            navViewUserName.text = userName
+//
+//            dialog.dismiss()
+//        }
+//
+//
+//        builder.setCancelable(false)
+//        // Mostrar el diálogo
+//        builder.show()
+//    }
 
     /**
      * Here it reloads all the notes when the app returns to this activity
@@ -374,27 +381,29 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if (requestCode == notificationPermissionCode) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == PermissionCode) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 with(
                     NotificationManagerCompat.from(this)
                 ) {
                     if (ActivityCompat.checkSelfPermission(
                             this@MainActivity, Manifest.permission.POST_NOTIFICATIONS
+                        ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                            this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         ActivityCompat.requestPermissions(
                             this@MainActivity,
-                            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                            notificationPermissionCode
+                            arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION),
+                            PermissionCode
                         )
                     }
                 }
             } else {
                 ActivityCompat.requestPermissions(
                     this@MainActivity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    notificationPermissionCode
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION),
+                    PermissionCode
                 )
             }
         }
@@ -430,7 +439,8 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             isConnectedToInternet = checkConnectivity(state, applicationContext)
             Log.i("isConnectedToInternet", isConnectedToInternet.toString())
             if (isConnectedToInternet != null) {
-                mainViewModel.syncPendingNotes(userName!!)
+//                mainViewModel.syncPendingNotes(userName!!)
+                mainViewModel.syncPendingNotes()
             }
         } catch (e: Exception) {
             Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")

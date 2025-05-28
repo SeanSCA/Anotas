@@ -215,7 +215,7 @@ class AdapterNotes(
     }
 
     fun sendNote(context: Context, note: Note) {
-        showNestedAlertDialog(context, note = note)
+//        showNestedAlertDialog(context, note = note)
     }
 
     private fun Print(context: Context, text: String) {
@@ -224,44 +224,44 @@ class AdapterNotes(
 
     override fun getItemCount() = list.size
 
-    private fun showNestedAlertDialog(context: Context, note: Note) {
-        val builder = AlertDialog.Builder(context)
-        builder.setTitle(context.getString(R.string.sendNoteWho))
-
-        // Crear el campo de entrada
-        val layout = LinearLayout(context)
-        layout.orientation = LinearLayout.VERTICAL
-        val nameInput =
-            EditText(context).apply { hint = context.getString(R.string.sendNoteUserName) }
-        layout.addView(nameInput)
-        builder.setView(layout)
-
-        builder.setPositiveButton(context.getString(R.string.sendNoteAccept)) { _, _ ->
-            // Llamar a la función suspensiva dentro de una corrutina
-            val userToSend = nameInput.text.toString().lowercase()
-            CoroutineScope(Dispatchers.IO).launch {
-                val tokens = getTokenByUser(userToSend, context)
-                if (tokens.isNotEmpty()) {
-                    tokens.forEach { it ->
-                        sendPushNotificationToUserWithNote(userToSend, note, context, it)
-                    }
-                } else {
-                    // Se asegura de que el código de UI se ejecute en el hilo principal
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.sendNoteUserNotExists),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            }
-        }.setNegativeButton(context.getString(R.string.sendNoteDecline)) { _, _ ->
-            showConfirmationDialog(
-                context, note
-            )
-        }.show()
-    }
+//    private fun showNestedAlertDialog(context: Context, note: Note) {
+//        val builder = AlertDialog.Builder(context)
+//        builder.setTitle(context.getString(R.string.sendNoteWho))
+//
+//        // Crear el campo de entrada
+//        val layout = LinearLayout(context)
+//        layout.orientation = LinearLayout.VERTICAL
+//        val nameInput =
+//            EditText(context).apply { hint = context.getString(R.string.sendNoteUserName) }
+//        layout.addView(nameInput)
+//        builder.setView(layout)
+//
+//        builder.setPositiveButton(context.getString(R.string.sendNoteAccept)) { _, _ ->
+//            // Llamar a la función suspensiva dentro de una corrutina
+//            val userToSend = nameInput.text.toString().lowercase()
+//            CoroutineScope(Dispatchers.IO).launch {
+//                val tokens = getTokenByUser(userToSend, context)
+//                if (tokens.isNotEmpty()) {
+//                    tokens.forEach { it ->
+//                        sendPushNotificationToUserWithNote(userToSend, note, context, it)
+//                    }
+//                } else {
+//                    // Se asegura de que el código de UI se ejecute en el hilo principal
+//                    withContext(Dispatchers.Main) {
+//                        Toast.makeText(
+//                            context,
+//                            context.getString(R.string.sendNoteUserNotExists),
+//                            Toast.LENGTH_LONG
+//                        ).show()
+//                    }
+//                }
+//            }
+//        }.setNegativeButton(context.getString(R.string.sendNoteDecline)) { _, _ ->
+//            showConfirmationDialog(
+//                context, note
+//            )
+//        }.show()
+//    }
 
 
     private fun showConfirmationDialog(context: Context, note: Note) {
@@ -275,7 +275,7 @@ class AdapterNotes(
                     Toast.LENGTH_SHORT
                 ).show()
             }.setNegativeButton("No") { _, _ ->
-                showNestedAlertDialog(context, note)
+//                showNestedAlertDialog(context, note)
             }.show()
     }
 
@@ -329,14 +329,14 @@ class AdapterNotes(
 //        builder.show()
 //    }
 
-    private suspend fun getTokenByUser(userName: String, context: Context): List<String> =
-        withContext(Dispatchers.IO) {
-            val localToken = CrudApi().getTokenByUser(userName).map { it.token }
-
-            Log.i("UserToken", localToken.toString())
-
-            return@withContext localToken
-        }
+//    private suspend fun getTokenByUser(userName: String, context: Context): List<String> =
+//        withContext(Dispatchers.IO) {
+//            val localToken = CrudApi().getTokenByUser(userName).map { it.token }
+//
+//            Log.i("UserToken", localToken.toString())
+//
+//            return@withContext localToken
+//        }
 
 
     private fun sendPushNotificationToUserWithNote(
@@ -363,8 +363,8 @@ class AdapterNotes(
                             put("title", note.title)
                             put("textContent", note.textContent)
                             put("date", note.date)
-                            put("userFrom", note.userFrom)
-                            put("userTo", userName)
+//                            put("userFrom", note.userFrom)
+//                            put("userTo", userName)
                             put("updatedTime", note.updatedTime.toString())
                         })
                     })
@@ -395,7 +395,7 @@ class AdapterNotes(
 
 
     private fun updateNoteUserTo(note: Note, userTo: String, context: Context) {
-        note.userTo = userTo
+//        note.userTo = userTo
         CoroutineScope(Dispatchers.IO).launch {
             db = AppDatabase.getDatabase(context)
             db.noteDAO().updateNote(note)
