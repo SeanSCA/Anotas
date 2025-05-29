@@ -10,45 +10,20 @@ import java.util.UUID
 data class Note(
     @PrimaryKey @SerializedName("code") val code: Int = UUID.randomUUID().hashCode(),
 
-    @SerializedName("Id") var id: Int?,
+    @SerializedName("title") var title: String = "",
 
-    @SerializedName("title") var title: String,
+    @SerializedName("textContent") var textContent: String = "",
 
-    @SerializedName("textContent") var textContent: String,
-
-    @SerializedName("date") var date: String,
-
-//    @SerializedName("userFrom") var userFrom: String,
-
-//    @SerializedName("userTo") var userTo: String?,
-
-    @SerializedName("updatedTime") var updatedTime: Long,
-
-    var syncStatus: SyncStatus = SyncStatus.SYNCED,
-
-    var isSynced: Boolean = true
+    @SerializedName("date") var date: String = ""
 ) {
     constructor(
-        id: Int?,
-        title: String,
-        textContent: String,
-        date: String,
-//        userFrom: String,
-//        userTo: String?,
-        updatedTime: Long
+        title: String, textContent: String, date: String
     ) : this(
-        code = UUID.randomUUID().hashCode(),
-        id = id,
-        title = title,
-        textContent = textContent,
-        date = date,
-//        userFrom = userFrom,
-//        userTo = userTo,
-        updatedTime = updatedTime
+        code = UUID.randomUUID().hashCode(), title = title, textContent = textContent, date = date
     )
 
     override fun toString(): String {
-//        return "Note(id= $id, code=$code, title='$title', textContent='$textContent', date='$date', userFrom='$userFrom', userTo=$userTo, isSynced='$isSynced'"
-        return "Note(id= $id, code=$code, title='$title', textContent='$textContent', date='$date', isSynced='$isSynced'"
+        return "Note(code=$code, title='$title', textContent='$textContent', date='$date')"
     }
+
 }
