@@ -40,14 +40,6 @@ class RepositoryNotes(private val noteDAO: NoteDAO, private val tokenDAO: TokenD
         return tokenDAO.getToken()
     }
 
-    fun getNoteByCode(codeSearchUpdate: Int): Note {
-        return noteDAO.getNoteByCode(codeSearchUpdate)
-    }
-
-    fun getNoteSynced(): List<Note> {
-        return noteDAO.getNotesList().filter { !it.isSynced }
-    }
-
     fun updateNote(note: Note){
         noteDAO.updateNote(note = note)
     }
