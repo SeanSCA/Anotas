@@ -130,21 +130,17 @@ dependencies {
 
     implementation("javax.inject:javax.inject:1")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
-    implementation("com.google.firebase:firebase-analytics")
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
 
-    implementation("com.onesignal:OneSignal:[5.0.0, 5.99.99]")
+    // Declare the dependency for the Cloud Firestore library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+//    implementation("com.onesignal:OneSignal:[5.0.0, 5.99.99]")
 
     implementation("com.google.dagger:hilt-android:2.44")
     kapt("com.google.dagger:hilt-android-compiler:2.44")
-
-    implementation("com.google.api:gax:2.8.0") // Latest version may vary
-
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.10.0") // Latest version may vary
-
-    implementation("com.google.api-client:google-api-client:1.32.1") // Latest version may vary
-
-    implementation("com.google.api-client:google-api-client-gson:1.32.1") // For JSON support
 
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
 
