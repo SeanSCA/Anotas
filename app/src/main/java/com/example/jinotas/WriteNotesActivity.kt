@@ -36,7 +36,6 @@ class WriteNotesActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListen
         setContentView(binding.root)
         mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-//        val userNameFrom = intent.getStringExtra("userFrom")
         mContentEditText = binding.noteContent
         binding.btReturnToNotes.setOnClickListener {
             vibratePhone(this)
@@ -59,7 +58,6 @@ class WriteNotesActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListen
             disableSaveButton()
             vibratePhone(this)
 
-//            val note = createNote(userNameFrom)
             val note = createNote()
             mainViewModel.saveNoteConcurrently(note)
 
@@ -75,18 +73,14 @@ class WriteNotesActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListen
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun createNote(/*userNameFrom: String?*/): Note {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private fun createNote(): Note {
+        val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
         val current = LocalDateTime.now().format(formatter)
 
         return Note(
-            id = null,
             title = binding.etTitle.text.toString(),
             textContent = binding.noteContent.getPlainTextContent(),
-            date = current.toString(),
-//            userFrom = userNameFrom ?: "",
-//            userTo = null,
-            updatedTime = System.currentTimeMillis()
+            date = current.toString()
         )
     }
 
