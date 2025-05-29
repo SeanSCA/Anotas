@@ -33,9 +33,9 @@ object UtilsDBAPI {
     val API_TOKEN = dotenv["API_TOKEN"]
 
     //Esto es para almacenar en la api
-    suspend fun saveNoteToCloud(note: Note, context: Context) {
-        CrudApi.postNote(note, context)
-    }
+//    suspend fun saveNoteToCloud(note: Note, context: Context) {
+//        CrudApi.postNote(note, context)
+//    }
 
     //Esto es para modificar en la api
     suspend fun updateNoteInCloud(note: Note, context: Context) {
@@ -45,9 +45,9 @@ object UtilsDBAPI {
     //Esto es para eliminar en la api
     suspend fun deleteNoteInCloud(note: Note, context: Context) {
         Log.e("deleteNote", note.toString())
-        if(note.id != null){
-            CrudApi().deleteNote(note.id!!)
-        }
+//        if(note.id != null){
+//            CrudApi().deleteNote(note.id!!)
+//        }
     }
     //-------------------
 
