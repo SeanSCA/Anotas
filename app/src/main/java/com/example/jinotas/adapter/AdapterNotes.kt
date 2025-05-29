@@ -1,48 +1,25 @@
 package com.example.jinotas.adapter
 
-import android.app.Activity
 import android.app.ActivityOptions
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.text.Editable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.R
 import com.example.jinotas.ShowNoteActivity
-import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
-import com.example.jinotas.utils.SyncStatus
 import com.example.jinotas.utils.ThemeUtils
-import com.example.jinotas.utils.Utils.getAccessToken
-import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.google.gson.Gson
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.Response
-import org.json.JSONObject
-import java.io.IOException
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class AdapterNotes(
@@ -123,95 +100,43 @@ class AdapterNotes(
         notifyDataSetChanged()
     }
 
-//    fun deleteNoteDBApi(context: Context, note: Note) {
+    fun deleteNoteDBApi(context: Context, note: Note) {
 //        CoroutineScope(Dispatchers.IO).launch {
-//            db = AppDatabase.getDatabase(context)
-//            var existingNote: Note? = null
 //            try {
-//                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
-//                Log.e("notaeliminar", existingNote.code.toString())
-//                CrudApi().deleteNote(existingNote.id!!)  // Llamada a la API para borrar la nota mediante la Id
+//                db = AppDatabase.getDatabase(context)
+//                note.syncStatus = SyncStatus.DELETED // ✅ Marcar como eliminada en local
+//                note.updatedTime = System.currentTimeMillis()
+//                db.noteDAO().updateNote(note)
 //
-//                db.noteDAO()
-//                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+//                if (isConnectionStableAndFast(context)) {
+//                    CrudApi().deleteNote(note.id!!) // Intentar eliminar en la nube
+//                    db.noteDAO().deleteNote(note) // ✅ Borrar definitivamente tras éxito
+//                }
 //
-//                // Actualización de la lista y notificación en el hilo principal
 //                withContext(Dispatchers.Main) {
 //                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
 //                }
-//
 //            } catch (e: Exception) {
-//                // Manejo de errores
 //                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
-//            } finally {
-//                if (existingNote != null) {
-//                    db.noteDAO()
-//                        .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
-//                }
 //            }
 //        }
-//    }
-
-    fun deleteNoteDBApi(context: Context, note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                db = AppDatabase.getDatabase(context)
-                note.syncStatus = SyncStatus.DELETED // ✅ Marcar como eliminada en local
-                note.updatedTime = System.currentTimeMillis()
-                db.noteDAO().updateNote(note)
-
-                if (isConnectionStableAndFast(context)) {
-                    CrudApi().deleteNote(note.id!!) // Intentar eliminar en la nube
-                    db.noteDAO().deleteNote(note) // ✅ Borrar definitivamente tras éxito
-                }
-
-                withContext(Dispatchers.Main) {
-                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
-                }
-            } catch (e: Exception) {
-                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
-            }
-        }
     }
 
-
-//    fun deleteNoteDB(context: Context, note: Note) {
+    fun deleteNoteDB(context: Context, note: Note) {
 //        CoroutineScope(Dispatchers.IO).launch {
-//            db = AppDatabase.getDatabase(context)
-//            var existingNote: Note? = null
 //            try {
-//                existingNote = note.code.let { db.noteDAO().getNoteByCode(it) }
-//                Log.e("notaeliminar", existingNote.code.toString())
-//                db.noteDAO()
-//                    .deleteNoteWithTransaction(existingNote)  // Eliminación en la base de datos local
+//                db = AppDatabase.getDatabase(context)
+//                note.syncStatus = SyncStatus.DELETED
+//                note.updatedTime = System.currentTimeMillis()
+//                db.noteDAO().updateNote(note)
 //
-//                // Actualización de la lista y notificación en el hilo principal
 //                withContext(Dispatchers.Main) {
 //                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
 //                }
-//
 //            } catch (e: Exception) {
-//                // Manejo de errores
-//                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
+//                Log.e("deleteNoteDB", "Error eliminando localmente: ${e.message}")
 //            }
 //        }
-//    }
-
-    fun deleteNoteDB(context: Context, note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                db = AppDatabase.getDatabase(context)
-                note.syncStatus = SyncStatus.DELETED
-                note.updatedTime = System.currentTimeMillis()
-                db.noteDAO().updateNote(note)
-
-                withContext(Dispatchers.Main) {
-                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
-                }
-            } catch (e: Exception) {
-                Log.e("deleteNoteDB", "Error eliminando localmente: ${e.message}")
-            }
-        }
     }
 
     fun sendNote(context: Context, note: Note) {
@@ -224,60 +149,20 @@ class AdapterNotes(
 
     override fun getItemCount() = list.size
 
-//    private fun showNestedAlertDialog(context: Context, note: Note) {
+//    private fun showConfirmationDialog(context: Context, note: Note) {
 //        val builder = AlertDialog.Builder(context)
-//        builder.setTitle(context.getString(R.string.sendNoteWho))
-//
-//        // Crear el campo de entrada
-//        val layout = LinearLayout(context)
-//        layout.orientation = LinearLayout.VERTICAL
-//        val nameInput =
-//            EditText(context).apply { hint = context.getString(R.string.sendNoteUserName) }
-//        layout.addView(nameInput)
-//        builder.setView(layout)
-//
-//        builder.setPositiveButton(context.getString(R.string.sendNoteAccept)) { _, _ ->
-//            // Llamar a la función suspensiva dentro de una corrutina
-//            val userToSend = nameInput.text.toString().lowercase()
-//            CoroutineScope(Dispatchers.IO).launch {
-//                val tokens = getTokenByUser(userToSend, context)
-//                if (tokens.isNotEmpty()) {
-//                    tokens.forEach { it ->
-//                        sendPushNotificationToUserWithNote(userToSend, note, context, it)
-//                    }
-//                } else {
-//                    // Se asegura de que el código de UI se ejecute en el hilo principal
-//                    withContext(Dispatchers.Main) {
-//                        Toast.makeText(
-//                            context,
-//                            context.getString(R.string.sendNoteUserNotExists),
-//                            Toast.LENGTH_LONG
-//                        ).show()
-//                    }
-//                }
-//            }
-//        }.setNegativeButton(context.getString(R.string.sendNoteDecline)) { _, _ ->
-//            showConfirmationDialog(
-//                context, note
-//            )
-//        }.show()
+//        builder.setTitle(context.getString(R.string.sendNoteConfirmation))
+//            .setMessage(context.getString(R.string.sendNoteConfirmationCancel))
+//            .setPositiveButton("Ok") { _, _ ->
+//                Toast.makeText(
+//                    context,
+//                    context.getString(R.string.sendNoteConfirmationCanceled),
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            }.setNegativeButton("No") { _, _ ->
+////                showNestedAlertDialog(context, note)
+//            }.show()
 //    }
-
-
-    private fun showConfirmationDialog(context: Context, note: Note) {
-        val builder = AlertDialog.Builder(context)
-        builder.setTitle(context.getString(R.string.sendNoteConfirmation))
-            .setMessage(context.getString(R.string.sendNoteConfirmationCancel))
-            .setPositiveButton("Ok") { _, _ ->
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.sendNoteConfirmationCanceled),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }.setNegativeButton("No") { _, _ ->
-//                showNestedAlertDialog(context, note)
-            }.show()
-    }
 
     // Método para mostrar el formulario en un AlertDialog
 //    private fun showFormDialog(context: Context, note: Note) {
@@ -328,82 +213,6 @@ class AdapterNotes(
 //        // Mostrar el diálogo
 //        builder.show()
 //    }
-
-//    private suspend fun getTokenByUser(userName: String, context: Context): List<String> =
-//        withContext(Dispatchers.IO) {
-//            val localToken = CrudApi().getTokenByUser(userName).map { it.token }
-//
-//            Log.i("UserToken", localToken.toString())
-//
-//            return@withContext localToken
-//        }
-
-
-    private fun sendPushNotificationToUserWithNote(
-        userName: String, note: Note, context: Context, tokenReceptor: String
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val accessToken = getAccessToken(context)
-//            val tokenReceptor = getTokenByUser(userName, context)
-
-            if (tokenReceptor.isNotEmpty()) {
-                val url = dotenv["URL_SEND_MESSAGE"]
-
-                Log.e("urlFire", url)
-                val noteJson = Gson().toJson(note)
-                Log.e("idNota", note.id.toString())
-
-                val client = OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build()
-                val json = JSONObject().apply {
-                    put("message", JSONObject().apply {
-                        put("token", tokenReceptor)
-                        put("data", JSONObject().apply {
-                            put("id", note.id.toString())
-                            put("code", note.code.toString())
-                            put("title", note.title)
-                            put("textContent", note.textContent)
-                            put("date", note.date)
-//                            put("userFrom", note.userFrom)
-//                            put("userTo", userName)
-                            put("updatedTime", note.updatedTime.toString())
-                        })
-                    })
-                }
-
-                updateNoteUserTo(note, userName, context)
-
-                val body = RequestBody.create(
-                    "application/json; charset=utf-8".toMediaType(), json.toString()
-                )
-                val request = Request.Builder().url(url).post(body)
-                    .addHeader("Authorization", "Bearer $accessToken").build()
-
-                client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        e.printStackTrace()
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        Log.i("sendNotification", "Response: ${response.body?.string()}")
-                    }
-                })
-            } else {
-                Log.e("sendNotification", "Token receptor es nulo")
-            }
-        }
-    }
-
-
-    private fun updateNoteUserTo(note: Note, userTo: String, context: Context) {
-//        note.userTo = userTo
-        CoroutineScope(Dispatchers.IO).launch {
-            db = AppDatabase.getDatabase(context)
-            db.noteDAO().updateNote(note)
-            CrudApi().patchNote(note)
-            Log.i("noteUpdateUserTo", "Notas actualizadas en BD local y api")
-
-        }
-    }
 
     private fun processChecklists(content: Editable, context: Context, textView: TextView) {
         if (content.isEmpty()) {
