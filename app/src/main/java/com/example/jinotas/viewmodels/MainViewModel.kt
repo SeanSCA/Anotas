@@ -1,49 +1,30 @@
 package com.example.jinotas.viewmodels
 
 import android.app.Application
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import com.example.jinotas.R
-import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.db.RepositoryNotes
 import com.example.jinotas.db.Token
 import com.example.jinotas.db.UserToken
-import com.example.jinotas.utils.SyncStatus
 import com.example.jinotas.utils.Utils
-import com.example.jinotas.utils.UtilsDBAPI.deleteNoteInCloud
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteToLocalDatabase
-import com.example.jinotas.utils.UtilsDBAPI.updateNoteInCloud
-import com.example.jinotas.utils.UtilsDBAPI.updateNoteInLocalDatabase
-import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
-import com.example.jinotas.widget.WidgetProvider
 import com.google.android.material.navigation.NavigationView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext: Context = getApplication<Application>().applicationContext
     private val db: AppDatabase = AppDatabase.getDatabase(application)
     private val repositoryNotes = RepositoryNotes(db.noteDAO(), db.tokenDAO())
-    private val crudApi: CrudApi = CrudApi()
     private val sharedPreferences: SharedPreferences =
         appContext.getSharedPreferences("MyPrefsFile", Context.MODE_PRIVATE)
 
@@ -53,14 +34,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _noteSavedMessage = MutableLiveData<String>()
     val noteSavedMessage: LiveData<String> get() = _noteSavedMessage
 
-    private val _noteByCode = MutableLiveData<Note>()
-    val noteByCode: LiveData<Note> get() = _noteByCode
+    private val _noteByCode = MutableLiveData<Note?>()
+    val noteByCode: LiveData<Note?> get() = _noteByCode
+
 
 //    private val _notesListStyle = MutableStateFlow<String>("Valor no encontrado")
 //    val notesListStyle: StateFlow<String> get() = _notesListStyle
 
     private val _notesListStyle = MutableLiveData<String>()
     val notesListStyle: LiveData<String> get() = _notesListStyle
+
+    private val _mutableNotesList = MutableLiveData<List<Note>>()
+    val notesList: LiveData<List<Note>> get() = _mutableNotesList
 
 
     /**
@@ -84,82 +69,82 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @param userName the username of the logged user
      */
     fun syncPendingNotes(/*userName: String*/) {
-        viewModelScope.launch {
-            if (isConnectionStableAndFast(appContext)) {
-
-                val cloudNotes = (crudApi.getNotesList() as? ArrayList<Note>) ?: arrayListOf()
-                val pendingNotes = repositoryNotes.getNoteSynced()
-                val localNotes = repositoryNotes.getNotesList()
-
-                // Filtrar notas en la nube que pertenecen al usuario actual
-                val userCloudNotes =
-                    cloudNotes/*.filter { it.userFrom == userName }*/      //Se ha comentado para no tener que usar usuarios
-
-                // Obtener los códigos de notas locales
-                val localCodes = localNotes.map { it.code }.toSet()
-
-                // Identificar qué notas en la nube deben eliminarse (las que no existen localmente)
-                val notesToDelete = userCloudNotes.filter { it.code !in localCodes }
-
-                for (note in pendingNotes) {
-                    val cloudNote = cloudNotes.find { it.code == note.code }
-
-                    if (cloudNote != null) {
-                        if (note.updatedTime!! > cloudNote.updatedTime!!) {
-                            // 🔹 Solo actualizar en la nube si la versión local es más reciente
-                            updateNoteInCloud(note, appContext)
-                        } else {
-                            // 🔹 Si la nube tiene una versión más nueva, traerla a local
-                            repositoryNotes.updateNote(cloudNote)
-                        }
-                    } else {
-                        // 🔹 Si la nota no está en la nube, subirla
-                        saveNoteToCloud(note, appContext)
-                    }
-
-                    // ✅ Marcar como sincronizada
-                    note.isSynced = true
-                    note.syncStatus = SyncStatus.SYNCED
-                    repositoryNotes.updateNote(note)
-                    updateLastSyncTime()
-                }
-
-                for (note in cloudNotes) {
-                    if (!localNotes.any { it.code == note.code }) {
-                        if (note.updatedTime!! > getLastSyncTime()) {
-                            // 🔹 Si la nota es más reciente que la última sincronización, recuperarla en local
-                            repositoryNotes.insertNote(note)
-                            Log.i("Sync", "Nota restaurada desde la nube: ${note.title}")
-                        } else if (!cloudNotes.contains(note)) {
-                            repositoryNotes.insertNote(note)
-                        } else {
-                            // 🔹 Si la nota en local está marcada como eliminada, eliminarla de la nube
-                            if (notesToDelete.any { it.code == note.code }) {
-                                deleteNoteInCloud(note, appContext)
-                                Log.i("Sync", "Nota eliminada en la nube: ${note.title}")
-                            }
-                        }
-                    }
-                }
-
-                // 🔹 Solo eliminar si en local tiene estado DELETED
-                for (note in localNotes.filter { it.syncStatus == SyncStatus.DELETED }) {
-                    deleteNoteInCloud(note, appContext)
-                    repositoryNotes.deleteNote(note) // 🔹 Eliminar también de local después de confirmar eliminación en la nube
-                    Log.i("Sync", "Nota eliminada en la nube: ${note.title}")
-                }
-
-                // 🔹 Si la nota está en la nube pero no en local, podríamos recuperarla
-                for (note in cloudNotes) {
-                    if (!localNotes.any { it.code == note.code }) {
-                        repositoryNotes.insertNote(note)  // 🔹 Recuperamos la nota en local
-                        Log.i("Sync", "Nota recuperada desde la nube: ${note.title}")
-                    }
-                }
-
-            }
-        }
-        println("Llega hasta aquí")
+//        viewModelScope.launch {
+//            if (isConnectionStableAndFast(appContext)) {
+//
+//                val cloudNotes = (crudApi.getNotesList() as? ArrayList<Note>) ?: arrayListOf()
+//                val pendingNotes = repositoryNotes.getNoteSynced()
+//                val localNotes = repositoryNotes.getNotesList()
+//
+//                // Filtrar notas en la nube que pertenecen al usuario actual
+//                val userCloudNotes =
+//                    cloudNotes/*.filter { it.userFrom == userName }*/      //Se ha comentado para no tener que usar usuarios
+//
+//                // Obtener los códigos de notas locales
+//                val localCodes = localNotes.map { it.code }.toSet()
+//
+//                // Identificar qué notas en la nube deben eliminarse (las que no existen localmente)
+//                val notesToDelete = userCloudNotes.filter { it.code !in localCodes }
+//
+//                for (note in pendingNotes) {
+//                    val cloudNote = cloudNotes.find { it.code == note.code }
+//
+//                    if (cloudNote != null) {
+//                        if (note.updatedTime!! > cloudNote.updatedTime!!) {
+//                            // 🔹 Solo actualizar en la nube si la versión local es más reciente
+//                            updateNoteInCloud(note, appContext)
+//                        } else {
+//                            // 🔹 Si la nube tiene una versión más nueva, traerla a local
+//                            repositoryNotes.updateNote(cloudNote)
+//                        }
+//                    } else {
+//                        // 🔹 Si la nota no está en la nube, subirla
+//                        saveNoteToCloud(note, appContext)
+//                    }
+//
+//                    // ✅ Marcar como sincronizada
+//                    note.isSynced = true
+//                    note.syncStatus = SyncStatus.SYNCED
+//                    repositoryNotes.updateNote(note)
+//                    updateLastSyncTime()
+//                }
+//
+//                for (note in cloudNotes) {
+//                    if (!localNotes.any { it.code == note.code }) {
+//                        if (note.updatedTime!! > getLastSyncTime()) {
+//                            // 🔹 Si la nota es más reciente que la última sincronización, recuperarla en local
+//                            repositoryNotes.insertNote(note)
+//                            Log.i("Sync", "Nota restaurada desde la nube: ${note.title}")
+//                        } else if (!cloudNotes.contains(note)) {
+//                            repositoryNotes.insertNote(note)
+//                        } else {
+//                            // 🔹 Si la nota en local está marcada como eliminada, eliminarla de la nube
+//                            if (notesToDelete.any { it.code == note.code }) {
+//                                deleteNoteInCloud(note, appContext)
+//                                Log.i("Sync", "Nota eliminada en la nube: ${note.title}")
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                // 🔹 Solo eliminar si en local tiene estado DELETED
+//                for (note in localNotes.filter { it.syncStatus == SyncStatus.DELETED }) {
+//                    deleteNoteInCloud(note, appContext)
+//                    repositoryNotes.deleteNote(note) // 🔹 Eliminar también de local después de confirmar eliminación en la nube
+//                    Log.i("Sync", "Nota eliminada en la nube: ${note.title}")
+//                }
+//
+//                // 🔹 Si la nota está en la nube pero no en local, podríamos recuperarla
+//                for (note in cloudNotes) {
+//                    if (!localNotes.any { it.code == note.code }) {
+//                        repositoryNotes.insertNote(note)  // 🔹 Recuperamos la nota en local
+//                        Log.i("Sync", "Nota recuperada desde la nube: ${note.title}")
+//                    }
+//                }
+//
+//            }
+//        }
+//        println("Llega hasta aquí")
     }
 
     fun getLastSyncTime(): Long {
@@ -172,75 +157,70 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
     fun saveNoteConcurrently(note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                note.updatedTime = System.currentTimeMillis() // ✅ Actualizar timestamp
-                note.syncStatus = SyncStatus.CREATED // ✅ Marcar como nueva
-                note.isSynced = isConnectionStableAndFast(appContext)
+        val db = Firebase.firestore
 
-                repositoryNotes.insertNote(note) // Guardar localmente
-
-                if (note.isSynced) {
-                    saveNoteToCloud(note, appContext) // Guardar en la nube
-                    note.syncStatus = SyncStatus.SYNCED // ✅ Marcar como sincronizada
-                    repositoryNotes.updateNote(note) // Actualizar estado local
-                }
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        appContext,
-                        if (note.isSynced) "Nota sincronizada" else "Guardada localmente",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Log.e("saveNoteConcurrently", "Error al guardar: ${e.message}")
-            }
+        // Add a new document with a generated ID
+        db.collection("notas").add(note).addOnSuccessListener {
+            Log.d("Nota Insertada", note.toString())
+        }.addOnFailureListener { e ->
+            Log.d("Nota No Insertada", note.toString())
         }
     }
 
 
     fun overwriteNoteConcurrently(note: Note) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                note.updatedTime = System.currentTimeMillis() // ✅ Actualizar timestamp
-                note.syncStatus = SyncStatus.UPDATED // ✅ Marcar como modificada
-                note.isSynced = isConnectionStableAndFast(appContext)
+        val db = Firebase.firestore
 
-                repositoryNotes.updateNote(note) // Guardar cambios en local
+        db.collection("notas").whereEqualTo("code", note.code).get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    for (document in result) {
+                        val docId = document.id
 
-                if (note.isSynced) {
-                    updateNoteInCloud(note, appContext) // Actualizar en la nube
-                    note.syncStatus = SyncStatus.SYNCED // ✅ Marcar como sincronizada
-                    repositoryNotes.updateNote(note) // Guardar estado actualizado
+                        // Aquí modificamos campos individuales
+                        db.collection("notas").document(docId).update(
+                            mapOf(
+                                "title" to note.title, "textContent" to note.textContent
+                            )
+                        ).addOnSuccessListener {
+                            Log.d("Firestore", "Nota actualizada correctamente")
+                        }.addOnFailureListener { e ->
+                            Log.w("Firestore", "Error al actualizar", e)
+                        }
+                    }
+                } else {
+                    Log.d("Firestore", "No se encontró ninguna nota con code = $note.code")
                 }
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        appContext,
-                        if (note.isSynced) "Nota sincronizada" else "Actualizada localmente",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Log.e("overwriteNoteConcurrently", "Error al actualizar: ${e.message}")
+            }.addOnFailureListener { e ->
+                Log.w("Firestore", "Error al buscar nota", e)
             }
-        }
     }
 
 
     /**
      * Load all the notes into the recyclerview
      */
-    fun loadNotes(): ArrayList<Note>? {
-        return try {
-            val notes = db.noteDAO().getNotesList()
-                .filter { it.syncStatus != SyncStatus.DELETED } as ArrayList<Note>
-            notes
-        } catch (e: Exception) {
-            null
+    fun loadNotes() {
+        val db = Firebase.firestore
+
+        db.collection("notas").addSnapshotListener { snapshots, exception ->
+            if (exception != null) {
+                Log.w("Firestore", "Error al escuchar cambios", exception)
+                return@addSnapshotListener
+            }
+
+            if (snapshots != null && !snapshots.isEmpty) {
+                val notes = snapshots.map { it.toObject(Note::class.java) }
+                _mutableNotesList.value = notes
+                Log.d("LoadNotes", notes.toString())
+                Log.d("Firestore", "Notas actualizadas: $notes")
+            } else {
+                _mutableNotesList.value = emptyList()
+                Log.d("Firestore", "No hay notas")
+            }
         }
     }
+
 
     /**
      * Sort all notes in the list according to the chosen option
@@ -285,14 +265,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Gets a note by a given code
      * @param codeSearchUpdate the note code to search
      */
+//    fun getNoteByCode(codeSearchUpdate: Int) {
+//        try {
+//            viewModelScope.launch {
+//                _noteByCode.postValue(repositoryNotes.getNoteByCode(codeSearchUpdate))
+//            }
+//        } catch (e: Exception) {
+//            Log.e("getNoteByCode", e.message.toString())
+//        }
+//    }
+
+    /**
+     * Gets a note by a given code
+     * @param codeSearchUpdate the note code to search
+     */
     fun getNoteByCode(codeSearchUpdate: Int) {
-        try {
-            viewModelScope.launch {
-                _noteByCode.postValue(repositoryNotes.getNoteByCode(codeSearchUpdate))
+        val db = Firebase.firestore
+
+        db.collection("notas").whereEqualTo("code", codeSearchUpdate).get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    val note = result.documents[0].toObject(Note::class.java)
+                    _noteByCode.value = note!!
+                    Log.d("Firestore", "Nota encontrada: $note")
+                } else {
+                    _noteByCode.value = null!!
+                    Log.d("Firestore", "No se encontró ninguna nota con code = $codeSearchUpdate")
+                }
+            }.addOnFailureListener { exception ->
+                Log.e("Firestore", "Error al buscar la nota", exception)
             }
-        } catch (e: Exception) {
-            Log.e("getNoteByCode", e.message.toString())
-        }
     }
 
     /**
@@ -356,7 +358,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun saveNoteListStyle(name: String, context: Context) {
         viewModelScope.launch {
-            Utils.saveValues("Vertical", context)
+            Utils.saveValues(name, context)
         }
     }
 
