@@ -40,6 +40,7 @@ import com.google.firebase.ktx.Firebase
 import com.muddassir.connection_checker.ConnectionChecker
 import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
+import androidx.core.content.edit
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     ConnectivityListener {
@@ -168,59 +169,11 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         val isFirstTime = sharedPreferences.getBoolean("isFirstTime", true)
 
         if (isFirstTime) {
-            // Si es la primera vez, mostrar el formulario
-//            showFormDialog(sharedPreferences)
-            //Se comenta el código de Firebase si no se tiene que enviar notas
-//            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-//                if (task.isSuccessful) {
-//                    val token = task.result
-//                    // Guarda este token en tu base de datos
-//                    mainViewModel.insertToken(Token(token = token))
-//
-//                    Log.e("Token del dispositivo:", token)
-//                }
-//            }
-//            FirebaseMessaging.getInstance().subscribeToTopic("global")
-//                .addOnCompleteListener { task ->
-//                    if (task.isSuccessful) {
-//                        Log.e("Topic", "Suscripción exitosa al topic global")
-//                    } else {
-//                        Log.e("Topic", "Error al suscribirse al topic")
-//                    }
-//                }
             mainViewModel.saveNoteListStyle("Vertical", applicationContext)
-
-            //Aqui también se comenta el código de Firebase
-//            val secretSharedPreferences = EncryptedSharedPreferences.create(
-//                "secure_shared_prefs",
-//                masterKeyAlias,
-//                applicationContext,
-//                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-//                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-//            )
-//
-//            val jsonString = getJsonFromAssets(applicationContext)
-//
-//            if (jsonString != null) {
-//                secretSharedPreferences.edit().putString("firebase_json", jsonString).apply()
-//            } else {
-//                println("❌ Error al cargar el archivo JSON")
-//            }
-        } else {
-//            userName = sharedPreferences.getString("userFrom", "")
-//            val headerView = navigationView.getHeaderView(0) // Esto obtiene la vista del encabezado
-//
-//            val navViewUserName = headerView.findViewById<TextView>(R.id.nav_username)
-//
-//            navViewUserName.text = userName
-//
-//            connectivityMonitor.registerCallback {
-//                mainViewModel.syncPendingNotes(userName!!)
-//            }
-//
-//            Log.e("username null", "no es null")
-//            Log.e("userNameGuardado", userName!!)
+            Log.i("isFirstTime", "isFirstTime iniciado a vertical")
+            sharedPreferences.edit { putBoolean("isFirstTime", false) }
         }
+
         connectivityMonitor.registerCallback {
             mainViewModel.syncPendingNotes()
         }
