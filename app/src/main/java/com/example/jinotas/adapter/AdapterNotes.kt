@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.text.Editable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,10 +15,11 @@ import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.R
 import com.example.jinotas.ShowNoteActivity
-import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.ThemeUtils
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext
@@ -26,7 +28,7 @@ class AdapterNotes(
     private var list: ArrayList<Note>, override val coroutineContext: CoroutineContext
 ) : RecyclerView.Adapter<AdapterNotes.ViewHolder>(), CoroutineScope {
 
-    private lateinit var db: AppDatabase
+    private val db = Firebase.firestore
     private var canConnect: Boolean = false
     val dotenv = dotenv {
         directory = "/assets"
@@ -101,25 +103,32 @@ class AdapterNotes(
     }
 
     fun deleteNoteDBApi(context: Context, note: Note) {
-//        CoroutineScope(Dispatchers.IO).launch {
-//            try {
-//                db = AppDatabase.getDatabase(context)
-//                note.syncStatus = SyncStatus.DELETED // ✅ Marcar como eliminada en local
-//                note.updatedTime = System.currentTimeMillis()
-//                db.noteDAO().updateNote(note)
-//
-//                if (isConnectionStableAndFast(context)) {
-//                    CrudApi().deleteNote(note.id!!) // Intentar eliminar en la nube
-//                    db.noteDAO().deleteNote(note) // ✅ Borrar definitivamente tras éxito
-//                }
-//
-//                withContext(Dispatchers.Main) {
-//                    updateList(db.noteDAO().getNotesList() as ArrayList<Note>)
-//                }
-//            } catch (e: Exception) {
-//                Log.e("deleteNoteDBApi", "Error eliminando la nota: ${e.message}")
-//            }
-//        }
+//        whereEqualTo("code", note.code)
+        var docId = ""
+        db.collection("notas").whereEqualTo("code", note.code).get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    for (document in result) {
+                        docId = document.id
+
+                        // Aquí se elimina la nota
+                        db.collection("notas").document(docId).delete().addOnSuccessListener {
+                                Log.d(
+                                    "Nota eliminada", "DocumentSnapshot successfully deleted!"
+                                )
+                            }.addOnFailureListener { e ->
+                                Log.w(
+                                    "Nota no eliminada", "Error deleting document", e
+                                )
+                            }
+                    }
+                } else {
+                    Log.d("Firestore", "No se encontró ninguna nota con code = $note.code")
+                }
+            }.addOnFailureListener { e ->
+                Log.w("Firestore", "Error al buscar nota", e)
+            }
+
     }
 
     fun deleteNoteDB(context: Context, note: Note) {
