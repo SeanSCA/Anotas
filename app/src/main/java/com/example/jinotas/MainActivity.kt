@@ -2,7 +2,6 @@ package com.example.jinotas
 
 import android.Manifest
 import android.app.ActivityOptions
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -10,7 +9,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.InputType
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -19,9 +17,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ExpandableListView
-import android.widget.LinearLayout
 import android.widget.PopupWindow
-import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -30,23 +26,17 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
-import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.jinotas.connection.ConnectivityMonitor
 import com.example.jinotas.databinding.ActivityMainBinding
-import com.example.jinotas.db.Token
 import com.example.jinotas.utils.Utils
-import com.example.jinotas.utils.Utils.getJsonFromAssets
-import com.example.jinotas.utils.Utils.masterKeyAlias
 import com.example.jinotas.utils.Utils.vibratePhone
 import com.example.jinotas.utils.UtilsInternet.checkConnectivity
 import com.example.jinotas.utils.UtilsInternet.isConnectedToInternet
-import com.example.jinotas.utils.UtilsInternet.isConnectionStableAndFast
 import com.example.jinotas.viewmodels.MainViewModel
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
-import com.google.firebase.messaging.FirebaseMessaging
 import com.muddassir.connection_checker.ConnectionChecker
 import com.muddassir.connection_checker.ConnectionState
 import com.muddassir.connection_checker.ConnectivityListener
@@ -135,9 +125,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         drawerLayout.closeDrawer(GravityCompat.START)
         //Hasta aqui
 
-
-//        Firebase.initialize(this)
-
         instance = this
 
 //        // Solicitar permisos de notificación si no están concedidos
@@ -148,7 +135,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION), PermissionCode
+                this, arrayOf(
+                    Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION
+                ), PermissionCode
             )
         }
 
@@ -156,7 +145,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         binding.btCreateNote.setOnClickListener {
             vibratePhone(this)
             val intent = Intent(this, WriteNotesActivity::class.java)
-//            intent.putExtra("userFrom", userName)
 
             val options = ActivityOptions.makeCustomAnimation(
                 applicationContext, R.anim.fade_in, R.anim.fade_out
@@ -393,17 +381,19 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         ActivityCompat.requestPermissions(
-                            this@MainActivity,
-                            arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION),
-                            PermissionCode
+                            this@MainActivity, arrayOf(
+                                Manifest.permission.POST_NOTIFICATIONS,
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                            ), PermissionCode
                         )
                     }
                 }
             } else {
                 ActivityCompat.requestPermissions(
-                    this@MainActivity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION),
-                    PermissionCode
+                    this@MainActivity, arrayOf(
+                        Manifest.permission.POST_NOTIFICATIONS,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ), PermissionCode
                 )
             }
         }

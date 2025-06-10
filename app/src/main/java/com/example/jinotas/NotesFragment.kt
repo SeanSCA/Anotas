@@ -158,13 +158,18 @@ class NotesFragment : Fragment() {
     fun loadNotes() {
         if (::notesListStyle.isInitialized) {
             lifecycleScope.launch {
-                notesList = mainViewModel.loadNotes()!!
-                adapterNotes = AdapterNotes(notesList, coroutineContext)
-                Log.i("cargarNotas", "ha cargado las notas")
-                showNotes()
+                mainViewModel.loadNotes()  // Carga desde Firebase
+
+                mainViewModel.notesList.observe(viewLifecycleOwner) { list ->
+                    notesList = ArrayList(list)  // convierte a ArrayList si es necesario
+                    adapterNotes = AdapterNotes(notesList, coroutineContext)
+                    showNotes()
+                }
             }
+
         }
     }
+
 
     /**
      * Shows only the notes with the @param filter as title

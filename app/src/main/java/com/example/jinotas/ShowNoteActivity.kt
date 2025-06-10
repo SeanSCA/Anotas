@@ -31,10 +31,11 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
         super.onCreate(savedInstanceState)
         binding = ActivityShowNoteBinding.inflate(layoutInflater)
 
+
+
         mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
         val codeSearchUpdate = intent.getIntExtra("code", 0)
-        val userName = intent.getStringExtra("userFrom")
         mContentEditText = binding.noteContent
 
         mainViewModel.getNoteByCode(codeSearchUpdate)
@@ -45,6 +46,7 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
             if (note != null) {
                 Log.e("noteByCode", note.toString())
                 notesShow = note
+
             }
 
             notesShow.let {
@@ -71,8 +73,8 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
 
             vibratePhone(this)
 
-            val note = updateNote(userName, codeSearchUpdate)
-            mainViewModel.overwriteNoteConcurrently(note)
+            val localNote = updateNote(codeSearchUpdate)
+            mainViewModel.overwriteNoteConcurrently(localNote)
 
             finishWithAnimation()
         }
@@ -86,19 +88,15 @@ class ShowNoteActivity : AppCompatActivity(), TextWatcher, OnFocusChangeListener
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun updateNote(userNameFrom: String?, codeSearchUpdate: Int): Note {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private fun updateNote(codeSearchUpdate: Int): Note {
+        val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
         val current = LocalDateTime.now().format(formatter)
 
         return Note(
-            id = notesShow.id,
             code = codeSearchUpdate,
             title = binding.etTitle.text.toString(),
             textContent = binding.noteContent.getPlainTextContent(),
-            date = current,
-//            userFrom = userNameFrom!!,
-//            userTo = null,
-            updatedTime = System.currentTimeMillis()
+            date = current
         )
     }
 

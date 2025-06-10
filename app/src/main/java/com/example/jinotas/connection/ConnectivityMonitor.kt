@@ -3,12 +3,6 @@ package com.example.jinotas.connection
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
-import android.util.Log
-import com.example.jinotas.db.AppDatabase
-import com.example.jinotas.utils.UtilsDBAPI.saveNoteToCloud
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class ConnectivityMonitor(private val context: Context) {
 

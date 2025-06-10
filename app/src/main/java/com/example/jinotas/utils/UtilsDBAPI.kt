@@ -2,23 +2,15 @@ package com.example.jinotas.utils
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.jinotas.api.CrudApi
 import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import io.github.cdimascio.dotenv.dotenv
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 object UtilsDBAPI {
-    private val CrudApi = CrudApi()
     private lateinit var db: AppDatabase
     lateinit var localPendingNotes: MutableList<Note>
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")    // Método para obtener el ID del dispositivo
@@ -33,21 +25,16 @@ object UtilsDBAPI {
     val API_TOKEN = dotenv["API_TOKEN"]
 
     //Esto es para almacenar en la api
-    suspend fun saveNoteToCloud(note: Note, context: Context) {
-        CrudApi.postNote(note, context)
-    }
-
-    //Esto es para modificar en la api
-    suspend fun updateNoteInCloud(note: Note, context: Context) {
-        CrudApi().patchNote(note)
-    }
+//    suspend fun saveNoteToCloud(note: Note, context: Context) {
+//        CrudApi.postNote(note, context)
+//    }
 
     //Esto es para eliminar en la api
     suspend fun deleteNoteInCloud(note: Note, context: Context) {
         Log.e("deleteNote", note.toString())
-        if(note.id != null){
-            CrudApi().deleteNote(note.id!!)
-        }
+//        if(note.id != null){
+//            CrudApi().deleteNote(note.id!!)
+//        }
     }
     //-------------------
 
