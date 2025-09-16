@@ -378,15 +378,15 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     }
 
     override fun onConnectionState(state: ConnectionState) {
-        try {
-            isConnectedToInternet = checkConnectivity(state, applicationContext)
-            Log.i("isConnectedToInternet", isConnectedToInternet.toString())
-            if (isConnectedToInternet != null) {
-//                mainViewModel.syncPendingNotes(userName!!)
-                mainViewModel.syncPendingNotes()
-            }
-        } catch (e: Exception) {
-            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
-        }
+//        try {
+//            isConnectedToInternet = checkConnectivity(state, applicationContext)
+//            Log.i("isConnectedToInternet", isConnectedToInternet.toString())
+//            if (isConnectedToInternet != null) {
+////                mainViewModel.syncPendingNotes(userName!!)
+//                mainViewModel.syncPendingNotes()
+//            }
+//        } catch (e: Exception) {
+//            Log.e("isConnectedToInternet", "No se puede comprobar si está conectado")
+//        }
     }
 }
