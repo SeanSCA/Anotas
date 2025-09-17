@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jinotas.R
 import com.example.jinotas.ShowNoteActivity
+import com.example.jinotas.db.AppDatabase
 import com.example.jinotas.db.Note
 import com.example.jinotas.utils.ChecklistUtils
 import com.example.jinotas.utils.ThemeUtils
@@ -104,6 +105,7 @@ class AdapterNotes(
 
     fun deleteNoteDBApi(context: Context, note: Note) {
 //        whereEqualTo("code", note.code)
+        val localDb: AppDatabase = AppDatabase.getDatabase(context)
         var docId = ""
         db.collection("notas").whereEqualTo("code", note.code).get()
             .addOnSuccessListener { result ->
@@ -113,14 +115,15 @@ class AdapterNotes(
 
                         // Aquí se elimina la nota
                         db.collection("notas").document(docId).delete().addOnSuccessListener {
-                                Log.d(
-                                    "Nota eliminada", "DocumentSnapshot successfully deleted!"
-                                )
-                            }.addOnFailureListener { e ->
-                                Log.w(
-                                    "Nota no eliminada", "Error deleting document", e
-                                )
-                            }
+                            Log.d(
+                                "Nota eliminada", "DocumentSnapshot successfully deleted!"
+                            )
+                            localDb.noteDAO().deleteNote(note)
+                        }.addOnFailureListener { e ->
+                            Log.w(
+                                "Nota no eliminada", "Error deleting document", e
+                            )
+                        }
                     }
                 } else {
                     Log.d("Firestore", "No se encontró ninguna nota con code = $note.code")
