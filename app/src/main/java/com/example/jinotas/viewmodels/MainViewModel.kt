@@ -156,29 +156,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
+    /**
+     * Stores the note to the local database and firebase
+     * @param note The note to be stored
+     */
     fun saveNoteConcurrently(note: Note) {
-        val db = Firebase.firestore
+        val dbFirebase = Firebase.firestore
+
+        db.noteDAO().insertNote(note)
 
         // Add a new document with a generated ID
-        db.collection("notas").add(note).addOnSuccessListener {
+        dbFirebase.collection("notas").add(note).addOnSuccessListener {
             Log.d("Nota Insertada", note.toString())
         }.addOnFailureListener { e ->
             Log.d("Nota No Insertada", note.toString())
         }
     }
 
-
+    /**
+     * Overwrites the note at the local database and firebase
+     * @param note The note to be overwrite
+     */
     fun overwriteNoteConcurrently(note: Note) {
-        val db = Firebase.firestore
+        val dbFirebase = Firebase.firestore
 
-        db.collection("notas").whereEqualTo("code", note.code).get()
+        db.noteDAO().updateNote(note)
+
+        dbFirebase.collection("notas").whereEqualTo("code", note.code).get()
             .addOnSuccessListener { result ->
                 if (!result.isEmpty) {
                     for (document in result) {
                         val docId = document.id
 
                         // Aquí modificamos campos individuales
-                        db.collection("notas").document(docId).update(
+                        dbFirebase.collection("notas").document(docId).update(
                             mapOf(
                                 "title" to note.title, "textContent" to note.textContent
                             )
